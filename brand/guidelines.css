@@ -1,9 +1,9 @@
 /* Vibe Web — Brand Guidelines Stylesheet */
 /* ─── Reset & Variables ──────────────────────────────────── */
 /* WCAG AA compliance notes:
-   - --muted (#a3a3a3) on --bg (#0d0d0d) = 8.1:1  ✓ AA normal text
-   - --brand (#04d361) on --bg (#0d0d0d) = 9.75:1 ✓ AA
-   - --text  (#ffffff) on --bg (#0d0d0d) = 19.1:1 ✓ AAA
+   - --muted (#a3a3a3) on --bg (#0a0a0a) = 7.9:1  ✓ AA normal text
+   - --brand (#04d361) on --bg (#0a0a0a) = 9.5:1 ✓ AA
+   - --text  (#ffffff) on --bg (#0a0a0a) = 19.6:1 ✓ AAA
    - --faint (#3a3a3a) = 1.86:1 → decorative borders ONLY, never text
 */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,7 +12,7 @@
   --brand:      #04d361;
   --brand-dark: #028a40;
   --brand-light:#05ff7a;
-  --bg:         #0d0d0d;
+  --bg:         #0a0a0a;
   --surface:    #141414;
   --card:       #1c1c1c;
   --border:     #2a2a2a;
@@ -136,7 +136,7 @@ nav { position: sticky; top: 0; z-index: 100;
 .swatch-color.brand-green  { background: #04d361; }
 .swatch-color.brand-dark   { background: #028a40; }
 .swatch-color.brand-light  { background: #05ff7a; }
-.swatch-color.bg-primary   { background: #0d0d0d; border-bottom: 1px solid #2a2a2a; }
+.swatch-color.bg-primary   { background: #0a0a0a; border-bottom: 1px solid #2a2a2a; }
 .swatch-color.bg-surface   { background: #141414; border-bottom: 1px solid #2a2a2a; }
 .swatch-color.bg-card      { background: #1c1c1c; border-bottom: 1px solid #2a2a2a; }
 .swatch-color.border-col   { background: #2a2a2a; }

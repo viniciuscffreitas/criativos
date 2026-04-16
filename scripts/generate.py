@@ -50,7 +50,7 @@ async def render_svg_logo(page, svg_path: Path, out_path: Path, width: int, heig
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&display=swap" rel="stylesheet">
-<style>*{{margin:0;padding:0}}body{{background:#0d0d0d;display:flex;align-items:center;justify-content:center;width:{width}px;height:{height}px}}</style>
+<style>*{{margin:0;padding:0}}body{{background:#0a0a0a;display:flex;align-items:center;justify-content:center;width:{width}px;height:{height}px}}</style>
 </head><body>{svg_content}</body></html>"""
     await page.set_viewport_size({"width": width, "height": height})
     await page.set_content(html)
@@ -103,7 +103,7 @@ async def main():
         # Icon: 512x512 (square, tight crop)
         icon_html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<style>*{{margin:0;padding:0}}body{{background:#0d0d0d;width:512px;height:512px;display:flex;align-items:center;justify-content:center}}</style>
+<style>*{{margin:0;padding:0}}body{{background:#0a0a0a;width:512px;height:512px;display:flex;align-items:center;justify-content:center}}</style>
 </head><body>
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="320" viewBox="-40 -70 680 680">
   <g fill="#04d361" fill-rule="evenodd">

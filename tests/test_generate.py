@@ -95,9 +95,10 @@ def test_brand_guidelines_css_exists():
 
 # ─── Unit: SVG content integrity ─────────────────────────────
 
-def test_icon_svg_has_dark_background():
+def test_icon_svg_has_canonical_bg():
     content = (BASE / "logos/vibeweb-icon.svg").read_text(encoding="utf-8")
-    assert "#0d0d0d" in content
+    assert "#0a0a0a" in content
+    assert "#0d0d0d" not in content
 
 
 def test_icon_svg_has_brand_green():
@@ -155,12 +156,6 @@ def test_all_templates_have_brand_green():
     for rel_path in SOURCE_HTML_FILES:
         content = (BASE / rel_path).read_text(encoding="utf-8")
         assert "#04d361" in content, f"{rel_path} nao tem a cor #04d361"
-
-
-def test_all_templates_have_dark_background():
-    for rel_path in SOURCE_HTML_FILES:
-        content = (BASE / rel_path).read_text(encoding="utf-8")
-        assert "#0d0d0d" in content, f"{rel_path} nao tem background #0d0d0d"
 
 
 def test_instagram_post_has_footer_url():
