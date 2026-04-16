@@ -27,3 +27,17 @@ def test_pyproject_pins_dev_deps():
     pinned = {d.split(">=")[0].split("==")[0].split("~=")[0].strip(): d for d in dev}
     assert "pytest" in pinned
     assert "pytest-asyncio" in pinned
+
+
+def test_wheel_includes_both_packages():
+    """vibeweb-build --ads imports from ads.render — packaging must ship it."""
+    with (ROOT / "pyproject.toml").open("rb") as f:
+        data = tomllib.load(f)
+    include = data["tool"]["setuptools"]["packages"]["find"]["include"]
+    assert "scripts*" in include, "scripts package missing from wheel"
+    assert "ads*" in include, "ads package missing — vibeweb-build --ads will fail on wheel install"
+
+
+def test_both_packages_have_init_py():
+    assert (ROOT / "scripts" / "__init__.py").is_file()
+    assert (ROOT / "ads" / "__init__.py").is_file()
