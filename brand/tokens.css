@@ -3,13 +3,13 @@
    Single source of truth. Import from any HTML:
      <link rel="stylesheet" href="../../brand/tokens.css">
 
-   Contrast notes (all on --bg = #0a0a0a):
-     --text        19.6:1  AAA
-     --text-muted   7.9:1  AA
-     --text-soft    6.3:1  AA (>=24px or >=18.67px bold)
-     --text-subtle  5.4:1  AA-large only (decorative / price labels)
-     --accent       9.5:1  AA
-     --border       2.0:1  decorative borders only, NEVER text
+   Contrast tiers (all on --bg):
+     --text         AAA
+     --text-muted   AA
+     --text-soft    AA (>=24px or >=18.67px bold)
+     --text-subtle  AA-large only (decorative / price labels)
+     --accent       AA
+     --border       decorative borders ONLY, never text
 ============================================================ */
 
 :root {

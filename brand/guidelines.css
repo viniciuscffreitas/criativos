@@ -1,10 +1,10 @@
 /* Vibe Web — Brand Guidelines Stylesheet */
 /* ─── Reset & Variables ──────────────────────────────────── */
-/* WCAG AA compliance notes:
-   - --muted (#a3a3a3) on --bg (#0a0a0a) = 7.9:1  ✓ AA normal text
-   - --brand (#04d361) on --bg (#0a0a0a) = 9.5:1 ✓ AA
-   - --text  (#ffffff) on --bg (#0a0a0a) = 19.6:1 ✓ AAA
-   - --faint (#3a3a3a) = 1.86:1 → decorative borders ONLY, never text
+/* WCAG compliance:
+   - --muted on --bg: AA normal text
+   - --brand on --bg: AA
+   - --text  on --bg: AAA
+   - --faint: decorative borders ONLY, never text
 */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -17,7 +17,7 @@
   --card:       #1c1c1c;
   --border:     #2a2a2a;
   --text:       #ffffff;
-  --muted:      #a3a3a3; /* 8.1:1 on --bg — use for secondary text */
+  --muted:      #a3a3a3; /* secondary text — meets AA on --bg */
   --faint:      #3a3a3a; /* decorative only — NEVER use as text color */
   --page-max:   1200px;
   --gap:        48px;
@@ -196,7 +196,7 @@ nav { position: sticky; top: 0; z-index: 100;
 .code-keyword { color: #569cd6; }
 .code-attr    { color: #9cdcfe; }
 .code-value   { color: #ce9178; }
-.code-comment { color: #8a8a8a; } /* #8a8a8a on #1c1c1c = ~5.4:1 ✓ AA */
+.code-comment { color: #8a8a8a; } /* on #1c1c1c: AA */
 
 /* ─── Footer ──────────────────────────────────────────────── */
 footer.site-footer { background: var(--surface); border-top: 1px solid var(--border); padding: 48px 0; }
