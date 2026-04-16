@@ -1,0 +1,29 @@
+[project]
+name = "vibeweb"
+version = "0.1.0"
+description = "Vibe Web brand identity + ad creatives pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.47,<2.0",
+    "pillow>=10.4,<12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "pytest-asyncio>=0.24,<1.0",
+]
+
+[project.scripts]
+vibeweb-build = "scripts.build:main"
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires generate.py already run (produces PNGs)",
+    "visual: perceptual golden-image comparison",
+]
+asyncio_mode = "auto"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scripts*"]
