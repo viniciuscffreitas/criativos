@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1000px;
+  height: 1000px;
+  overflow: hidden;
+  background: #0d0d0d;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Ghost mark very subtle */
+.bg-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 560px;
+  opacity: 0.04;
+  z-index: 0;
+}
+
+/* Ring frame */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 60px;
+  border: 1px solid rgba(4,211,97,0.08);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Outer accent dots */
+.dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #04d361;
+  border-radius: 50%;
+  z-index: 2;
+}
+.dot-top    { top: 55px;    left: 50%; transform: translateX(-50%); }
+.dot-right  { right: 55px;  top: 50%; transform: translateY(-50%); }
+.dot-bottom { bottom: 55px; left: 50%; transform: translateX(-50%); }
+.dot-left   { left: 55px;   top: 50%; transform: translateY(-50%); }
+
+/* Icon container */
+.icon-wrap {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.icon-circle {
+  width: 200px;
+  height: 200px;
+  background: rgba(4,211,97,0.08);
+  border: 1.5px solid rgba(4,211,97,0.25);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-circle svg {
+  width: 90px;
+  height: 90px;
+}
+
+.label {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  text-align: center;
+}
+
+.label-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #04d361;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: -20px;
+}
+</style>
+</head>
+<body>
+
+<!-- Ghost mark -->
+<svg class="bg-mark" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#04d361" fill-rule="evenodd">
+    <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+    <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+    <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+  </g>
+</svg>
+
+<!-- Accent dots -->
+<div class="dot dot-top"></div>
+<div class="dot dot-right"></div>
+<div class="dot dot-bottom"></div>
+<div class="dot dot-left"></div>
+
+<!-- Dynamic content via JS -->
+<div class="icon-wrap">
+  <div class="icon-circle">
+    <svg id="icon-svg" viewBox="0 0 24 24" fill="none" stroke="#04d361" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Default: grid icon (portfolio) -->
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+    </svg>
+  </div>
+  <div class="label" id="label-text">Portfólio</div>
+  <div class="label-sub" id="label-sub">@vibeweb.br</div>
+</div>
+
+<script>
+const types = {
+  portfolio: {
+    label: 'Portfolio',
+    icon: `<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>`,
+    sub: 'Our work'
+  },
+  services: {
+    label: 'Services',
+    icon: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+    sub: 'What we do'
+  },
+  about: {
+    label: 'About',
+    icon: `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`,
+    sub: 'Who we are'
+  },
+  contact: {
+    label: 'Contact',
+    icon: `<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>`,
+    sub: 'Get in touch'
+  },
+  feed: {
+    label: 'Feed',
+    icon: ``,  /* will use VW mark */
+    sub: '@vibeweb.br',
+    useMark: true
+  }
+};
+
+const type = new URLSearchParams(window.location.search).get('type') || 'portfolio';
+const data = types[type] || types.portfolio;
+
+document.getElementById('label-text').textContent = data.label;
+document.getElementById('label-sub').textContent = data.sub;
+
+const iconSvg = document.getElementById('icon-svg');
+if (data.useMark) {
+  // Replace with VW mark
+  iconSvg.setAttribute('viewBox', '0 0 600 480');
+  iconSvg.setAttribute('fill', '#04d361');
+  iconSvg.removeAttribute('stroke');
+  iconSvg.removeAttribute('stroke-width');
+  iconSvg.setAttribute('fill-rule', 'evenodd');
+  iconSvg.innerHTML = `
+    <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+    <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+    <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+  `;
+} else {
+  iconSvg.innerHTML = data.icon;
+}
+</script>
+</body>
+</html>

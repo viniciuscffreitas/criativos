@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+}
+
+/* Top label */
+.niche-label {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 3;
+}
+
+.niche-tag {
+  display: inline-block;
+  background: rgba(4,211,97,0.08);
+  border: 1px solid rgba(4,211,97,0.2);
+  color: #04d361;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+}
+
+/* Main headline */
+.main-text {
+  position: absolute;
+  top: 120px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  z-index: 3;
+}
+
+.main-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 56px;
+  color: #ffffff;
+  line-height: 1.08;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+
+.main-text h1 em {
+  font-style: normal;
+  color: #04d361;
+}
+
+.main-text .sub {
+  font-size: 20px;
+  color: #a3a3a3;
+  line-height: 1.5;
+}
+
+/* Phone + laptop mockup side by side */
+.mockups {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 920px;
+  height: 560px;
+  z-index: 2;
+}
+
+/* Laptop - real MacBook frame */
+.laptop-frame {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 860px;
+}
+
+.lt-device {
+  width: 100%;
+  display: block;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+}
+
+.lt-screen {
+  position: absolute;
+  top: 4.6%;
+  left: 10.85%;
+  right: 10.87%;
+  bottom: 11.59%;
+  overflow: hidden;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+.lt-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Phone mockup - real iPhone frame, right side overlapping */
+.phone-frame {
+  position: absolute;
+  right: 0;
+  bottom: 30px;
+  width: 200px;
+  height: 410px;
+  z-index: 4;
+  filter: drop-shadow(-8px 8px 24px rgba(0,0,0,0.6));
+}
+
+.phone-device {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.phone-screen {
+  position: absolute;
+  top: 9%;
+  left: 7%;
+  right: 6.8%;
+  bottom: 3.5%;
+  border-radius: 20px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.phone-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Bottom fade */
+.bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  background: linear-gradient(to top, #0a0a0a 20%, transparent);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* CTA bar at very bottom */
+.cta-bar {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  align-items: center;
+}
+
+.cta-price {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.cta-sep {
+  width: 1px;
+  height: 24px;
+  background: #333;
+}
+
+.cta-days {
+  font-size: 18px;
+  color: #a3a3a3;
+  font-weight: 500;
+}
+
+.cta-action {
+  font-size: 16px;
+  font-weight: 500;
+  color: #04d361;
+}
+
+.cta-action::after { content: ' →'; }
+</style>
+</head>
+<body>
+
+<div class="niche-label">
+  <div class="niche-tag">Websites for Designers</div>
+</div>
+
+<div class="main-text">
+  <h1>
+    No portfolio site?<br>
+    You're <em>invisible.</em>
+  </h1>
+  <p class="sub">Your competitors have one. You should too.</p>
+</div>
+
+<div class="mockups">
+  <div class="laptop-frame">
+    <div class="lt-screen">
+      <img src="../assets/guima-dark.png" alt="Designer portfolio - desktop">
+    </div>
+    <img class="lt-device" src="../assets/macbook-frame.png" alt="">
+  </div>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <img src="../assets/guima-mobile.png" alt="Designer portfolio - mobile">
+    </div>
+    <img class="phone-device" src="../assets/iphone-frame.png" alt="">
+  </div>
+</div>
+
+<div class="bottom-fade"></div>
+
+<div class="cta-bar">
+  <span class="cta-price">From €450</span>
+  <div class="cta-sep"></div>
+  <span class="cta-days">Ready in 7 days</span>
+  <div class="cta-sep"></div>
+  <span class="cta-action">Message me</span>
+</div>
+
+</body>
+</html>

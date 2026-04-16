@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 80">
+  <defs>
+    <style><![CDATA[
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700&display=swap');
+    ]]></style>
+  </defs>
+  <rect width="340" height="80" fill="#0d0d0d"/>
+  <!-- Mark: scale 600x480 -> 75x60, centered in 80px height (y offset = 10) -->
+  <g transform="translate(0, 10) scale(0.125)" fill="#04d361" fill-rule="evenodd">
+    <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+    <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+    <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+  </g>
+  <!-- Separator -->
+  <line x1="88" y1="12" x2="88" y2="68" stroke="#2a2a2a" stroke-width="1.5"/>
+  <!-- Wordmark -->
+  <text x="104" y="50"
+        font-family="'Syne', 'Space Grotesk', sans-serif"
+        font-weight="700" font-size="32" fill="#ffffff" letter-spacing="-0.5">
+    Vibe Web
+  </text>
+</svg>

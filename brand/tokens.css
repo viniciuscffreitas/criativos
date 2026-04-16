@@ -1,0 +1,46 @@
+/* ============================================================
+   Vibe Web — Design Tokens
+   Single source of truth. Import from any HTML:
+     <link rel="stylesheet" href="../../brand/tokens.css">
+
+   Contrast notes (all on --bg = #0a0a0a):
+     --text        19.6:1  AAA
+     --text-muted   7.9:1  AA
+     --text-soft    6.3:1  AA (>=24px or >=18.67px bold)
+     --text-subtle  5.4:1  AA-large only (decorative / price labels)
+     --accent       9.5:1  AA
+     --border       2.0:1  decorative borders only, NEVER text
+============================================================ */
+
+:root {
+  /* ---------- Surface ---------- */
+  --bg:           #0a0a0a;
+  --surface:      #141414;
+  --surface-hi:   #1c1c1c;
+  --border:       #2a2a2a;
+  --border-faint: #3a3a3a;
+
+  /* ---------- Text ---------- */
+  --text:         #ffffff;
+  --text-muted:   #a3a3a3;
+  --text-soft:    #999999;
+  --text-subtle:  #888888;
+
+  /* ---------- Accent (brand green) ---------- */
+  --accent:        #04d361;
+  --accent-dark:   #028a40;
+  --accent-light:  #05ff7a;
+  --accent-10:     rgba(4, 211, 97, 0.10);
+  --accent-20:     rgba(4, 211, 97, 0.20);
+  --accent-25:     rgba(4, 211, 97, 0.25);
+  --accent-30:     rgba(4, 211, 97, 0.30);
+
+  /* ---------- Signal ---------- */
+  --signal-red:    #e87070;
+  --signal-yellow: #e8c84a;
+
+  /* ---------- Typography ---------- */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'Fira Code', monospace;
+}

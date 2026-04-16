@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0a0a0a;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+}
+
+/* Large quote marks */
+.quote-mark {
+  position: absolute;
+  top: 52px;
+  left: 72px;
+  font-family: 'Syne', sans-serif;
+  font-size: 180px;
+  font-weight: 800;
+  color: #04d361;
+  opacity: 0.12;
+  line-height: 1;
+  z-index: 1;
+  user-select: none;
+}
+
+.content {
+  position: absolute;
+  top: 130px;
+  left: 80px;
+  right: 80px;
+  z-index: 2;
+}
+
+.testimonial {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  margin-bottom: 36px;
+}
+
+.testimonial .name {
+  color: #04d361;
+}
+
+.accent-line {
+  width: 56px;
+  height: 3px;
+  background: #04d361;
+  margin-bottom: 28px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 28px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stat-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.stat-lbl {
+  font-size: 14px;
+  color: #a3a3a3;
+  letter-spacing: 0.03em;
+}
+
+.subtext {
+  font-size: 20px;
+  color: #999; /* 6.5:1 on #0a0a0a — WCAG AA ✓ */
+  font-style: italic;
+}
+
+/* Device mockup at bottom */
+.mockup-area {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 440px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.device-frame {
+  width: 860px;
+  position: relative;
+}
+
+/* MacBook frame */
+.device-img {
+  width: 100%;
+  display: block;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+}
+
+.device-screen {
+  position: absolute;
+  top: 4.6%;
+  left: 10.85%;
+  right: 10.87%;
+  bottom: 11.59%;
+  overflow: hidden;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+.device-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* Fade at bottom */
+.mockup-area::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to top, #0a0a0a, transparent);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Corner accents */
+.corner { position: absolute; width: 18px; height: 18px; z-index: 5; }
+.corner-tl { top: 18px; left: 18px; border-top: 1.5px solid rgba(4,211,97,0.3); border-left: 1.5px solid rgba(4,211,97,0.3); }
+.corner-tr { top: 18px; right: 18px; border-top: 1.5px solid rgba(4,211,97,0.15); border-right: 1.5px solid rgba(4,211,97,0.15); }
+</style>
+</head>
+<body>
+
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+
+<div class="quote-mark">"</div>
+
+<div class="content">
+  <div class="testimonial">
+    Built a portfolio site<br>
+    for <span class="name">a designer<br>
+    in Berlin.</span>
+  </div>
+  <div class="accent-line"></div>
+  <div class="stats-row">
+    <div class="stat-item">
+      <div class="stat-val">€500</div>
+      <div class="stat-lbl">Total cost</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">4 days</div>
+      <div class="stat-lbl">Turnaround</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val">3× more</div>
+      <div class="stat-lbl">Client inquiries</div>
+    </div>
+  </div>
+  <div class="subtext">"Best investment I made this year."</div>
+</div>
+
+<div class="mockup-area">
+  <div class="device-frame">
+    <div class="device-screen">
+      <img src="../assets/guima-dark.png" alt="Portfolio site">
+    </div>
+    <img class="device-img" src="../assets/macbook-frame.png" alt="">
+  </div>
+</div>
+
+</body>
+</html>

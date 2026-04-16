@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60">
+  <defs>
+    <style><![CDATA[
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700&display=swap');
+    ]]></style>
+  </defs>
+  <rect width="300" height="60" fill="#0d0d0d"/>
+  <text x="150" y="43" text-anchor="middle"
+        font-family="'Syne', 'Space Grotesk', sans-serif"
+        font-weight="700" font-size="40" fill="#ffffff" letter-spacing="-1">
+    Vibe Web
+  </text>
+</svg>

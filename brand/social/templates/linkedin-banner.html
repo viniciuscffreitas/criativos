@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1584px;
+  height: 396px;
+  overflow: hidden;
+  background: #0d0d0d;
+  position: relative;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* Diagonal gradient accent */
+body::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg,
+      transparent 45%,
+      rgba(4,211,97,0.04) 55%,
+      rgba(4,211,97,0.02) 65%,
+      transparent 75%
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ghost mark — right side, large */
+.bg-mark {
+  position: absolute;
+  right: -60px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 580px;
+  height: 464px;
+  opacity: 0.06;
+  z-index: 0;
+}
+
+/* Geometric grid pattern — subtle */
+.grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(4,211,97,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(4,211,97,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  z-index: 0;
+}
+
+/* Green left accent bar */
+.left-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, #04d361 30%, #04d361 70%, transparent);
+  z-index: 5;
+}
+
+/* Vertical separator */
+.separator {
+  position: absolute;
+  left: 50%;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, #2a2a2a 30%, #2a2a2a 70%, transparent);
+  z-index: 5;
+}
+
+/* Left content — logo + tagline */
+.left-content {
+  position: absolute;
+  left: 56px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+}
+
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.logo-mark {
+  width: 52px;
+  height: 42px;
+}
+
+.logo-sep {
+  width: 1px;
+  height: 34px;
+  background: #2a2a2a;
+}
+
+.logo-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.tagline {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #a3a3a3;
+  letter-spacing: 0.01em;
+}
+
+.tagline strong {
+  color: #04d361;
+  font-weight: 500;
+}
+
+/* Right content — headline + badge */
+.right-content {
+  position: absolute;
+  left: calc(50% + 56px);
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+}
+
+.badge {
+  display: inline-block;
+  background: rgba(4,211,97,0.1);
+  border: 1px solid rgba(4,211,97,0.25);
+  color: #04d361;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  margin-bottom: 18px;
+}
+
+.headline {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  color: #ffffff;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin-bottom: 16px;
+}
+
+.headline em {
+  font-style: normal;
+  color: #04d361;
+}
+
+.sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  color: #a3a3a3;
+  line-height: 1.55;
+}
+
+/* Corner brackets */
+.corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  z-index: 5;
+}
+.corner-tl { top: 18px; left: 18px; border-top: 1.5px solid rgba(4,211,97,0.4); border-left: 1.5px solid rgba(4,211,97,0.4); }
+.corner-br { bottom: 18px; right: 18px; border-bottom: 1.5px solid rgba(4,211,97,0.2); border-right: 1.5px solid rgba(4,211,97,0.2); }
+</style>
+</head>
+<body>
+
+<div class="grid-pattern"></div>
+
+<!-- Ghost mark -->
+<svg class="bg-mark" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#04d361" fill-rule="evenodd">
+    <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+    <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+    <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+  </g>
+</svg>
+
+<div class="left-bar"></div>
+<div class="separator"></div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-br"></div>
+
+<!-- Left: logo -->
+<div class="left-content">
+  <div class="logo-wrap">
+    <svg class="logo-mark" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+      <g fill="#04d361" fill-rule="evenodd">
+        <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+        <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+        <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+      </g>
+    </svg>
+    <div class="logo-sep"></div>
+    <span class="logo-name">Vibe Web</span>
+  </div>
+  <div class="tagline">Web development agency &mdash; <strong>vibe-web.com</strong></div>
+</div>
+
+<!-- Right: headline -->
+<div class="right-content">
+  <div class="badge">Web Development</div>
+  <h2 class="headline">
+    We turn ideas into<br>
+    sites that <em>convert.</em>
+  </h2>
+  <p class="sub">From design to deployment &mdash; fast, modern and functional.</p>
+</div>
+
+</body>
+</html>

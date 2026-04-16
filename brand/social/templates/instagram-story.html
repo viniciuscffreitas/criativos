@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: #0d0d0d;
+  font-family: 'DM Sans', sans-serif;
+  position: relative;
+}
+
+/* Full-bleed VW mark ghost — fills entire background */
+.bg-mark-full {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1400px;
+  height: 1120px;
+  opacity: 0.04;
+  z-index: 0;
+}
+
+/* Gradient overlay — darkens top/bottom safe zones */
+.gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      #0d0d0d 0%,
+      rgba(13,13,13,0.6) 15%,
+      transparent 30%,
+      transparent 70%,
+      rgba(13,13,13,0.6) 85%,
+      #0d0d0d 100%
+    );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Scan line effect */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(4,211,97,0.008) 3px,
+    rgba(4,211,97,0.008) 4px
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Corner brackets */
+.corner {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  z-index: 5;
+}
+.corner-tl { top: 280px; left: 48px; border-top: 2px solid #04d361; border-left: 2px solid #04d361; }
+.corner-tr { top: 280px; right: 48px; border-top: 2px solid #04d361; border-right: 2px solid #04d361; }
+.corner-bl { bottom: 280px; left: 48px; border-bottom: 2px solid rgba(4,211,97,0.4); border-left: 2px solid rgba(4,211,97,0.4); }
+.corner-br { bottom: 280px; right: 48px; border-bottom: 2px solid rgba(4,211,97,0.4); border-right: 2px solid rgba(4,211,97,0.4); }
+
+/* Safe zone top — logo area */
+.safe-top {
+  position: absolute;
+  top: 310px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  z-index: 6;
+}
+
+.logo-mark-sm {
+  width: 48px;
+  height: 38px;
+}
+
+.logo-sep {
+  width: 1px;
+  height: 30px;
+  background: #2a2a2a;
+}
+
+.logo-text-sm {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+/* Main content block — centered */
+.main-content {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  z-index: 6;
+}
+
+.eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #04d361;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+}
+
+.headline {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 110px;
+  color: #ffffff;
+  line-height: 0.97;
+  letter-spacing: -4px;
+  margin-bottom: 52px;
+}
+
+.headline em {
+  font-style: normal;
+  color: #04d361;
+  display: block;
+}
+
+.accent-bar {
+  width: 80px;
+  height: 3px;
+  background: #04d361;
+  margin: 0 auto 44px;
+}
+
+.body-text {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  color: #a3a3a3;
+  line-height: 1.6;
+  margin-bottom: 72px;
+}
+
+/* CTA button */
+.cta {
+  display: inline-block;
+  background: #04d361;
+  color: #0d0d0d;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 22px 56px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.cta::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px solid rgba(4,211,97,0.35);
+  pointer-events: none;
+}
+
+/* Safe zone bottom */
+.safe-bottom {
+  position: absolute;
+  bottom: 310px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 6;
+}
+
+.url-text {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em;
+}
+
+/* Green side accents */
+.side-left {
+  position: absolute;
+  left: 0;
+  top: 35%;
+  width: 3px;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, #04d361, transparent);
+  z-index: 5;
+}
+
+.side-right {
+  position: absolute;
+  right: 0;
+  top: 35%;
+  width: 3px;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgba(4,211,97,0.4), transparent);
+  z-index: 5;
+}
+</style>
+</head>
+<body>
+
+<!-- Full background mark -->
+<svg class="bg-mark-full" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#04d361" fill-rule="evenodd">
+    <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+    <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+    <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+  </g>
+</svg>
+
+<div class="gradient-overlay"></div>
+<div class="scanlines"></div>
+<div class="side-left"></div>
+<div class="side-right"></div>
+
+<!-- Corner brackets -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- Logo -->
+<div class="safe-top">
+  <svg class="logo-mark-sm" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#04d361" fill-rule="evenodd">
+      <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+      <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+      <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+    </g>
+  </svg>
+  <div class="logo-sep"></div>
+  <span class="logo-text-sm">Vibe Web</span>
+</div>
+
+<!-- Main content -->
+<div class="main-content">
+  <div class="eyebrow">Web development agency</div>
+  <h1 class="headline">
+    Your site<br>
+    in your<br>
+    <em>next</em>
+    week.
+  </h1>
+  <div class="accent-bar"></div>
+  <p class="body-text">
+    From brief to launch in<br>
+    record time. No fluff.
+  </p>
+  <div class="cta">Talk to us</div>
+</div>
+
+<!-- Bottom URL -->
+<div class="safe-bottom">
+  <div class="url-text">vibe-web.com</div>
+</div>
+
+</body>
+</html>
