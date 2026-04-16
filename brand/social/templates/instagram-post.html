@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,7 +12,7 @@ body {
   width: 1080px;
   height: 1080px;
   overflow: hidden;
-  background: #0d0d0d;
+  background: var(--bg);
   font-family: 'DM Sans', sans-serif;
   position: relative;
 }
@@ -55,8 +56,8 @@ body::after {
   left: 48px;
   width: 36px;
   height: 36px;
-  border-top: 2px solid #04d361;
-  border-left: 2px solid #04d361;
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
   z-index: 3;
 }
 
@@ -100,21 +101,21 @@ body::after {
 .logo-separator {
   width: 1px;
   height: 28px;
-  background: #2a2a2a;
+  background: var(--border);
 }
 
 .logo-text {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 22px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.3px;
 }
 
 .tag {
   background: rgba(4,211,97,0.12);
   border: 1px solid rgba(4,211,97,0.3);
-  color: #04d361;
+  color: var(--accent);
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -137,7 +138,7 @@ body::after {
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: #04d361;
+  color: var(--accent);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   margin-bottom: 28px;
@@ -147,7 +148,7 @@ body::after {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 88px;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.0;
   letter-spacing: -3px;
   margin-bottom: 40px;
@@ -155,13 +156,13 @@ body::after {
 
 .headline em {
   font-style: normal;
-  color: #04d361;
+  color: var(--accent);
 }
 
 .accent-line {
   width: 64px;
   height: 3px;
-  background: #04d361;
+  background: var(--accent);
   margin-bottom: 32px;
 }
 
@@ -169,7 +170,7 @@ body::after {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 22px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   line-height: 1.6;
   max-width: 560px;
 }
@@ -195,14 +196,14 @@ body::after {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 36px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -1px;
 }
 
 .stat-label {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -214,7 +215,7 @@ body::after {
   left: 0;
   right: 0;
   height: 68px;
-  background: #04d361;
+  background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -226,7 +227,7 @@ body::after {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 16px;
-  color: #0d0d0d;
+  color: var(--bg);
   letter-spacing: 0.02em;
 }
 
@@ -234,7 +235,7 @@ body::after {
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: #0d0d0d; /* solid — rgba(13,13,13,0.65) on #04d361 was ~2.9:1 FAIL; solid = 9.75:1 ✓ */
+  color: var(--bg); /* solid — rgba(13,13,13,0.65) on #04d361 was ~2.9:1 FAIL; solid = 9.75:1 ✓ */
   letter-spacing: 0.04em;
 }
 </style>

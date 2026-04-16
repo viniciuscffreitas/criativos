@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,7 +12,7 @@ body {
   width: 1200px;
   height: 630px;
   overflow: hidden;
-  background: #0d0d0d;
+  background: var(--bg);
   position: relative;
   font-family: 'DM Sans', sans-serif;
 }
@@ -82,14 +83,14 @@ body::before {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 16px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   letter-spacing: 0.02em;
 }
 
 .footer-badge {
   background: rgba(4,211,97,0.1);
   border: 1px solid rgba(4,211,97,0.2);
-  color: #04d361;
+  color: var(--accent);
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -122,7 +123,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 15px;
-  color: #04d361;
+  color: var(--accent);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   margin-bottom: 24px;
@@ -132,7 +133,7 @@ body::before {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 64px;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.02;
   letter-spacing: -2.5px;
   margin-bottom: 28px;
@@ -140,13 +141,13 @@ body::before {
 
 .headline em {
   font-style: normal;
-  color: #04d361;
+  color: var(--accent);
 }
 
 .accent-line {
   width: 48px;
   height: 3px;
-  background: #04d361;
+  background: var(--accent);
   margin-bottom: 24px;
 }
 
@@ -154,7 +155,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 18px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -177,14 +178,14 @@ body::before {
 .logo-sep {
   width: 1px;
   height: 26px;
-  background: #2a2a2a;
+  background: var(--border);
 }
 
 .logo-name {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 20px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.2px;
 }
 </style>

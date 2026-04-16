@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,7 +12,7 @@ body {
   width: 1584px;
   height: 396px;
   overflow: hidden;
-  background: #0d0d0d;
+  background: var(--bg);
   position: relative;
   font-family: 'DM Sans', sans-serif;
 }
@@ -101,14 +102,14 @@ body::after {
 .logo-sep {
   width: 1px;
   height: 34px;
-  background: #2a2a2a;
+  background: var(--border);
 }
 
 .logo-name {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 28px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.3px;
 }
 
@@ -116,12 +117,12 @@ body::after {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 16px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   letter-spacing: 0.01em;
 }
 
 .tagline strong {
-  color: #04d361;
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -139,7 +140,7 @@ body::after {
   display: inline-block;
   background: rgba(4,211,97,0.1);
   border: 1px solid rgba(4,211,97,0.25);
-  color: #04d361;
+  color: var(--accent);
   font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -153,7 +154,7 @@ body::after {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 40px;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.08;
   letter-spacing: -1.5px;
   margin-bottom: 16px;
@@ -161,13 +162,13 @@ body::after {
 
 .headline em {
   font-style: normal;
-  color: #04d361;
+  color: var(--accent);
 }
 
 .sub {
   font-family: 'DM Sans', sans-serif;
   font-size: 17px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   line-height: 1.55;
 }
 
