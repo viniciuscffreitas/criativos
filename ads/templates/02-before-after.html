@@ -12,7 +12,7 @@ body {
   width: 1080px;
   height: 1080px;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--bg);
   font-family: 'DM Sans', sans-serif;
   position: relative;
 }
@@ -31,18 +31,18 @@ body {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 42px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -1.5px;
 }
 
-.hook h1 em { font-style: normal; color: #04d361; }
+.hook h1 em { font-style: normal; color: var(--accent); }
 
 /* Shared browser chrome */
 .bchrome {
   height: 30px;
   min-height: 30px;
   background: #151515;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -68,7 +68,7 @@ body {
 }
 
 .frame-label.red { color: #e87070; }
-.frame-label.green { color: #04d361; }
+.frame-label.green { color: var(--accent); }
 
 .frame-before {
   width: 400px;
@@ -92,7 +92,7 @@ body {
 .empty-text {
   font-size: 17px;
   font-weight: 500;
-  color: #888;
+  color: var(--text-subtle);
 }
 
 .empty-sub {
@@ -166,15 +166,15 @@ body {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 32px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
-.stat-val.accent { color: #04d361; }
+.stat-val.accent { color: var(--accent); }
 
 .stat-lbl {
   font-size: 14px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 3px;
@@ -183,7 +183,7 @@ body {
 .bottom-cta {
   font-size: 17px;
   font-weight: 500;
-  color: #04d361;
+  color: var(--accent);
 }
 </style>
 </head>
@@ -198,9 +198,9 @@ body {
 <div class="before-wrap">
   <div class="frame-before">
     <div class="bchrome">
-      <div class="bdot" style="background:#2a2a2a"></div>
-      <div class="bdot" style="background:#2a2a2a"></div>
-      <div class="bdot" style="background:#2a2a2a"></div>
+      <div class="bdot" style="background: var(--border)"></div>
+      <div class="bdot" style="background: var(--border)"></div>
+      <div class="bdot" style="background: var(--border)"></div>
     </div>
     <div class="empty-body">
       <span class="empty-text">No website yet.</span>

@@ -12,7 +12,7 @@ body {
   width: 1080px;
   height: 1080px;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--bg);
   font-family: 'DM Sans', sans-serif;
   position: relative;
 }
@@ -25,7 +25,7 @@ body {
   font-family: 'Syne', sans-serif;
   font-size: 180px;
   font-weight: 800;
-  color: #04d361;
+  color: var(--accent);
   opacity: 0.12;
   line-height: 1;
   z-index: 1;
@@ -44,20 +44,20 @@ body {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 52px;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.1;
   letter-spacing: -1.5px;
   margin-bottom: 36px;
 }
 
 .testimonial .name {
-  color: #04d361;
+  color: var(--accent);
 }
 
 .accent-line {
   width: 56px;
   height: 3px;
-  background: #04d361;
+  background: var(--accent);
   margin-bottom: 28px;
 }
 
@@ -77,19 +77,19 @@ body {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 28px;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.5px;
 }
 
 .stat-lbl {
   font-size: 14px;
-  color: #a3a3a3;
+  color: var(--text-muted);
   letter-spacing: 0.03em;
 }
 
 .subtext {
   font-size: 20px;
-  color: #999; /* 6.5:1 on #0a0a0a — WCAG AA ✓ */
+  color: var(--text-soft); /* 6.5:1 on #0a0a0a — WCAG AA ✓ */
   font-style: italic;
 }
 

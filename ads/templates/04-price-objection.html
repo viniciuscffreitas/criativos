@@ -12,7 +12,7 @@ body {
   width: 1080px;
   height: 1080px;
   overflow: hidden;
-  background: #0a0a0a;
+  background: var(--bg);
   font-family: 'DM Sans', sans-serif;
   position: relative;
   display: flex;
@@ -42,7 +42,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 28px;
-  color: #888; /* 5.4:1 on #0a0a0a — WCAG AA (large text) ✓ */
+  color: var(--text-subtle); /* 5.4:1 on #0a0a0a — WCAG AA (large text) ✓ */
   margin-bottom: 20px;
 }
 
@@ -74,7 +74,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 24px;
-  color: #888; /* 5.4:1 — WCAG AA ✓ */
+  color: var(--text-subtle); /* 5.4:1 — WCAG AA ✓ */
   margin-top: 40px;
   margin-bottom: 16px;
 }
@@ -83,7 +83,7 @@ body::before {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 96px;
-  color: #04d361;
+  color: var(--accent);
   letter-spacing: -3px;
   line-height: 1;
   margin-bottom: 8px;
@@ -93,7 +93,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-size: 24px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text);
   margin-top: 16px;
   letter-spacing: 0.02em;
 }
@@ -102,12 +102,12 @@ body::before {
   margin-top: 44px;
   font-size: 18px;
   font-weight: 500;
-  color: #a3a3a3;
+  color: var(--text-muted);
   letter-spacing: 0.02em;
 }
 
 .cta strong {
-  color: #04d361;
+  color: var(--accent);
   font-weight: 600;
 }
 
