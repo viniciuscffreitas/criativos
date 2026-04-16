@@ -11,7 +11,6 @@ e reuso de helpers (to_file_url, render_job, playwright_page).
 from __future__ import annotations
 
 import asyncio
-import shutil
 import sys
 from pathlib import Path
 
@@ -76,12 +75,29 @@ def _social_jobs() -> list[RenderJob]:
     return jobs
 
 
-def _generate_favicons_pillow() -> None:
-    """Legacy Pillow favicons — replaced by native Playwright render in Task 7."""
-    from PIL import Image
-    src = Image.open(str(FAVICONS_DIR / "icon-512.png"))
-    for fname, size in [("favicon-16.png", 16), ("favicon-32.png", 32), ("apple-touch-icon.png", 180)]:
-        src.resize((size, size), Image.LANCZOS).save(str(FAVICONS_DIR / fname))
+async def _render_favicons_native(page) -> None:
+    """Render favicons natively at target resolution from vibeweb-icon.svg.
+
+    Substitui o downscale LANCZOS 512->16 (passada unica, perde detalhe).
+    Cada tamanho e renderizado direto do SVG, preservando precisao em pixels pequenos.
+    """
+    icon_svg = (LOGOS_DIR / "vibeweb-icon.svg").read_text(encoding="utf-8")
+    for fname, size in [
+        ("favicon-16.png", 16),
+        ("favicon-32.png", 32),
+        ("apple-touch-icon.png", 180),
+        ("icon-512.png", 512),
+    ]:
+        inner = max(int(size * 0.78), 12)
+        html = (
+            f"<!DOCTYPE html><html><head><meta charset='UTF-8'>"
+            f"<style>*{{margin:0;padding:0}}"
+            f"body{{background:#0a0a0a;width:{size}px;height:{size}px;"
+            f"display:flex;align-items:center;justify-content:center}}"
+            f"svg{{width:{inner}px;height:{inner}px}}"
+            f"</style></head><body>{icon_svg}</body></html>"
+        )
+        await render_html_string(page, html, FAVICONS_DIR / fname, size, size)
         print(f"  -> {fname}")
 
 
@@ -123,16 +139,13 @@ async def main() -> None:
         await render_html_string(page, icon_html, LOGOS_DIR / "vibeweb-icon.png", 512, 512)
         print("  -> vibeweb-icon.png")
 
-        shutil.copy(str(LOGOS_DIR / "vibeweb-icon.png"), str(FAVICONS_DIR / "icon-512.png"))
-        print("  -> favicons/icon-512.png (copy)")
-
         print("\n[2/3] Social templates")
         for job in _social_jobs():
             await render_job(page, job)
             print(f"  -> {job.out.name}")
 
-    print("\n[3/3] Favicons (Pillow — Task 7 replaces with native render)")
-    _generate_favicons_pillow()
+        print("\n[3/3] Favicons (native render)")
+        await _render_favicons_native(page)
 
     print("\nVerificando outputs...")
     rc = _verify_outputs()

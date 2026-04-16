@@ -202,3 +202,13 @@ def test_output_png_dimensions(rel_path, expected_w, expected_h):
     w, h = img.size
     assert w == expected_w, f"{rel_path}: largura {w} != {expected_w}"
     assert h == expected_h, f"{rel_path}: altura {h} != {expected_h}"
+
+
+# Task 7 invariante: favicons renderizam nativamente do SVG, sem LANCZOS downscale.
+
+def test_favicons_render_natively_not_via_lanczos():
+    """Task 7: favicons devem vir do SVG via Playwright, sem Pillow.resize LANCZOS."""
+    src = (BASE.parent / "scripts" / "generate.py").read_text(encoding="utf-8")
+    assert "Image.LANCZOS" not in src, "generate.py ainda usa Image.LANCZOS"
+    assert ".resize(" not in src, "generate.py ainda faz Pillow resize (downscale)"
+    assert "_render_favicons_native" in src, "Task 7 nao aplicada"
