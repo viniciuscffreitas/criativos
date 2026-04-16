@@ -1,56 +1,51 @@
 """
-Render Meta Ads creatives (1080x1080) from HTML templates in `templates/` -> PNG in `renders/`.
+Render Meta Ads creatives (1080x1080) from templates/*.html -> renders/*.png.
 
-Usage: python render.py
-Requires: pip install playwright && playwright install chromium
+Uses scripts.pipeline for deterministic font loading (document.fonts.ready).
+Legacy exports (to_file_url, SIZE, TEMPLATES_DIR, RENDERS_DIR) are kept for
+ads/test_render.py backward compatibility.
+
+Usage: python ads/render.py
 """
+from __future__ import annotations
 
 import asyncio
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from scripts.pipeline import RenderJob, run_jobs, to_file_url as _to_file_url
 
 ADS_DIR = Path(__file__).parent
 TEMPLATES_DIR = ADS_DIR / "templates"
 RENDERS_DIR = ADS_DIR / "renders"
-RENDERS_DIR.mkdir(exist_ok=True)
-
 SIZE = 1080
-FONT_LOAD_MS = 1500
 
 
 def to_file_url(path: Path) -> str:
-    return path.resolve().as_uri()
+    """Re-export for test_render.py backward compat."""
+    return _to_file_url(path)
+
+
+def build_jobs() -> list[RenderJob]:
+    RENDERS_DIR.mkdir(exist_ok=True)
+    return [
+        RenderJob(source=tpl, out=RENDERS_DIR / f"{tpl.stem}.png", width=SIZE, height=SIZE)
+        for tpl in sorted(TEMPLATES_DIR.glob("*.html"))
+    ]
 
 
 async def main():
-    from playwright.async_api import async_playwright
-
-    templates = sorted(TEMPLATES_DIR.glob("*.html"))
-    if not templates:
+    jobs = build_jobs()
+    if not jobs:
         print(f"No templates found in {TEMPLATES_DIR}")
         return
-
-    print(f"Rendering {len(templates)} creative(s)...\n")
-
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch()
-        page = await browser.new_page()
-        await page.set_viewport_size({"width": SIZE, "height": SIZE})
-
-        for html_path in templates:
-            out_path = RENDERS_DIR / f"{html_path.stem}.png"
-            await page.goto(to_file_url(html_path))
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(FONT_LOAD_MS)
-            await page.screenshot(
-                path=str(out_path),
-                clip={"x": 0, "y": 0, "width": SIZE, "height": SIZE},
-            )
-            print(f"  [OK] {out_path.name}")
-
-        await browser.close()
-
-    rendered = list(RENDERS_DIR.glob("*.png"))
-    print(f"\nDone: {len(rendered)} creatives in {RENDERS_DIR.resolve()}")
+    print(f"Rendering {len(jobs)} ad creative(s)...")
+    await run_jobs(jobs)
+    for job in jobs:
+        print(f"  [OK] {job.out.name}")
+    print(f"\nDone: {RENDERS_DIR.resolve()}")
 
 
 if __name__ == "__main__":
