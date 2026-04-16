@@ -17,8 +17,7 @@ vibeweb/
 │       └── renders/    Generated PNG outputs
 │
 ├── ads/                Meta Ads creatives (1080×1080)
-│   ├── tokens.css      → imports ../brand/tokens.css
-│   ├── templates/      6 HTML ad templates
+│   ├── templates/      6 HTML ad templates (each imports ../../brand/tokens.css)
 │   ├── assets/         Device mockups (iPhone, MacBook) + site screenshots
 │   ├── renders/        Generated PNGs (upload these to Meta Ads Manager)
 │   ├── copy.md         Primary text / headline / description for each ad
