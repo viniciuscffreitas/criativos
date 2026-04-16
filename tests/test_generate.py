@@ -206,6 +206,16 @@ def test_output_png_dimensions(rel_path, expected_w, expected_h):
 
 # Task 7 invariante: favicons renderizam nativamente do SVG, sem LANCZOS downscale.
 
+def test_no_orphan_logo_pngs():
+    """Todo PNG em brand/logos/ deve ser produzido pelo pipeline (EXPECTED_OUTPUTS)."""
+    produced = {p.name for p in (BASE / "logos").glob("*.png")}
+    expected_in_logos = {
+        Path(rel).name for rel, _, _ in EXPECTED_OUTPUTS if rel.startswith("logos/")
+    }
+    orphans = produced - expected_in_logos
+    assert not orphans, f"Orphan PNGs in brand/logos/: {orphans}"
+
+
 def test_favicons_render_natively_not_via_lanczos():
     """Task 7: favicons devem vir do SVG via Playwright, sem Pillow.resize LANCZOS."""
     src = (BASE.parent / "scripts" / "generate.py").read_text(encoding="utf-8")
