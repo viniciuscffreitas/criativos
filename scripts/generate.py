@@ -31,17 +31,21 @@ FAVICONS_DIR = BASE / "favicons"
 
 HIGHLIGHT_TYPES = ("portfolio", "services", "about", "contact", "feed")
 
+# Canonical bg for SVG wrapper HTML. Duplicated from brand/tokens.css:--bg
+# because the wrapper is synthesized in Python and can't read the CSS file.
+# If tokens.css changes, update here.
+_BG = "#0a0a0a"
+
 _FONTS_LINK = (
     '<link href="https://fonts.googleapis.com/css2?'
     'family=Syne:wght@700&display=swap" rel="stylesheet">'
 )
 
 
-def _wrap_svg(svg: str, width: int, height: int, with_fonts: bool = True) -> str:
-    fonts = _FONTS_LINK if with_fonts else ""
+def _wrap_svg(svg: str, width: int, height: int) -> str:
     return f"""<!DOCTYPE html>
-<html><head><meta charset="UTF-8">{fonts}
-<style>*{{margin:0;padding:0}}body{{background:#0a0a0a;display:flex;align-items:center;justify-content:center;width:{width}px;height:{height}px}}</style>
+<html><head><meta charset="UTF-8">{_FONTS_LINK}
+<style>*{{margin:0;padding:0}}body{{background:{_BG};display:flex;align-items:center;justify-content:center;width:{width}px;height:{height}px}}</style>
 </head><body>{svg}</body></html>"""
 
 
@@ -75,10 +79,8 @@ def _social_jobs() -> list[RenderJob]:
 
 
 async def _render_favicons_native(page) -> None:
-    """Render favicons natively at target resolution from vibeweb-icon.svg.
-
-    Substitui o downscale LANCZOS 512->16 (passada unica, perde detalhe).
-    Cada tamanho e renderizado direto do SVG, preservando precisao em pixels pequenos.
+    """Each favicon size is rendered directly from the SVG — raster downscale
+    from 512 loses sub-pixel detail at 16/32.
     """
     icon_svg = (LOGOS_DIR / "vibeweb-icon.svg").read_text(encoding="utf-8")
     for fname, size in [
@@ -91,7 +93,7 @@ async def _render_favicons_native(page) -> None:
         html = (
             f"<!DOCTYPE html><html><head><meta charset='UTF-8'>"
             f"<style>*{{margin:0;padding:0}}"
-            f"body{{background:#0a0a0a;width:{size}px;height:{size}px;"
+            f"body{{background:{_BG};width:{size}px;height:{size}px;"
             f"display:flex;align-items:center;justify-content:center}}"
             f"svg{{width:{inner}px;height:{inner}px}}"
             f"</style></head><body>{icon_svg}</body></html>"
@@ -133,7 +135,7 @@ async def main() -> None:
         icon_svg = (LOGOS_DIR / "vibeweb-icon.svg").read_text(encoding="utf-8")
         icon_html = f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<style>*{{margin:0;padding:0}}body{{background:#0a0a0a;width:512px;height:512px;display:flex;align-items:center;justify-content:center}}svg{{width:400px;height:320px}}</style>
+<style>*{{margin:0;padding:0}}body{{background:{_BG};width:512px;height:512px;display:flex;align-items:center;justify-content:center}}svg{{width:400px;height:320px}}</style>
 </head><body>{icon_svg}</body></html>"""
         await render_html_string(page, icon_html, LOGOS_DIR / "vibeweb-icon.png", 512, 512)
         print("  -> vibeweb-icon.png")

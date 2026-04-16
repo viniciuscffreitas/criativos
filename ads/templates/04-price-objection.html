@@ -27,7 +27,7 @@ body::before {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(4,211,97,0.03) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 30%, rgba(var(--accent-rgb), 0.03) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -42,7 +42,7 @@ body::before {
   font-family: 'DM Sans', sans-serif;
   font-weight: 400;
   font-size: 28px;
-  color: var(--text-subtle); /* 5.4:1 on #0a0a0a — WCAG AA (large text) ✓ */
+  color: var(--text-subtle); /* 5.4:1 on var(--bg) — WCAG AA (large text) ✓ */
   margin-bottom: 20px;
 }
 
@@ -118,7 +118,7 @@ body::before {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #04d361 50%, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
   opacity: 0.3;
 }
 
@@ -128,7 +128,7 @@ body::before {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #04d361 50%, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
   opacity: 0.3;
 }
 </style>

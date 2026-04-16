@@ -30,6 +30,12 @@
   --accent:        #04d361;
   --accent-dark:   #028a40;
   --accent-light:  #05ff7a;
+
+  /* RGB channels of --accent — use in templates as rgba(var(--accent-rgb), X)
+     for arbitrary opacity without proliferating opacity tokens. */
+  --accent-rgb:    4, 211, 97;
+
+  /* Pre-mixed discrete opacities for common alpha levels. */
   --accent-10:     rgba(4, 211, 97, 0.10);
   --accent-20:     rgba(4, 211, 97, 0.20);
   --accent-25:     rgba(4, 211, 97, 0.25);

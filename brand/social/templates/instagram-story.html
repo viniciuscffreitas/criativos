@@ -54,8 +54,8 @@ body {
     0deg,
     transparent,
     transparent 3px,
-    rgba(4,211,97,0.008) 3px,
-    rgba(4,211,97,0.008) 4px
+    rgba(var(--accent-rgb), 0.008) 3px,
+    rgba(var(--accent-rgb), 0.008) 4px
   );
   z-index: 2;
   pointer-events: none;
@@ -70,8 +70,8 @@ body {
 }
 .corner-tl { top: 280px; left: 48px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
 .corner-tr { top: 280px; right: 48px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
-.corner-bl { bottom: 280px; left: 48px; border-bottom: 2px solid rgba(4,211,97,0.4); border-left: 2px solid rgba(4,211,97,0.4); }
-.corner-br { bottom: 280px; right: 48px; border-bottom: 2px solid rgba(4,211,97,0.4); border-right: 2px solid rgba(4,211,97,0.4); }
+.corner-bl { bottom: 280px; left: 48px; border-bottom: 2px solid rgba(var(--accent-rgb), 0.4); border-left: 2px solid rgba(var(--accent-rgb), 0.4); }
+.corner-br { bottom: 280px; right: 48px; border-bottom: 2px solid rgba(var(--accent-rgb), 0.4); border-right: 2px solid rgba(var(--accent-rgb), 0.4); }
 
 /* Safe zone top — logo area */
 .safe-top {
@@ -181,7 +181,7 @@ body {
   left: 4px;
   right: -4px;
   bottom: -4px;
-  border: 1px solid rgba(4,211,97,0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.35);
   pointer-events: none;
 }
 
@@ -210,7 +210,7 @@ body {
   top: 35%;
   width: 3px;
   height: 30%;
-  background: linear-gradient(to bottom, transparent, #04d361, transparent);
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
   z-index: 5;
 }
 
@@ -220,7 +220,7 @@ body {
   top: 35%;
   width: 3px;
   height: 30%;
-  background: linear-gradient(to bottom, transparent, rgba(4,211,97,0.4), transparent);
+  background: linear-gradient(to bottom, transparent, rgba(var(--accent-rgb), 0.4), transparent);
   z-index: 5;
 }
 </style>

@@ -38,7 +38,7 @@ body::before {
   content: '';
   position: absolute;
   inset: 60px;
-  border: 1px solid rgba(4,211,97,0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.08);
   border-radius: 50%;
   z-index: 1;
 }
@@ -70,8 +70,8 @@ body::before {
 .icon-circle {
   width: 200px;
   height: 200px;
-  background: rgba(4,211,97,0.08);
-  border: 1.5px solid rgba(4,211,97,0.25);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1.5px solid rgba(var(--accent-rgb), 0.25);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -174,7 +174,7 @@ const iconSvg = document.getElementById('icon-svg');
 if (data.useMark) {
   // Replace with VW mark
   iconSvg.setAttribute('viewBox', '0 0 600 480');
-  iconSvg.setAttribute('fill', '#04d361');
+  iconSvg.setAttribute('fill', 'var(--accent)');
   iconSvg.removeAttribute('stroke');
   iconSvg.removeAttribute('stroke-width');
   iconSvg.setAttribute('fill-rule', 'evenodd');

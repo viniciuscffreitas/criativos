@@ -26,7 +26,7 @@ body::before {
   transform: translate(-50%, -20%);
   width: 700px;
   height: 500px;
-  background: radial-gradient(ellipse, rgba(4,211,97,0.06) 0%, transparent 60%);
+  background: radial-gradient(ellipse, rgba(var(--accent-rgb), 0.06) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -43,8 +43,8 @@ body::before {
 
 .badge {
   display: inline-block;
-  background: rgba(4,211,97,0.1);
-  border: 1px solid rgba(4,211,97,0.25);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
   color: var(--accent);
   font-size: 13px;
   font-weight: 500;

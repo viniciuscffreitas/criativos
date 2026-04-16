@@ -89,7 +89,7 @@ body {
 
 .subtext {
   font-size: 20px;
-  color: var(--text-soft); /* 6.5:1 on #0a0a0a — WCAG AA ✓ */
+  color: var(--text-soft); /* 6.5:1 on var(--bg) — WCAG AA ✓ */
   font-style: italic;
 }
 
@@ -148,15 +148,15 @@ body {
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(to top, #0a0a0a, transparent);
+  background: linear-gradient(to top, var(--bg), transparent);
   z-index: 3;
   pointer-events: none;
 }
 
 /* Corner accents */
 .corner { position: absolute; width: 18px; height: 18px; z-index: 5; }
-.corner-tl { top: 18px; left: 18px; border-top: 1.5px solid rgba(4,211,97,0.3); border-left: 1.5px solid rgba(4,211,97,0.3); }
-.corner-tr { top: 18px; right: 18px; border-top: 1.5px solid rgba(4,211,97,0.15); border-right: 1.5px solid rgba(4,211,97,0.15); }
+.corner-tl { top: 18px; left: 18px; border-top: 1.5px solid rgba(var(--accent-rgb), 0.3); border-left: 1.5px solid rgba(var(--accent-rgb), 0.3); }
+.corner-tr { top: 18px; right: 18px; border-top: 1.5px solid rgba(var(--accent-rgb), 0.15); border-right: 1.5px solid rgba(var(--accent-rgb), 0.15); }
 </style>
 </head>
 <body>
