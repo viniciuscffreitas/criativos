@@ -14,29 +14,7 @@ from pathlib import Path
 
 BASE = Path(__file__).parent.parent / "brand"
 
-# ─── Markers ──────────────────────────────────────────────────
-# ─── Unit: to_file_url ────────────────────────────────────────
-# Usa BASE / arquivo existente pois no Windows Path("/foo") não é absoluto.
-
-def test_to_file_url_returns_string():
-    from generate import to_file_url
-    result = to_file_url(BASE / "guidelines.html")
-    assert isinstance(result, str)
-
-
-def test_to_file_url_starts_with_file_scheme():
-    from generate import to_file_url
-    result = to_file_url(BASE / "guidelines.html")
-    assert result.startswith("file:///")
-
-
-def test_to_file_url_with_query_appended():
-    """generate.py concatena query string manualmente — verificar comportamento base."""
-    from generate import to_file_url
-    base_url = to_file_url(BASE / "social" / "templates" / "instagram-highlight.html")
-    with_query = base_url + "?type=portfolio"
-    assert "?type=portfolio" in with_query
-
+# to_file_url is covered by tests/test_pipeline.py — no duplicate coverage here.
 
 # ─── Unit: directory structure ────────────────────────────────
 
@@ -117,10 +95,9 @@ def test_primary_svg_has_separator_line():
 
 
 def test_white_svg_has_no_background_rect():
-    """vibeweb-white.svg é para overlay — não deve ter fundo sólido."""
+    """vibeweb-white.svg is an overlay logo — no solid background allowed."""
     content = (BASE / "logos/vibeweb-white.svg").read_text(encoding="utf-8")
-    # Pode ter um comentário mencionando "sem background", mas não um rect fill sólido escuro
-    assert 'fill="#0d0d0d"' not in content or '<rect' not in content
+    assert "<rect" not in content, "vibeweb-white.svg contains a <rect> — overlay logos must not have a solid bg"
 
 
 def test_black_svg_has_white_background():
@@ -204,8 +181,6 @@ def test_output_png_dimensions(rel_path, expected_w, expected_h):
     assert h == expected_h, f"{rel_path}: altura {h} != {expected_h}"
 
 
-# Task 7 invariante: favicons renderizam nativamente do SVG, sem LANCZOS downscale.
-
 def test_no_orphan_logo_pngs():
     """Todo PNG em brand/logos/ deve ser produzido pelo pipeline (EXPECTED_OUTPUTS)."""
     produced = {p.name for p in (BASE / "logos").glob("*.png")}
@@ -217,8 +192,12 @@ def test_no_orphan_logo_pngs():
 
 
 def test_favicons_render_natively_not_via_lanczos():
-    """Task 7: favicons devem vir do SVG via Playwright, sem Pillow.resize LANCZOS."""
+    """Favicons must render from SVG via Playwright — never Pillow LANCZOS downscale.
+
+    Raster downscale from 512->16 loses sub-pixel detail; native render at
+    target resolution preserves the 1px features of the icon.
+    """
     src = (BASE.parent / "scripts" / "generate.py").read_text(encoding="utf-8")
-    assert "Image.LANCZOS" not in src, "generate.py ainda usa Image.LANCZOS"
-    assert ".resize(" not in src, "generate.py ainda faz Pillow resize (downscale)"
-    assert "_render_favicons_native" in src, "Task 7 nao aplicada"
+    assert "Image.LANCZOS" not in src, "generate.py uses Image.LANCZOS"
+    assert ".resize(" not in src, "generate.py still calls Pillow resize"
+    assert "_render_favicons_native" in src, "native favicon renderer missing"

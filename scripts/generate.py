@@ -21,7 +21,6 @@ from scripts.pipeline import (  # noqa: E402
     playwright_page,
     render_html_string,
     render_job,
-    to_file_url,
 )
 
 BASE = Path(__file__).parent.parent / "brand"
