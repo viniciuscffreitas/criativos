@@ -21,3 +21,7 @@ desktop.ini
 playwright-report/
 test-results/
 .superpowers/
+
+# Python build artifacts
+build/
+dist/
