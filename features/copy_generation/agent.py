@@ -18,6 +18,7 @@ from features.copy_generation.schema import AgentResult, Brief, CopyVariant
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DRY_RUN_MODEL_TAG = "dry-run"
+VALID_CONFIDENCE = {"high", "medium", "low"}
 
 
 def _is_dry_run() -> bool:
@@ -95,11 +96,17 @@ def _call_claude(
     variants: list[CopyVariant] = []
     for i, v in enumerate(payload):
         try:
+            conf = v["confidence"]
+            if conf not in VALID_CONFIDENCE:
+                raise RuntimeError(
+                    f"Claude variant {i} returned invalid confidence {conf!r}; "
+                    f"expected one of {sorted(VALID_CONFIDENCE)}.\nfull payload: {raw!r}"
+                )
             variants.append(CopyVariant(
                 headline=v["headline"],
                 primary_text=v["primary_text"],
                 description=v["description"],
-                confidence=v["confidence"],
+                confidence=conf,
             ))
         except KeyError as exc:
             raise RuntimeError(

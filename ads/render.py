@@ -57,8 +57,6 @@ def render_template_to_html(
 
     # .html.j2 -> .html  |  .j2 -> (strip suffix)
     stem = template_path.name.removesuffix(".j2").removesuffix(".html") + ".html"
-    if stem.endswith(".html.html"):
-        stem = stem[:-5]
     out = out_dir / stem
     out.write_text(html, encoding="utf-8")
     return out

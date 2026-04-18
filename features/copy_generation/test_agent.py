@@ -74,3 +74,31 @@ def test_real_api_call(brief):
         assert v.headline
         assert v.primary_text
         assert v.confidence in {"high", "medium", "low"}
+
+
+def test_invalid_confidence_raises(brief, monkeypatch):
+    """Claude returning a confidence outside {high,medium,low} must raise with context, not defer to confidence_symbol access."""
+    # Route around dry-run so _call_claude is invoked
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
+    monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
+
+    # Mock the Anthropic SDK
+    class FakeTextBlock:
+        text = '[{"headline": "H", "primary_text": "P", "description": "D", "confidence": "very high", "reasoning": "r"}]'
+
+    class FakeResponse:
+        content = [FakeTextBlock()]
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            return FakeResponse()
+
+    class FakeAnthropic:
+        def __init__(self, *a, **kw):
+            self.messages = FakeMessages()
+
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
+
+    with pytest.raises(RuntimeError, match="invalid confidence"):
+        generate(brief, methodology="pas", n=1)
