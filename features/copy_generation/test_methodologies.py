@@ -12,7 +12,7 @@ def brief() -> Brief:
         audience="European freelancers",
         pain="Losing clients to competitors with real sites",
         social_proof="6 sites last month",
-        cta="Message me",
+        ctas=["Message me"],
     )
 
 
@@ -28,8 +28,25 @@ def test_pas_builds_user_prompt_with_brief_fields(brief):
     assert brief.product in prompt
     assert brief.audience in prompt
     assert brief.pain in prompt
-    assert brief.cta in prompt
+    assert brief.ctas[0] in prompt
     assert brief.social_proof in prompt
+
+
+def test_pas_joins_multiple_ctas():
+    """Multiple CTAs are joined with ', ' in the prompt."""
+    b = Brief(
+        product="p", audience="a", pain="q",
+        ctas=["Message me", "Book a call"],
+    )
+    prompt = PAS.build_user_prompt(b, n=1)
+    assert "Message me, Book a call" in prompt
+
+
+def test_pas_falls_back_when_ctas_empty():
+    """Empty ctas list uses the 'Message me' fallback rather than an empty string."""
+    b = Brief(product="p", audience="a", pain="q", ctas=[])
+    prompt = PAS.build_user_prompt(b, n=1)
+    assert "Message me" in prompt
 
 
 def test_npqel_is_placeholder(brief):

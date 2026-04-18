@@ -25,7 +25,7 @@ class _PAS:
             audience=brief.audience,
             pain=brief.pain,
             social_proof=brief.social_proof or "(none)",
-            cta=brief.cta,
+            cta=", ".join(brief.ctas) or "Message me",
         )
 
 

@@ -14,7 +14,7 @@ def brief() -> Brief:
         audience="European freelancers",
         pain="Losing clients to competitors with real sites",
         social_proof="6 sites last month",
-        cta="Message me",
+        ctas=["Message me"],
     )
 
 

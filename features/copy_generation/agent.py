@@ -18,7 +18,7 @@ import json
 import os
 
 from features.copy_generation.methodologies import by_name
-from features.copy_generation.schema import AgentResult, Brief, CopyVariant
+from features.copy_generation.schema import AgentResult, Brief, CopyVariant, VariantAxes
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DRY_RUN_MODEL_TAG = "dry-run"
@@ -34,31 +34,37 @@ def _is_dry_run() -> bool:
 
 
 def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResult:
+    import uuid
+    import datetime
+    run_id = uuid.uuid4().hex[:8]
     variants = [
         CopyVariant(
+            id=f"V{i+1}",
             headline=f"[{methodology_name.upper()} v{i+1}] {brief.pain[:30]}",
             primary_text=(
                 f"[dry-run {methodology_name} v{i+1}]\n"
-                f"Pain: {brief.pain}\n"
-                f"Offer: {brief.product}\n"
-                f"CTA: {brief.cta}"
+                f"Pain: {brief.pain}\nOffer: {brief.product}\nCTA: {', '.join(brief.ctas)}"
             ),
             description=f"[dry v{i+1}] {brief.product[:28]}",
+            ctas=list(brief.ctas),
             confidence="medium",
+            confidence_score=0.65,
+            axes=VariantAxes(relevance=0.7, originality=0.6, brand_fit=0.75),
+            reasoning=f"[dry v{i+1}] deterministic stub for CI",
         )
         for i in range(n)
     ]
-    trace = (
-        f"[dry-run] methodology={methodology_name} n={n}\n"
-        f"brief.product={brief.product}\n"
-        f"brief.pain={brief.pain}\n"
-        "No API call made. Set ANTHROPIC_API_KEY and unset VIBEWEB_DRY_RUN for real output."
-    )
+    trace = f"[dry-run] methodology={methodology_name} n={n}"
     return AgentResult(
+        run_id=run_id,
         variants=variants,
         trace=trace,
+        trace_structured=[],
         methodology=methodology_name,
         model=DRY_RUN_MODEL_TAG,
+        pipeline_version="copy_generation@dry-run",
+        seed=None,
+        created_at=datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
     )
 
 
@@ -105,6 +111,9 @@ def _call_claude(
             f"Claude response must be a JSON array, got {type(payload).__name__}: {raw!r}"
         )
 
+    # Task 2 compat: strict JSON parsing (axes, ctas from prompt) arrives in Task 3 — see prompts/pas.md
+    import uuid
+    import datetime
     variants: list[CopyVariant] = []
     for i, v in enumerate(payload):
         try:
@@ -115,10 +124,15 @@ def _call_claude(
                     f"expected one of {sorted(VALID_CONFIDENCE)}.\nfull payload: {raw!r}"
                 )
             variants.append(CopyVariant(
+                id=f"V{i+1}",
                 headline=v["headline"],
                 primary_text=v["primary_text"],
                 description=v["description"],
+                ctas=v.get("ctas", []),
                 confidence=conf,
+                confidence_score=float(v.get("confidence_score", 0.5)),
+                axes=VariantAxes(relevance=0.5, originality=0.5, brand_fit=0.5),
+                reasoning=v.get("reasoning", ""),
             ))
         except KeyError as exc:
             raise RuntimeError(
@@ -128,10 +142,15 @@ def _call_claude(
         f"[{v.get('confidence', '?')}] {v.get('reasoning', '')}" for v in payload
     )
     return AgentResult(
+        run_id=uuid.uuid4().hex[:8],
         variants=variants,
         trace=trace,
+        trace_structured=[],
         methodology=methodology.name,
         model=model,
+        pipeline_version="copy_generation@task-2-compat",
+        seed=None,
+        created_at=datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
     )
 
 
