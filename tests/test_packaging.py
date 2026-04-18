@@ -41,3 +41,23 @@ def test_wheel_includes_both_packages():
 def test_both_packages_have_init_py():
     assert (ROOT / "scripts" / "__init__.py").is_file()
     assert (ROOT / "ads" / "__init__.py").is_file()
+
+
+def test_pyproject_pins_spec1_deps():
+    """Spec 1 introduces Jinja2 (templating), PyYAML (config), anthropic (LLM)."""
+    with (ROOT / "pyproject.toml").open("rb") as f:
+        data = tomllib.load(f)
+    pinned = {d.split(">=")[0].split("==")[0].split("~=")[0].strip(): d
+              for d in data["project"]["dependencies"]}
+    for required in ("jinja2", "pyyaml", "anthropic"):
+        assert required in pinned, f"{required} missing from [project].dependencies"
+        spec = pinned[required]
+        assert any(op in spec for op in (">=", "==", "~=")), f"{required} is unpinned"
+
+
+def test_wheel_includes_features_package():
+    """features/ is the target layout for all new feature code (CLAUDE.md §2.1)."""
+    with (ROOT / "pyproject.toml").open("rb") as f:
+        data = tomllib.load(f)
+    include = data["tool"]["setuptools"]["packages"]["find"]["include"]
+    assert "features*" in include, "features package missing from wheel"
