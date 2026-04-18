@@ -33,6 +33,23 @@ def _resolve_path() -> Path:
     return Path(override) if override else ROOT / "config" / "ads.yaml"
 
 
+def _is_v2(data: dict) -> bool:
+    """All ads have kind/placement/format/brief.ctas(list)/copy.hero populated."""
+    ads = data.get("ads", {})
+    if not ads:
+        return True  # nothing to migrate
+    for ad in ads.values():
+        brief = ad.get("brief", {})
+        copy_ = ad.get("copy", {})
+        if "kind" not in ad or "placement" not in ad or "format" not in ad:
+            return False
+        if not isinstance(brief.get("ctas"), list):
+            return False
+        if "hero" not in copy_:
+            return False
+    return True
+
+
 def migrate(data: dict) -> dict:
     for key, ad in data.get("ads", {}).items():
         slug = ad.get("slug", "")
@@ -52,23 +69,30 @@ def migrate(data: dict) -> dict:
 
         copy = ad.setdefault("copy", {})
         if "hero" not in copy:
-            # Fallback to the existing headline_lead or a per-slug default
-            copy["hero"] = copy.get("headline_lead") or hero_fallback or ad.get("meta", {}).get("headline", "")
+            hero = copy.get("headline_lead") or hero_fallback or ad.get("meta", {}).get("headline")
+            if not hero:
+                raise RuntimeError(
+                    f"migrate_ads_yaml_v2: ad {key!r} (slug={slug!r}) has no copy.hero candidate. "
+                    f"Provide copy.headline_lead, add the slug to DEFAULTS, or set meta.headline."
+                )
+            copy["hero"] = hero
     return data
 
 
 def main() -> int:
     path = _resolve_path()
-    if not path.exists():
-        print(f"ERROR: {path} not found", file=sys.stderr)
-        return 1
-    raw = path.read_text(encoding="utf-8")
-    data = yaml.safe_load(raw)
-    migrated = migrate(data)
-    new_yaml = yaml.safe_dump(migrated, sort_keys=False, allow_unicode=True)
-    if new_yaml == raw:
+    try:
+        raw = path.read_text(encoding="utf-8")
+        data = yaml.safe_load(raw) or {}
+    except FileNotFoundError as e:
+        raise RuntimeError(f"migrate_ads_yaml_v2: {path} not found") from e
+    except yaml.YAMLError as e:
+        raise RuntimeError(f"migrate_ads_yaml_v2: {path} is not valid YAML") from e
+    if _is_v2(data):
         print(f"{path}: already v2 (no-op)")
         return 0
+    migrated = migrate(data)
+    new_yaml = yaml.safe_dump(migrated, sort_keys=False, allow_unicode=True)
     path.write_text(new_yaml, encoding="utf-8")
     print(f"{path}: migrated to v2")
     return 0

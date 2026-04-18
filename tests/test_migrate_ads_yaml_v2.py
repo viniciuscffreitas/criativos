@@ -55,3 +55,36 @@ def test_migration_preserves_existing_cta_value(tmp_path, monkeypatch):
     # Ad 01 in current yaml has brief.cta="Message me"; after migration it's ctas=["Message me"]
     ad01 = data["ads"]["01_portfolio_grid"]
     assert ad01["brief"]["ctas"] == ["Message me"]
+
+
+def test_noop_message_when_already_v2(tmp_path, monkeypatch, capfd):
+    """After first migration, a second run should print 'already v2'."""
+    copy = tmp_path / "ads.yaml"
+    copy.write_text(ADS.read_text(encoding="utf-8"), encoding="utf-8")
+    monkeypatch.setenv("ADS_YAML_PATH", str(copy))
+    _run()  # first: migrates
+    capfd.readouterr()  # clear
+    _run()  # second: no-op
+    out = capfd.readouterr()
+    assert "already v2" in out.out or "no-op" in out.out
+
+
+def test_raises_when_ad_has_no_hero_candidate(tmp_path, monkeypatch):
+    """An ad with an unknown slug and no fallback content must fail loudly, not silently."""
+    copy = tmp_path / "ads.yaml"
+    copy.write_text(yaml.safe_dump({
+        "ads": {
+            "99_unknown": {
+                "id": "99", "slug": "totally-new-slug",
+                "brief": {"product": "p", "audience": "a", "pain": "pa"},
+                "variants": [],
+                # no copy.headline_lead, no meta.headline, slug not in DEFAULTS
+            }
+        }
+    }), encoding="utf-8")
+    monkeypatch.setenv("ADS_YAML_PATH", str(copy))
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT)], cwd=ROOT, capture_output=True, text=True,
+    )
+    assert result.returncode != 0, "script should crash on missing hero"
+    assert "no copy.hero candidate" in result.stderr
