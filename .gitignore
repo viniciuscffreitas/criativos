@@ -25,3 +25,5 @@ test-results/
 # Python build artifacts
 build/
 dist/
+
+ads/.rendered/
