@@ -6,6 +6,15 @@ import pytest
 from features.copy_generation.agent import generate, DEFAULT_MODEL
 from features.copy_generation.schema import AgentResult, Brief
 
+_FAKE_PAYLOAD = (
+    '[{"headline":"H","primary_text":"P","description":"D",'
+    '"ctas":["C1"],"confidence":"high","confidence_score":0.9,'
+    '"axes":{"relevance":0.9,"originality":0.9,"brand_fit":0.9},'
+    '"reasoning":"r"}]'
+)
+
+_FAKE_PAYLOAD_INVALID_CONF = _FAKE_PAYLOAD.replace('"confidence":"high"', '"confidence":"very high"')
+
 
 @pytest.fixture
 def brief() -> Brief:
@@ -82,10 +91,9 @@ def test_invalid_confidence_raises(brief, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
     monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
 
-    # Mock the Anthropic SDK
     class FakeTextBlock:
         type = "text"
-        text = '[{"headline": "H", "primary_text": "P", "description": "D", "confidence": "very high", "reasoning": "r"}]'
+        text = _FAKE_PAYLOAD_INVALID_CONF
 
     class FakeResponse:
         content = [FakeTextBlock()]
@@ -114,7 +122,7 @@ def test_system_prompt_uses_ephemeral_cache(brief, monkeypatch):
 
     class FakeTextBlock:
         type = "text"
-        text = '[{"headline": "H", "primary_text": "P", "description": "D", "confidence": "high", "reasoning": "r"}]'
+        text = _FAKE_PAYLOAD
 
     class FakeResponse:
         content = [FakeTextBlock()]
@@ -166,4 +174,30 @@ def test_thinking_block_raises(brief, monkeypatch):
     monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
 
     with pytest.raises(RuntimeError, match="extended thinking not supported"):
+        generate(brief, methodology="pas", n=1)
+
+
+def test_missing_axes_field_raises(brief, monkeypatch):
+    """Claude omitting 'axes' must raise with full payload in error, not default silently."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
+    monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
+
+    class FakeBlock:
+        type = "text"
+        text = '[{"headline":"H","primary_text":"P","description":"D","ctas":["C"],"confidence":"high","confidence_score":0.9,"reasoning":"r"}]'
+
+    class FakeResponse:
+        content = [FakeBlock()]
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            return FakeResponse()
+
+    class FakeAnthropic:
+        def __init__(self, *a, **kw):
+            self.messages = FakeMessages()
+
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
+    with pytest.raises(RuntimeError, match="missing required fields"):
         generate(brief, methodology="pas", n=1)

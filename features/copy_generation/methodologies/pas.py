@@ -20,12 +20,12 @@ class _PAS:
     def build_user_prompt(self, brief: Brief, n: int) -> str:
         template = self.user_prompt_template_path.read_text(encoding="utf-8")
         return template.format(
-            n=n,
             product=brief.product,
             audience=brief.audience,
             pain=brief.pain,
-            social_proof=brief.social_proof or "(none)",
-            cta=", ".join(brief.ctas),
+            social_proof=brief.social_proof or "none",
+            ctas=", ".join(brief.ctas),
+            n=n,
         )
 
 

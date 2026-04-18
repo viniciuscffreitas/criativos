@@ -18,9 +18,17 @@ import datetime
 import json
 import os
 import uuid
+from pathlib import Path
 
 from features.copy_generation.methodologies import by_name
 from features.copy_generation.schema import AgentResult, Brief, CopyVariant, VariantAxes
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+REQUIRED_VARIANT_FIELDS = {
+    "headline", "primary_text", "description", "ctas",
+    "confidence", "confidence_score", "axes", "reasoning",
+}
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DRY_RUN_MODEL_TAG = "dry-run"
@@ -68,33 +76,27 @@ def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResul
     )
 
 
-def _call_claude(
-    methodology, user_prompt: str, n: int, model: str
-) -> AgentResult:
-    # Import lazily so dry-run tests don't need the anthropic package installed.
-    from anthropic import Anthropic
+def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResult:
+    from anthropic import Anthropic  # kept lazy so dry-run tests don't need the package
 
     client = Anthropic()
     system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
+    run_id = uuid.uuid4().hex[:8]
+    started_at = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Ephemeral cache on the system prompt: PAS prompt is stable across runs
-    # within a session; caching it cuts input-token cost after the first call.
     response = client.messages.create(
-        model=model,
-        max_tokens=2048,
+        model=model, max_tokens=2048,
         system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user_prompt}],
     )
 
     if not response.content or not hasattr(response.content[0], "text"):
-        raise RuntimeError(
-            f"Unexpected Claude response shape: {response!r}"
-        )
+        raise RuntimeError(f"Unexpected Claude response shape: {response!r}")
     block_type = getattr(response.content[0], "type", None)
     if block_type != "text":
         raise RuntimeError(
-            f"Expected text block, got {block_type!r}; extended thinking not "
-            f"supported yet. Full response: {response!r}"
+            f"Expected text block, got {block_type!r}; extended thinking not supported yet. "
+            f"Full response: {response!r}"
         )
     raw = response.content[0].text.strip()
 
@@ -102,8 +104,7 @@ def _call_claude(
         payload = json.loads(raw)
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"Claude returned non-JSON payload for methodology "
-            f"{methodology.name!r}:\n---\n{raw}\n---"
+            f"Claude returned non-JSON payload for methodology {methodology.name!r}:\n---\n{raw}\n---"
         ) from e
 
     if not isinstance(payload, list):
@@ -111,45 +112,81 @@ def _call_claude(
             f"Claude response must be a JSON array, got {type(payload).__name__}: {raw!r}"
         )
 
-    # Task 2 compat: strict JSON parsing (axes, ctas from prompt) arrives in Task 3 — see prompts/pas.md
     variants: list[CopyVariant] = []
     for i, v in enumerate(payload):
-        try:
-            conf = v["confidence"]
-            if conf not in VALID_CONFIDENCE:
-                raise RuntimeError(
-                    f"Claude variant {i} returned invalid confidence {conf!r}; "
-                    f"expected one of {sorted(VALID_CONFIDENCE)}.\nfull payload: {raw!r}"
-                )
-            variants.append(CopyVariant(
-                id=f"V{i+1}",
-                headline=v["headline"],
-                primary_text=v["primary_text"],
-                description=v["description"],
-                ctas=v.get("ctas", []),
-                confidence=conf,
-                confidence_score=float(v.get("confidence_score", 0.5)),
-                axes=VariantAxes(relevance=0.5, originality=0.5, brand_fit=0.5),
-                reasoning=v.get("reasoning", ""),
-            ))
-        except KeyError as exc:
+        missing = REQUIRED_VARIANT_FIELDS - v.keys()
+        if missing:
             raise RuntimeError(
-                f"Claude variant {i} missing field {exc}: {v!r}\nfull payload: {raw!r}"
-            ) from exc
+                f"Claude variant {i} missing required fields {sorted(missing)}: {v!r}\n"
+                f"full payload: {raw!r}"
+            )
+        if v["confidence"] not in VALID_CONFIDENCE:
+            raise RuntimeError(
+                f"Claude variant {i} returned invalid confidence {v['confidence']!r}; "
+                f"expected one of {sorted(VALID_CONFIDENCE)}.\nfull payload: {raw!r}"
+            )
+        score = v["confidence_score"]
+        if not (isinstance(score, (int, float)) and 0.0 <= float(score) <= 1.0):
+            raise RuntimeError(
+                f"Claude variant {i} confidence_score {score!r} out of range [0,1]. payload: {raw!r}"
+            )
+        axes_raw = v["axes"]
+        if not isinstance(axes_raw, dict):
+            raise RuntimeError(
+                f"Claude variant {i} axes must be an object, got {type(axes_raw).__name__}: {raw!r}"
+            )
+        for axis in ("relevance", "originality", "brand_fit"):
+            a = axes_raw.get(axis)
+            if not (isinstance(a, (int, float)) and 0.0 <= float(a) <= 1.0):
+                raise RuntimeError(
+                    f"Claude variant {i} axes.{axis}={a!r} out of range [0,1]. payload: {raw!r}"
+                )
+        if not isinstance(v["ctas"], list) or not all(isinstance(c, str) for c in v["ctas"]):
+            raise RuntimeError(
+                f"Claude variant {i} ctas must be list[str], got {v['ctas']!r}. payload: {raw!r}"
+            )
+        variants.append(CopyVariant(
+            id=f"V{i+1}",
+            headline=v["headline"],
+            primary_text=v["primary_text"],
+            description=v["description"],
+            ctas=v["ctas"],
+            confidence=v["confidence"],
+            confidence_score=float(score),
+            axes=VariantAxes(
+                relevance=float(axes_raw["relevance"]),
+                originality=float(axes_raw["originality"]),
+                brand_fit=float(axes_raw["brand_fit"]),
+            ),
+            reasoning=v["reasoning"],
+        ))
+
     trace = "\n".join(
-        f"[{v.get('confidence', '?')}] {v.get('reasoning', '')}" for v in payload
+        f"[{v['confidence']}/{v['confidence_score']:.2f}] {v['reasoning']}"
+        for v in payload
     )
     return AgentResult(
-        run_id=uuid.uuid4().hex[:8],
+        run_id=run_id,
         variants=variants,
         trace=trace,
         trace_structured=[],
         methodology=methodology.name,
         model=model,
-        pipeline_version="copy_generation@task-2-compat",
+        pipeline_version=_pipeline_version(),
         seed=None,
-        created_at=datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        created_at=started_at,
     )
+
+
+def _pipeline_version() -> str:
+    import subprocess
+    try:
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT_DIR, text=True
+        ).strip()
+    except Exception:
+        sha = "unknown"
+    return f"copy_generation@{sha}"
 
 
 def generate(
