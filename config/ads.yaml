@@ -1,202 +1,264 @@
 ads:
   01_portfolio_grid:
-    id: "01"
+    id: '01'
     slug: portfolio-grid
     methodology: pas
     brief:
-      product: "Custom websites from €450 in 7 days"
-      audience: "European freelancers without a website"
-      pain: "Losing clients to competitors with real sites"
-      social_proof: "6 sites built last month"
-      cta: "Message me"
+      product: Custom websites from €450 in 7 days
+      audience: European freelancers without a website
+      pain: Losing clients to competitors with real sites
+      social_proof: 6 sites built last month
+      ctas:
+      - Message me
     copy:
-      headline_lead: "I built"
-      headline_count: "6 sites"
-      headline_tail: "last month."
-      sub_lead: "Yours could be"
-      sub_highlight: "next."
-      cta: "From €450 · Done in 7 days"
+      headline_lead: I built
+      headline_count: 6 sites
+      headline_tail: last month.
+      sub_lead: Yours could be
+      sub_highlight: next.
+      cta: From €450 · Done in 7 days
+      hero: I built
     meta:
-      headline: "6 Sites Last Month. Yours Next?"
-      primary_text: |
-        Freelancers without a website lose clients every single day. Someone Googles you, finds nothing, and hires the next person with a real site.
+      headline: 6 Sites Last Month. Yours Next?
+      primary_text: 'Freelancers without a website lose clients every single day.
+        Someone Googles you, finds nothing, and hires the next person with a real
+        site.
 
-        Meanwhile, I built 6 sites last month — all for freelancers like you. From €450, delivered in 7 days.
+
+        Meanwhile, I built 6 sites last month — all for freelancers like you. From
+        €450, delivered in 7 days.
+
 
         Yours could be next. Message me.
-      description: "Custom sites from €450. 7 days."
+
+        '
+      description: Custom sites from €450. 7 days.
     variants: []
     trace:
       last_run: null
       confidence: null
-
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png
   02_before_after:
-    id: "02"
+    id: '02'
     slug: before-after
     methodology: pas
     brief:
-      product: "Custom websites from €500 in 5 days"
-      audience: "European freelancers without a website"
-      pain: "Losing clients daily with no online presence"
-      social_proof: "Designer got 3× more inquiries after €500 site"
-      cta: "Message me"
+      product: Custom websites from €500 in 5 days
+      audience: European freelancers without a website
+      pain: Losing clients daily with no online presence
+      social_proof: Designer got 3× more inquiries after €500 site
+      ctas:
+      - Message me
     copy:
-      hook_lead: "You're losing clients"
-      hook_em: "right now."
-      before_text: "No website yet."
-      before_sub: "Losing clients daily."
-      stat1_val: "€500"
-      stat1_lbl: "Total cost"
-      stat2_val: "5 days"
-      stat2_lbl: "To launch"
-      stat3_val: "3×"
-      stat3_lbl: "More inquiries"
-      cta: "Your turn. Message me →"
+      hook_lead: You're losing clients
+      hook_em: right now.
+      before_text: No website yet.
+      before_sub: Losing clients daily.
+      stat1_val: €500
+      stat1_lbl: Total cost
+      stat2_val: 5 days
+      stat2_lbl: To launch
+      stat3_val: 3×
+      stat3_lbl: More inquiries
+      cta: Your turn. Message me →
+      hero: Invisible → Booked
     meta:
-      headline: "Before: Invisible. After: Booked."
-      primary_text: |
-        Right now, someone is searching for your service. They won't find you.
+      headline: 'Before: Invisible. After: Booked.'
+      primary_text: 'Right now, someone is searching for your service. They won''t
+        find you.
 
-        No website = no credibility. That lead just went to a competitor with a €500 site. This designer was in the same spot — zero online presence. I built his site in 5 days for €500. Now he gets 3× more inquiries.
+
+        No website = no credibility. That lead just went to a competitor with a €500
+        site. This designer was in the same spot — zero online presence. I built his
+        site in 5 days for €500. Now he gets 3× more inquiries.
+
 
         Stop bleeding clients. Message me.
-      description: "€500. 5 days. Done."
+
+        '
+      description: €500. 5 days. Done.
     variants: []
     trace:
       last_run: null
       confidence: null
-
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png
   03_social_proof:
-    id: "03"
+    id: '03'
     slug: social-proof
     methodology: pas
     brief:
-      product: "Custom portfolio sites from €500 in 4 days"
-      audience: "Freelance designers losing clients to competitors"
-      pain: "Losing clients to competitors with worse work but a website"
-      social_proof: "3× more client inquiries in the first month"
-      cta: "Message me"
+      product: Custom portfolio sites from €500 in 4 days
+      audience: Freelance designers losing clients to competitors
+      pain: Losing clients to competitors with worse work but a website
+      social_proof: 3× more client inquiries in the first month
+      ctas:
+      - Message me
     copy:
-      testimonial_lead: "Built a portfolio site"
-      testimonial_highlight_line1: "a designer"
-      testimonial_highlight_line2: "in Berlin."
-      stat1_val: "€500"
-      stat1_lbl: "Total cost"
-      stat2_val: "4 days"
-      stat2_lbl: "Turnaround"
-      stat3_val: "3× more"
-      stat3_lbl: "Client inquiries"
+      testimonial_lead: Built a portfolio site
+      testimonial_highlight_line1: a designer
+      testimonial_highlight_line2: in Berlin.
+      stat1_val: €500
+      stat1_lbl: Total cost
+      stat2_val: 4 days
+      stat2_lbl: Turnaround
+      stat3_val: 3× more
+      stat3_lbl: Client inquiries
       subtext: '"Best investment I made this year."'
+      hero: €500 · 3× more clients
     meta:
-      headline: "€500 Site = 3× More Clients"
-      primary_text: |
-        A designer in Berlin was losing clients to competitors with worse work — because they had a website and he didn't.
+      headline: €500 Site = 3× More Clients
+      primary_text: 'A designer in Berlin was losing clients to competitors with worse
+        work — because they had a website and he didn''t.
+
 
         3 months of missed opportunities. Thousands in lost revenue.
 
-        I built his portfolio site in 4 days for €500. First month: 3× more client inquiries. He told me it was the best investment he made all year.
+
+        I built his portfolio site in 4 days for €500. First month: 3× more client
+        inquiries. He told me it was the best investment he made all year.
+
 
         Want the same? Message me.
-      description: "Results in the first month."
+
+        '
+      description: Results in the first month.
     variants: []
     trace:
       last_run: null
       confidence: null
-
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png
   04_price_objection:
-    id: "04"
+    id: '04'
     slug: price-objection
     methodology: pas
     brief:
-      product: "Custom websites from €450 in 7 days"
-      audience: "Freelancers who have been quoted €3,000+ for a website"
-      pain: "Sticker shock from agency quotes causes inaction, costing clients weekly"
+      product: Custom websites from €450 in 7 days
+      audience: Freelancers who have been quoted €3,000+ for a website
+      pain: Sticker shock from agency quotes causes inaction, costing clients weekly
       social_proof: null
-      cta: "Message me"
+      ctas:
+      - Message me
     copy:
-      line1: "They quoted you"
-      price_old: "€3,000"
-      line2: "I charge"
-      price_new: "€450."
-      turnaround: "Done in 7 days."
-      cta_lead: "Stop overthinking."
-      cta_strong: "Message me."
+      line1: They quoted you
+      price_old: €3,000
+      line2: I charge
+      price_new: €450.
+      turnaround: Done in 7 days.
+      cta_lead: Stop overthinking.
+      cta_strong: Message me.
+      hero: €3,000? I charge €450
     meta:
-      headline: "€3,000? I Charge €450."
-      primary_text: |
-        You've been quoted €3,000+ for a website. So you didn't get one.
+      headline: €3,000? I Charge €450.
+      primary_text: 'You''ve been quoted €3,000+ for a website. So you didn''t get
+        one.
 
-        And every week without a site, you lose clients who Google you, find nothing, and hire someone else. That's not saving money — that's burning it.
 
-        I charge €450. Custom design. Built from scratch. Delivered in 7 days. No monthly fees. You own everything.
+        And every week without a site, you lose clients who Google you, find nothing,
+        and hire someone else. That''s not saving money — that''s burning it.
+
+
+        I charge €450. Custom design. Built from scratch. Delivered in 7 days. No
+        monthly fees. You own everything.
+
 
         Stop waiting. Message me.
-      description: "7 days. No hidden fees. Yours."
+
+        '
+      description: 7 days. No hidden fees. Yours.
     variants: []
     trace:
       last_run: null
       confidence: null
-
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png
   05_mockup_showcase:
-    id: "05"
+    id: '05'
     slug: mockup-showcase
     methodology: pas
     brief:
-      product: "Custom websites from €450, ready in 7 days — 50+ delivered"
-      audience: "Freelancers using Instagram bio or Linktree as their website"
-      pain: "Looking amateur by sending clients to a Linktree bio instead of a real site"
-      social_proof: "50+ projects delivered"
-      cta: "Message me"
+      product: Custom websites from €450, ready in 7 days — 50+ delivered
+      audience: Freelancers using Instagram bio or Linktree as their website
+      pain: Looking amateur by sending clients to a Linktree bio instead of a real
+        site
+      social_proof: 50+ projects delivered
+      ctas:
+      - Message me
     copy:
-      badge: "Custom Web Development"
-      headline_lead: "Still sending clients"
-      headline_em: "Instagram bio?"
-      bottom_item1: "From €450"
-      bottom_item2: "Ready in 7 days"
-      bottom_item3: "50+ delivered"
-      bottom_cta: "Message me to get started →"
+      badge: Custom Web Development
+      headline_lead: Still sending clients
+      headline_em: Instagram bio?
+      bottom_item1: From €450
+      bottom_item2: Ready in 7 days
+      bottom_item3: 50+ delivered
+      bottom_cta: Message me to get started →
+      hero: Still sending clients
     meta:
-      headline: "Still Sending Clients to Your Bio?"
-      primary_text: |
-        Your "website" is a Linktree in your Instagram bio. Potential clients see that and think "amateur."
+      headline: Still Sending Clients to Your Bio?
+      primary_text: 'Your "website" is a Linktree in your Instagram bio. Potential
+        clients see that and think "amateur."
 
-        You want to charge premium prices? Look like a premium brand. I build websites that convert visitors into paying clients — not just pages that exist.
+
+        You want to charge premium prices? Look like a premium brand. I build websites
+        that convert visitors into paying clients — not just pages that exist.
+
 
         50+ projects delivered. From €450. Ready in 7 days. Message me.
-      description: "50+ sites delivered. From €450."
+
+        '
+      description: 50+ sites delivered. From €450.
     variants: []
     trace:
       last_run: null
       confidence: null
-
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png
   06_niche_designers:
-    id: "06"
+    id: '06'
     slug: niche-designers
     methodology: pas
     brief:
-      product: "Portfolio sites for designers from €450 in 7 days"
-      audience: "Designers without a portfolio site"
-      pain: "Losing gigs to designers with worse talent but a custom portfolio site"
+      product: Portfolio sites for designers from €450 in 7 days
+      audience: Designers without a portfolio site
+      pain: Losing gigs to designers with worse talent but a custom portfolio site
       social_proof: null
-      cta: "Message me"
+      ctas:
+      - Message me
     copy:
-      niche_tag: "Websites for Designers"
-      headline_lead: "No portfolio site?"
-      headline_em: "invisible."
-      sub: "Your competitors have one. You should too."
-      cta_price: "From €450"
-      cta_days: "Ready in 7 days"
-      cta_action: "Message me"
+      niche_tag: Websites for Designers
+      headline_lead: No portfolio site?
+      headline_em: invisible.
+      sub: Your competitors have one. You should too.
+      cta_price: From €450
+      cta_days: Ready in 7 days
+      cta_action: Message me
+      hero: No portfolio site?
     meta:
-      headline: "No Site = No Clients."
-      primary_text: |
-        You're a designer without a portfolio site. Let that sink in.
+      headline: No Site = No Clients.
+      primary_text: 'You''re a designer without a portfolio site. Let that sink in.
 
-        Clients judge your design skills by YOUR online presence. A Behance page or a PDF portfolio? That's not it. Meanwhile, designers with custom sites are getting the gigs — and they might not even be better than you.
 
-        I build portfolio sites for designers. €450. Ready in 7 days. Clean, fast, yours. Stop losing work to people with worse talent and better websites.
-      description: "Portfolio sites from €450."
+        Clients judge your design skills by YOUR online presence. A Behance page or
+        a PDF portfolio? That''s not it. Meanwhile, designers with custom sites are
+        getting the gigs — and they might not even be better than you.
+
+
+        I build portfolio sites for designers. €450. Ready in 7 days. Clean, fast,
+        yours. Stop losing work to people with worse talent and better websites.
+
+        '
+      description: Portfolio sites from €450.
     variants: []
     trace:
       last_run: null
       confidence: null
+    kind: image
+    placement: Instagram Feed · 1:1
+    format: 1080×1080 png

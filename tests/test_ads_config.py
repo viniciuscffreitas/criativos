@@ -42,9 +42,11 @@ def test_ad_has_required_sections(ad_key):
 @pytest.mark.parametrize("ad_key", _all_ad_keys())
 def test_brief_has_required_fields(ad_key):
     # social_proof is intentionally nullable (not all ads lean on numeric proof).
+    # v2 schema: brief.cta (str) → brief.ctas (list[str])
     brief = _data()["ads"][ad_key]["brief"]
-    for field in ("product", "audience", "pain", "cta"):
+    for field in ("product", "audience", "pain"):
         assert field in brief and brief[field], f"{ad_key}.brief.{field} empty"
+    assert isinstance(brief.get("ctas"), list) and brief["ctas"], f"{ad_key}.brief.ctas empty"
 
 
 def test_methodology_is_known():
