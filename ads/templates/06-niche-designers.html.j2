@@ -214,15 +214,15 @@ body {
 <body>
 
 <div class="niche-label">
-  <div class="niche-tag">Websites for Designers</div>
+  <div class="niche-tag">{{ copy.niche_tag }}</div>
 </div>
 
 <div class="main-text">
   <h1>
-    No portfolio site?<br>
-    You're <em>invisible.</em>
+    {{ copy.headline_lead }}<br>
+    You're <em>{{ copy.headline_em }}</em>
   </h1>
-  <p class="sub">Your competitors have one. You should too.</p>
+  <p class="sub">{{ copy.sub }}</p>
 </div>
 
 <div class="mockups">
@@ -243,11 +243,11 @@ body {
 <div class="bottom-fade"></div>
 
 <div class="cta-bar">
-  <span class="cta-price">From €450</span>
+  <span class="cta-price">{{ copy.cta_price }}</span>
   <div class="cta-sep"></div>
-  <span class="cta-days">Ready in 7 days</span>
+  <span class="cta-days">{{ copy.cta_days }}</span>
   <div class="cta-sep"></div>
-  <span class="cta-action">Message me</span>
+  <span class="cta-action">{{ copy.cta_action }}</span>
 </div>
 
 </body>

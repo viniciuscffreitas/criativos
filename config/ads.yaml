@@ -43,7 +43,6 @@ ads:
     copy:
       hook_lead: "You're losing clients"
       hook_em: "right now."
-      before_label: "BEFORE"
       before_text: "No website yet."
       before_sub: "Losing clients daily."
       stat1_val: "€500"
@@ -79,7 +78,7 @@ ads:
       cta: "Message me"
     copy:
       testimonial_lead: "Built a portfolio site"
-      testimonial_highlight_line1: "for a designer"
+      testimonial_highlight_line1: "a designer"
       testimonial_highlight_line2: "in Berlin."
       stat1_val: "€500"
       stat1_lbl: "Total cost"

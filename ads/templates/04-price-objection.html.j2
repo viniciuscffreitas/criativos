@@ -139,14 +139,14 @@ body::before {
 <div class="line-bottom"></div>
 
 <div class="content">
-  <div class="line1">They quoted you</div>
-  <div class="price-old">€3,000</div>
+  <div class="line1">{{ copy.line1 }}</div>
+  <div class="price-old">{{ copy.price_old }}</div>
 
-  <div class="line2">I charge</div>
-  <div class="price-new">€450.</div>
-  <div class="turnaround">Done in 7 days.</div>
+  <div class="line2">{{ copy.line2 }}</div>
+  <div class="price-new">{{ copy.price_new }}</div>
+  <div class="turnaround">{{ copy.turnaround }}</div>
 
-  <div class="cta">Stop overthinking. <strong>Message me.</strong></div>
+  <div class="cta">{{ copy.cta_lead }} <strong>{{ copy.cta_strong }}</strong></div>
 </div>
 
 </body>

@@ -12,10 +12,26 @@ from PIL import Image, ImageChops
 ROOT = Path(__file__).parent.parent
 GOLDENS = Path(__file__).parent / "goldens"
 
+_ADS = ROOT / "ads" / "renders"
+_SOCIAL = ROOT / "brand" / "social" / "renders"
+_LOGOS = ROOT / "brand" / "logos"
+
 CASES = [
-    (ROOT / "ads" / "renders" / "01-portfolio-grid.png", GOLDENS / "ad-portfolio-grid.png"),
-    (ROOT / "brand" / "social" / "renders" / "instagram-post.png", GOLDENS / "social-instagram-post.png"),
-    (ROOT / "brand" / "logos" / "vibeweb-primary.png", GOLDENS / "logo-primary.png"),
+    # Ads — all 6 creatives. Dimension check misses layout drift; goldens catch it.
+    (_ADS / "01-portfolio-grid.png",  GOLDENS / "ad-portfolio-grid.png"),
+    (_ADS / "02-before-after.png",    GOLDENS / "ad-before-after.png"),
+    (_ADS / "03-social-proof.png",    GOLDENS / "ad-social-proof.png"),
+    (_ADS / "04-price-objection.png", GOLDENS / "ad-price-objection.png"),
+    (_ADS / "05-mockup-showcase.png", GOLDENS / "ad-mockup-showcase.png"),
+    (_ADS / "06-niche-designers.png", GOLDENS / "ad-niche-designers.png"),
+    # Social — one per distinct template (post, story, highlight, linkedin, og).
+    (_SOCIAL / "instagram-post.png",                 GOLDENS / "social-instagram-post.png"),
+    (_SOCIAL / "instagram-story.png",                GOLDENS / "social-instagram-story.png"),
+    (_SOCIAL / "instagram-highlight-portfolio.png",  GOLDENS / "social-instagram-highlight-portfolio.png"),
+    (_SOCIAL / "linkedin-banner.png",                GOLDENS / "social-linkedin-banner.png"),
+    (_SOCIAL / "og-image.png",                       GOLDENS / "social-og-image.png"),
+    # Logos
+    (_LOGOS / "vibeweb-primary.png", GOLDENS / "logo-primary.png"),
 ]
 
 PIXEL_DIFF_THRESHOLD = 20       # soma R+G+B per-channel Manhattan

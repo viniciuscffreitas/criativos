@@ -168,26 +168,26 @@ body {
 
 <div class="content">
   <div class="testimonial">
-    Built a portfolio site<br>
-    for <span class="name">a designer<br>
-    in Berlin.</span>
+    {{ copy.testimonial_lead }}<br>
+    for <span class="name">{{ copy.testimonial_highlight_line1 }}<br>
+    {{ copy.testimonial_highlight_line2 }}</span>
   </div>
   <div class="accent-line"></div>
   <div class="stats-row">
     <div class="stat-item">
-      <div class="stat-val">€500</div>
-      <div class="stat-lbl">Total cost</div>
+      <div class="stat-val">{{ copy.stat1_val }}</div>
+      <div class="stat-lbl">{{ copy.stat1_lbl }}</div>
     </div>
     <div class="stat-item">
-      <div class="stat-val">4 days</div>
-      <div class="stat-lbl">Turnaround</div>
+      <div class="stat-val">{{ copy.stat2_val }}</div>
+      <div class="stat-lbl">{{ copy.stat2_lbl }}</div>
     </div>
     <div class="stat-item">
-      <div class="stat-val">3× more</div>
-      <div class="stat-lbl">Client inquiries</div>
+      <div class="stat-val">{{ copy.stat3_val }}</div>
+      <div class="stat-lbl">{{ copy.stat3_lbl }}</div>
     </div>
   </div>
-  <div class="subtext">"Best investment I made this year."</div>
+  <div class="subtext">{{ copy.subtext }}</div>
 </div>
 
 <div class="mockup-area">

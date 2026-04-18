@@ -148,10 +148,10 @@ body::before {
 <body>
 
 <div class="top">
-  <div class="badge">Custom Web Development</div>
+  <div class="badge">{{ copy.badge }}</div>
   <h1 class="headline">
-    Still sending clients<br>
-    to your <em>Instagram bio?</em>
+    {{ copy.headline_lead }}<br>
+    to your <em>{{ copy.headline_em }}</em>
   </h1>
 </div>
 
@@ -164,11 +164,11 @@ body::before {
 
 <div class="bottom">
   <div class="bottom-row">
-    <div class="bottom-item"><span class="icon">&#10003;</span> From €450</div>
-    <div class="bottom-item"><span class="icon">&#10003;</span> Ready in 7 days</div>
-    <div class="bottom-item"><span class="icon">&#10003;</span> 50+ delivered</div>
+    <div class="bottom-item"><span class="icon">&#10003;</span> {{ copy.bottom_item1 }}</div>
+    <div class="bottom-item"><span class="icon">&#10003;</span> {{ copy.bottom_item2 }}</div>
+    <div class="bottom-item"><span class="icon">&#10003;</span> {{ copy.bottom_item3 }}</div>
   </div>
-  <div class="bottom-cta">Message me to get started →</div>
+  <div class="bottom-cta">{{ copy.bottom_cta }}</div>
 </div>
 
 </body>
