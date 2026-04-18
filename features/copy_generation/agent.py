@@ -17,6 +17,7 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import subprocess
 import uuid
 from pathlib import Path
 
@@ -162,8 +163,8 @@ def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResu
         ))
 
     trace = "\n".join(
-        f"[{v['confidence']}/{v['confidence_score']:.2f}] {v['reasoning']}"
-        for v in payload
+        f"[{v.confidence}/{v.confidence_score:.2f}] {v.reasoning}"
+        for v in variants
     )
     return AgentResult(
         run_id=run_id,
@@ -179,12 +180,11 @@ def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResu
 
 
 def _pipeline_version() -> str:
-    import subprocess
     try:
         sha = subprocess.check_output(
             ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT_DIR, text=True
         ).strip()
-    except Exception:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         sha = "unknown"
     return f"copy_generation@{sha}"
 
