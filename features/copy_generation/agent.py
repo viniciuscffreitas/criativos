@@ -7,6 +7,10 @@ Modes (resolved by environment):
 Dry-run returns deterministic stub variants so tests and local dev cost zero
 tokens. Real mode posts one messages.create() call; no streaming, no retry
 loop — failures raise verbose to make their cause obvious.
+
+Response format: text-block only. Extended thinking (thinking blocks) is not
+supported — if enabled upstream, _call_claude raises RuntimeError rather than
+silently picking a later block.
 """
 from __future__ import annotations
 
@@ -77,6 +81,12 @@ def _call_claude(
     if not response.content or not hasattr(response.content[0], "text"):
         raise RuntimeError(
             f"Unexpected Claude response shape: {response!r}"
+        )
+    block_type = getattr(response.content[0], "type", None)
+    if block_type != "text":
+        raise RuntimeError(
+            f"Expected text block, got {block_type!r}; extended thinking not "
+            f"supported yet. Full response: {response!r}"
         )
     raw = response.content[0].text.strip()
 

@@ -84,6 +84,7 @@ def test_invalid_confidence_raises(brief, monkeypatch):
 
     # Mock the Anthropic SDK
     class FakeTextBlock:
+        type = "text"
         text = '[{"headline": "H", "primary_text": "P", "description": "D", "confidence": "very high", "reasoning": "r"}]'
 
     class FakeResponse:
@@ -101,4 +102,31 @@ def test_invalid_confidence_raises(brief, monkeypatch):
     monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
 
     with pytest.raises(RuntimeError, match="invalid confidence"):
+        generate(brief, methodology="pas", n=1)
+
+
+def test_thinking_block_raises(brief, monkeypatch):
+    """If the first content block is a thinking block (extended thinking), raise with context — don't silently pick a later block."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
+    monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
+
+    class FakeThinkingBlock:
+        type = "thinking"
+        text = "internal reasoning that should not be parsed as JSON"
+
+    class FakeResponse:
+        content = [FakeThinkingBlock()]
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            return FakeResponse()
+
+    class FakeAnthropic:
+        def __init__(self, *a, **kw):
+            self.messages = FakeMessages()
+
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
+
+    with pytest.raises(RuntimeError, match="extended thinking not supported"):
         generate(brief, methodology="pas", n=1)

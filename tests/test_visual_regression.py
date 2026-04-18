@@ -27,7 +27,11 @@ CASES = [
     # Social — one per distinct template (post, story, highlight, linkedin, og).
     (_SOCIAL / "instagram-post.png",                 GOLDENS / "social-instagram-post.png"),
     (_SOCIAL / "instagram-story.png",                GOLDENS / "social-instagram-story.png"),
+    (_SOCIAL / "instagram-highlight-about.png",      GOLDENS / "social-instagram-highlight-about.png"),
+    (_SOCIAL / "instagram-highlight-contact.png",    GOLDENS / "social-instagram-highlight-contact.png"),
+    (_SOCIAL / "instagram-highlight-feed.png",       GOLDENS / "social-instagram-highlight-feed.png"),
     (_SOCIAL / "instagram-highlight-portfolio.png",  GOLDENS / "social-instagram-highlight-portfolio.png"),
+    (_SOCIAL / "instagram-highlight-services.png",   GOLDENS / "social-instagram-highlight-services.png"),
     (_SOCIAL / "linkedin-banner.png",                GOLDENS / "social-linkedin-banner.png"),
     (_SOCIAL / "og-image.png",                       GOLDENS / "social-og-image.png"),
     # Logos
