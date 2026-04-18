@@ -14,8 +14,10 @@ silently picking a later block.
 """
 from __future__ import annotations
 
+import datetime
 import json
 import os
+import uuid
 
 from features.copy_generation.methodologies import by_name
 from features.copy_generation.schema import AgentResult, Brief, CopyVariant, VariantAxes
@@ -34,8 +36,6 @@ def _is_dry_run() -> bool:
 
 
 def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResult:
-    import uuid
-    import datetime
     run_id = uuid.uuid4().hex[:8]
     variants = [
         CopyVariant(
@@ -64,7 +64,7 @@ def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResul
         model=DRY_RUN_MODEL_TAG,
         pipeline_version="copy_generation@dry-run",
         seed=None,
-        created_at=datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        created_at=datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
 
 
@@ -112,8 +112,6 @@ def _call_claude(
         )
 
     # Task 2 compat: strict JSON parsing (axes, ctas from prompt) arrives in Task 3 — see prompts/pas.md
-    import uuid
-    import datetime
     variants: list[CopyVariant] = []
     for i, v in enumerate(payload):
         try:
@@ -150,7 +148,7 @@ def _call_claude(
         model=model,
         pipeline_version="copy_generation@task-2-compat",
         seed=None,
-        created_at=datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        created_at=datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
 
 

@@ -22,6 +22,13 @@ class Brief:
     ctas: list[str] = field(default_factory=list)
     social_proof: str | None = None
 
+    def __post_init__(self) -> None:
+        if not self.ctas:
+            raise ValueError(
+                f"Brief requires at least one CTA; got empty list. "
+                f"product={self.product!r} audience={self.audience!r}"
+            )
+
 
 @dataclass
 class VariantAxes:

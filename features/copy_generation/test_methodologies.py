@@ -42,12 +42,6 @@ def test_pas_joins_multiple_ctas():
     assert "Message me, Book a call" in prompt
 
 
-def test_pas_falls_back_when_ctas_empty():
-    """Empty ctas list uses the 'Message me' fallback rather than an empty string."""
-    b = Brief(product="p", audience="a", pain="q", ctas=[])
-    prompt = PAS.build_user_prompt(b, n=1)
-    assert "Message me" in prompt
-
 
 def test_npqel_is_placeholder(brief):
     assert NPQEL.name == "npqel"

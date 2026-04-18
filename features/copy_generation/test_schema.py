@@ -1,3 +1,5 @@
+import pytest
+
 from features.copy_generation.schema import (
     AgentResult, Brief, CopyVariant, TraceNode, VariantAxes,
 )
@@ -16,8 +18,14 @@ def test_brief_has_required_fields():
 
 
 def test_brief_social_proof_optional():
-    b = Brief(product="x", audience="y", pain="z", social_proof=None, ctas=[])
+    b = Brief(product="x", audience="y", pain="z", social_proof=None, ctas=["CTA"])
     assert b.social_proof is None
+
+
+def test_brief_with_empty_ctas_raises():
+    """Brief must reject empty ctas — silent fallback previously violated CLAUDE.md §2.7."""
+    with pytest.raises(ValueError, match="at least one CTA"):
+        Brief(product="p", audience="a", pain="pa", ctas=[])
 
 
 def test_copy_variant_confidence_symbol():
