@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Wireframes — Criativos (5 telas + estados)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; min-height: 100%;
+    background: #f4f4f3;
+    font-family: "Geist", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #1a1a1a;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  ::-webkit-scrollbar { height: 10px; width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components/wf-primitives.jsx"></script>
+<script type="text/babel" src="components/wf-screen1.jsx"></script>
+<script type="text/babel" src="components/wf-screen2.jsx"></script>
+<script type="text/babel" src="components/wf-screen3.jsx"></script>
+<script type="text/babel" src="components/wf-screens-45.jsx"></script>
+
+<script type="text/babel">
+const FRAME_W = 760;
+const FRAME_H = 720;
+
+function App() {
+  // Per-screen state selectors
+  const [s1, setS1] = React.useState('empty');
+  const [s2, setS2] = React.useState('default');
+  const [s3, setS3] = React.useState('streaming');
+  const [s4, setS4] = React.useState('default');
+  const [s4var, setS4var] = React.useState('grid');
+  const [s5, setS5] = React.useState('rendering');
+
+  return (
+    <div style={{ padding: '32px 40px', minWidth: 'fit-content' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 32, maxWidth: 900 }}>
+        <div style={{
+          fontFamily: wfFonts.mono, fontSize: 11, color: WF_C.muted,
+          textTransform: 'uppercase', letterSpacing: 1,
+        }}>wireframe · v0.3 · mid-fi</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: WF_C.ink, letterSpacing: -0.5, marginTop: 4 }}>
+          Criativos — Fluxo de 5 telas
+        </div>
+        <div style={{ fontSize: 14, color: WF_C.muted, marginTop: 8, lineHeight: 1.55 }}>
+          Storyboard horizontal das telas principais do app desktop. Cada tela expõe estados alternativos (empty,
+          erro, dry-run, streaming) via toggles no topo. Callouts numerados destacam decisões-chave. Role horizontalmente.
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+          <WfChip variant="dark">5 telas</WfChip>
+          <WfChip variant="default">13 estados</WfChip>
+          <WfChip variant="default">2 variações · tela 4</WfChip>
+          <WfChip variant="accent">① callouts numerados</WfChip>
+        </div>
+      </div>
+
+      {/* Storyboard */}
+      <div style={{
+        display: 'flex', gap: 48, alignItems: 'flex-start',
+        paddingBottom: 40,
+      }}>
+        {/* Screen 1 */}
+        <WfScreen
+          step="01 · upload" title="Envio de ativos"
+          subtitle="drag & drop · múltiplos formatos"
+          states={['empty', 'dragover', 'filled']}
+          activeState={s1} onState={setS1}
+          width={FRAME_W} height={FRAME_H}
+          callouts={[
+            { x: 40, y: 72, note: 'Stepper persistente no topo mostra progresso de 5 etapas; clicável para voltar.' },
+            { x: 140, y: 280, note: 'Zona de drop aceita drag-in de qualquer lugar da janela (não só do box).' },
+            { x: 40, y: 510, note: 'Checklist de ativos recomendados aparece em tempo real conforme arquivos entram.' },
+            { x: FRAME_W - 140, y: FRAME_H - 40, note: 'CTA primário desabilitado enquanto upload está vazio. ⌘↵ dispara avançar.' },
+          ]}
+        >
+          <Screen1Upload state={s1}/>
+        </WfScreen>
+
+        {/* Screen 2 */}
+        <WfScreen
+          step="02 · brief" title="Editor de briefing"
+          subtitle="seleção de metodologia + preview de prompt"
+          states={['default', 'dry-run']}
+          activeState={s2} onState={setS2}
+          width={FRAME_W} height={FRAME_H}
+          callouts={[
+            { x: 460, y: 420, note: 'Seletor de metodologia (AIDA/PAS/BAB/custom) muda a estrutura do prompt enviado ao LLM.' },
+            { x: FRAME_W - 200, y: 110, note: 'Painel lateral mostra o prompt real que será enviado. Transparência total.' },
+            { x: 40, y: FRAME_H - 40, note: 'Dry-run simula a geração sem consumir créditos. Útil para validar briefing.' },
+          ]}
+        >
+          <Screen2Brief state={s2}/>
+        </WfScreen>
+
+        {/* Screen 3 */}
+        <WfScreen
+          step="03 · geração" title="Trace streaming"
+          subtitle="LLM pensando em tempo real"
+          states={['streaming', 'error-json', 'rate-limit', 'done']}
+          activeState={s3} onState={setS3}
+          width={FRAME_W} height={FRAME_H}
+          callouts={[
+            { x: 20, y: 100, note: 'Pipeline à esquerda: cada etapa tem status (done/active/error/queued) com cor semântica.' },
+            { x: 260, y: 180, note: 'Console de trace com tokens aparecendo um a um. Cores por tipo: JSON=azul/verde, erro=vermelho.' },
+            { x: 260, y: 550, note: 'Erros de JSON malformado disparam painel de recuperação com 3 opções: retry, ver raw, fallback.' },
+            { x: 20, y: 340, note: 'Métricas ao vivo: tokens, latência, custo estimado. Visibilidade de gastos em tempo real.' },
+          ]}
+        >
+          <Screen3Generation state={s3}/>
+        </WfScreen>
+
+        {/* Screen 4 */}
+        <WfScreen
+          step="04 · revisão" title="Variantes geradas"
+          subtitle="2 variações de layout: grid vs stack comparativo"
+          states={['default', 'empty']}
+          activeState={s4} onState={setS4}
+          width={FRAME_W} height={FRAME_H}
+          callouts={[
+            { x: FRAME_W - 240, y: 62, note: 'Toggle entre grid (overview) e stack (comparação lado-a-lado campo a campo).' },
+            { x: 30, y: 200, note: 'Cada card mostra preview visual + score de confidence (0.00–1.00).' },
+            { x: 30, y: 380, note: 'Variantes com score < 0.7 ganham badge "LOW CONF" e cor de aviso. 3 axes mostrados em mini-bars.' },
+            { x: 30, y: 500, note: 'Flags semânticos: "clichê detectado", "público errado", etc. Ajudam o usuário a confiar no modelo.' },
+          ]}
+        >
+          <Screen4Review state={s4} variation={s4var} onVar={setS4var}/>
+        </WfScreen>
+
+        {/* Screen 5 */}
+        <WfScreen
+          step="05 · export" title="Batch render + download"
+          subtitle="PNGs renderizados em paralelo"
+          states={['rendering', 'done']}
+          activeState={s5} onState={setS5}
+          width={FRAME_W} height={FRAME_H}
+          callouts={[
+            { x: 220, y: 130, note: '5 variantes × 3 formatos = 15 renders. Progresso global + ETA em segundos.' },
+            { x: 40, y: 240, note: 'Grid visual de thumbs. Cada tile tem status: queued (vazio), active (shimmer), done (✓).' },
+            { x: 40, y: FRAME_H - 40, note: 'Destinos de export múltiplos: Meta Ads Manager direto, Drive, Figma, ou .zip local com trace.json.' },
+          ]}
+        >
+          <Screen5Export state={s5}/>
+        </WfScreen>
+      </div>
+
+      {/* Flow arrows between screens */}
+      <div style={{
+        position: 'fixed', bottom: 16, left: 16,
+        padding: '8px 14px', borderRadius: 4,
+        background: '#fff', border: `1px solid ${WF_C.line}`,
+        fontSize: 11, color: WF_C.muted,
+        fontFamily: wfFonts.mono,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        display: 'flex', gap: 12, alignItems: 'center',
+      }}>
+        <span>role → para navegar</span>
+        <span style={{ color: WF_C.line }}>·</span>
+        <span>clique em chips para alternar estados</span>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
