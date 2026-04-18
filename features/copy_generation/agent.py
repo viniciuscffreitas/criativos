@@ -69,12 +69,14 @@ def _call_claude(
     from anthropic import Anthropic
 
     client = Anthropic()
-    system = methodology.system_prompt_path.read_text(encoding="utf-8")
+    system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
 
+    # Ephemeral cache on the system prompt: PAS prompt is stable across runs
+    # within a session; caching it cuts input-token cost after the first call.
     response = client.messages.create(
         model=model,
         max_tokens=2048,
-        system=system,
+        system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user_prompt}],
     )
 

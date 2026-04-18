@@ -105,6 +105,43 @@ def test_invalid_confidence_raises(brief, monkeypatch):
         generate(brief, methodology="pas", n=1)
 
 
+def test_system_prompt_uses_ephemeral_cache(brief, monkeypatch):
+    """System prompt must be passed as a cache_control=ephemeral text block — not a plain string — so consecutive calls reuse the cached prefix."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
+    monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
+
+    captured: dict = {}
+
+    class FakeTextBlock:
+        type = "text"
+        text = '[{"headline": "H", "primary_text": "P", "description": "D", "confidence": "high", "reasoning": "r"}]'
+
+    class FakeResponse:
+        content = [FakeTextBlock()]
+
+    class FakeMessages:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return FakeResponse()
+
+    class FakeAnthropic:
+        def __init__(self, *a, **kw):
+            self.messages = FakeMessages()
+
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic", FakeAnthropic)
+
+    generate(brief, methodology="pas", n=1)
+
+    system = captured["system"]
+    assert isinstance(system, list), f"system must be a list of blocks for cache_control, got {type(system).__name__}"
+    assert len(system) == 1
+    block = system[0]
+    assert block["type"] == "text"
+    assert block["cache_control"] == {"type": "ephemeral"}
+    assert block["text"], "system text must not be empty"
+
+
 def test_thinking_block_raises(brief, monkeypatch):
     """If the first content block is a thinking block (extended thinking), raise with context — don't silently pick a later block."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
