@@ -17,7 +17,7 @@ import pytest
 ROOT = Path(__file__).parent.parent
 
 BRAND_TEMPLATES = sorted((ROOT / "brand" / "social" / "templates").glob("*.html"))
-AD_TEMPLATES = sorted((ROOT / "ads" / "templates").glob("*.html"))
+AD_TEMPLATES = sorted((ROOT / "ads" / "templates").glob("*.html.j2"))
 ALL_TEMPLATES = BRAND_TEMPLATES + AD_TEMPLATES
 
 LEGACY_BG_PATTERN = re.compile(r"#0d0d0d", re.IGNORECASE)

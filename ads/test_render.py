@@ -36,12 +36,12 @@ def test_to_file_url_returns_file_uri():
 
 
 def test_templates_directory_populated():
-    templates = list(TEMPLATES_DIR.glob("*.html"))
+    templates = list(TEMPLATES_DIR.glob("*.html.j2"))
     assert len(templates) >= 6, f"expected >=6 templates, got {len(templates)}"
 
 
 def test_every_template_has_a_render():
-    template_stems = {p.stem for p in TEMPLATES_DIR.glob("*.html")}
+    template_stems = {p.stem.removesuffix(".html") for p in TEMPLATES_DIR.glob("*.html.j2")}
     render_stems = {p.stem for p in RENDERS_DIR.glob("*.png")}
     missing = template_stems - render_stems
     assert not missing, f"templates without renders: {sorted(missing)}"

@@ -123,7 +123,7 @@ body {
 <div class="corner corner-br"></div>
 
 <div class="headline">
-  <h1>I built <span class="count">6 sites</span> last month.</h1>
+  <h1>{{ copy.headline_lead }} <span class="count">{{ copy.headline_count }}</span> {{ copy.headline_tail }}</h1>
 </div>
 
 <div class="grid">
@@ -136,8 +136,8 @@ body {
 </div>
 
 <div class="bottom">
-  <p class="sub">Yours could be <strong>next.</strong></p>
-  <span class="cta">From €450 · Done in 7 days</span>
+  <p class="sub">{{ copy.sub_lead }} <strong>{{ copy.sub_highlight }}</strong></p>
+  <span class="cta">{{ copy.cta }}</span>
 </div>
 
 </body>
