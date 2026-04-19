@@ -1,16 +1,18 @@
-"""Copy generation agent — Claude API wrapper with dry-run mode.
+"""Copy generation agent — `claude` CLI wrapper with dry-run mode.
 
 Modes (resolved by environment):
-  - dry-run: VIBEWEB_DRY_RUN=1  OR  ANTHROPIC_API_KEY unset
-  - real:    ANTHROPIC_API_KEY set AND VIBEWEB_DRY_RUN unset (or != 1)
+  - dry-run: VIBEWEB_DRY_RUN=1  OR  (ANTHROPIC_API_KEY unset AND CLAUDE_CODE_OAUTH_TOKEN unset)
+  - real:   any of ANTHROPIC_API_KEY / CLAUDE_CODE_OAUTH_TOKEN set AND VIBEWEB_DRY_RUN unset (or != 1)
 
 Dry-run returns deterministic stub variants so tests and local dev cost zero
-tokens. Real mode posts one messages.create() call; no streaming, no retry
+tokens. Real mode shells out to the `claude` CLI (npm package
+@anthropic-ai/claude-code) with --output-format json; no streaming, no retry
 loop — failures raise verbose to make their cause obvious.
 
-Response format: text-block only. Extended thinking (thinking blocks) is not
-supported — if enabled upstream, _call_claude raises RuntimeError rather than
-silently picking a later block.
+Why subprocess and not the Python SDK: the Anthropic SDK only accepts API keys
+(`sk-ant-api*`). We use OAuth tokens (`sk-ant-oat*`) via CLAUDE_CODE_OAUTH_TOKEN,
+which only the CLI knows how to route through claude.ai. Same pattern as
+paperweight (~/Developer/agents).
 """
 from __future__ import annotations
 
@@ -35,13 +37,36 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 DRY_RUN_MODEL_TAG = "dry-run"
 VALID_CONFIDENCE = {"high", "medium", "low"}
 
+_CLI_TIMEOUT_SECONDS = 120
+
 
 def _is_dry_run() -> bool:
     if os.getenv("VIBEWEB_DRY_RUN") == "1":
         return True
-    if not os.getenv("ANTHROPIC_API_KEY"):
+    if not os.getenv("ANTHROPIC_API_KEY") and not os.getenv("CLAUDE_CODE_OAUTH_TOKEN"):
         return True
     return False
+
+
+def _build_cli_env() -> dict[str, str]:
+    """Clone os.environ and strip API-key vars that would shadow the OAuth token.
+
+    Claude CLI picks ANTHROPIC_API_KEY/ANTHROPIC_AUTH_TOKEN over
+    CLAUDE_CODE_OAUTH_TOKEN when present, even if they're empty or stale. When
+    we have a valid OAuth token (`sk-ant-oat*`), unconditionally drop the
+    API-key vars so the CLI routes through claude.ai instead of failing with
+    "invalid API key". Mirrors paperweight's _build_env_override.
+    """
+    env = dict(os.environ)
+    oauth = env.get("CLAUDE_CODE_OAUTH_TOKEN", "")
+    if oauth.startswith("sk-ant-oat"):
+        env.pop("ANTHROPIC_API_KEY", None)
+        env.pop("ANTHROPIC_AUTH_TOKEN", None)
+        return env
+    for key in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
+        if key in env and not env[key]:
+            del env[key]
+    return env
 
 
 def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResult:
@@ -77,29 +102,52 @@ def _dry_run_variants(brief: Brief, methodology_name: str, n: int) -> AgentResul
     )
 
 
-def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResult:
-    from anthropic import Anthropic  # kept lazy so dry-run tests don't need the package
+def _run_cli(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess:
+    """Thin subprocess wrapper — the mock surface for tests."""
+    return subprocess.run(
+        cmd, capture_output=True, text=True, env=env, timeout=_CLI_TIMEOUT_SECONDS,
+    )
 
-    client = Anthropic()
+
+def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResult:
     system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
     run_id = uuid.uuid4().hex[:8]
     started_at = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    response = client.messages.create(
-        model=model, max_tokens=2048,
-        system=[{"type": "text", "text": system_text, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    cmd = [
+        "claude", "-p", user_prompt,
+        "--append-system-prompt", system_text,
+        "--output-format", "json",
+        "--model", model,
+    ]
+    completed = _run_cli(cmd, _build_cli_env())
 
-    if not response.content or not hasattr(response.content[0], "text"):
-        raise RuntimeError(f"Unexpected Claude response shape: {response!r}")
-    block_type = getattr(response.content[0], "type", None)
-    if block_type != "text":
+    if completed.returncode != 0:
         raise RuntimeError(
-            f"Expected text block, got {block_type!r}; extended thinking not supported yet. "
-            f"Full response: {response!r}"
+            f"claude CLI exited {completed.returncode} for methodology {methodology.name!r}. "
+            f"stderr: {completed.stderr!r}\nstdout: {completed.stdout!r}"
         )
-    raw = response.content[0].text.strip()
+
+    try:
+        envelope = json.loads(completed.stdout)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"claude CLI returned non-JSON wrapper for methodology {methodology.name!r}:\n---\n"
+            f"{completed.stdout}\n---"
+        ) from e
+
+    if envelope.get("is_error"):
+        raise RuntimeError(
+            f"claude CLI reports is_error=true for methodology {methodology.name!r}: "
+            f"subtype={envelope.get('subtype')!r} result={envelope.get('result')!r}"
+        )
+
+    raw = envelope.get("result", "").strip()
+    if not raw:
+        raise RuntimeError(
+            f"claude CLI returned empty result for methodology {methodology.name!r}. "
+            f"full envelope: {envelope!r}"
+        )
 
     try:
         payload = json.loads(raw)

@@ -44,12 +44,13 @@ def test_both_packages_have_init_py():
 
 
 def test_pyproject_pins_spec1_deps():
-    """Spec 1 introduces Jinja2 (templating), PyYAML (config), anthropic (LLM)."""
+    """Spec 1 needs Jinja2 (templating) and PyYAML (config). The LLM path
+    shells out to the `claude` CLI (npm) — no Python SDK dependency."""
     with (ROOT / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     pinned = {d.split(">=")[0].split("==")[0].split("~=")[0].strip(): d
               for d in data["project"]["dependencies"]}
-    for required in ("jinja2", "pyyaml", "anthropic"):
+    for required in ("jinja2", "pyyaml"):
         assert required in pinned, f"{required} missing from [project].dependencies"
         spec = pinned[required]
         assert any(op in spec for op in (">=", "==", "~=")), f"{required} is unpinned"
