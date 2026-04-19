@@ -214,7 +214,12 @@ def _replay_events(brief: Brief, payload: GenerateIn):
         "pipeline_version": result.pipeline_version,
         "started_at": result.created_at,
     })
-    yield sse("node_start", {"node_id": "agent", "label": "Agente criativo", "start_ms": 0})
+    yield sse("node_start", {"node_id": "brief", "label": "Briefing", "start_ms": 0})
+    yield sse("node_done", {
+        "node_id": "brief", "end_ms": 20, "tokens": 0,
+        "confidence": None, "output_preview": brief.pain[:80],
+    })
+    yield sse("node_start", {"node_id": "agent", "label": "Agente criativo", "start_ms": 20})
     for v in result.variants:
         yield sse("variant_done", {
             **asdict(v), "axes": asdict(v.axes), "confidence_symbol": v.confidence_symbol,

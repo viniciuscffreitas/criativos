@@ -607,3 +607,131 @@ def test_generate_stream_done_payload_matches_variant_count(client, tmp_path, mo
             break
     assert done_data is not None, "No 'done' event found in stream"
     assert len(done_data["variants"]) == 3
+
+
+def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path, monkeypatch):
+    """Non-dry-run (_replay_events) must emit brief node events matching dry_run_events shape."""
+    import json as _json
+    from features.copy_generation.schema import (
+        AgentResult, CopyVariant, VariantAxes, TraceNode,
+    )
+
+    fake_variant = CopyVariant(
+        id="v1", headline="Test headline", primary_text="Body", description="Desc",
+        ctas=["Click"], confidence="high", confidence_score=0.9,
+        axes=VariantAxes(relevance=0.9, originality=0.8, brand_fit=0.85),
+        reasoning="ok",
+    )
+    fake_result = AgentResult(
+        run_id="test123", variants=[fake_variant], trace="trace",
+        trace_structured=[TraceNode(id="agent", label="Agente criativo",
+                                    start_ms=0, end_ms=10, tokens=5,
+                                    confidence=0.9, output_preview="Test")],
+        methodology="pas", model="dry-run", pipeline_version="v0",
+        seed=None, created_at="2026-04-18T00:00:00",
+    )
+
+    monkeypatch.setattr("features.web_gui.api.generate.agent._is_dry_run", lambda: False)
+    monkeypatch.setattr(
+        "features.web_gui.api.generate.agent.generate",
+        lambda brief, methodology, n: fake_result,
+    )
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    events = _parse_sse_events(raw)
+    assert events[0] == "run_start"
+    assert events[-1] == "done"
+    # brief node events must appear before agent node events
+    assert "node_start" in events
+    assert "node_done" in events
+
+    # Collect all node_start node_ids in order
+    node_start_ids = []
+    node_done_ids = []
+    for line in raw.splitlines():
+        if line.startswith("data: "):
+            try:
+                d = _json.loads(line[len("data: "):])
+            except _json.JSONDecodeError:
+                continue
+            if "node_id" in d:
+                # find which event precedes this data line
+                pass
+    # Parse (event, data) pairs
+    pairs = []
+    pending_event = None
+    for line in raw.splitlines():
+        if line.startswith("event: "):
+            pending_event = line[len("event: "):]
+        elif line.startswith("data: ") and pending_event:
+            try:
+                pairs.append((pending_event, _json.loads(line[len("data: "):])))
+            except _json.JSONDecodeError:
+                pass
+            pending_event = None
+
+    node_starts = [(ev, d) for ev, d in pairs if ev == "node_start"]
+    node_dones = [(ev, d) for ev, d in pairs if ev == "node_done"]
+
+    assert len(node_starts) == 2, f"expected 2 node_start events, got {node_starts}"
+    assert node_starts[0][1]["node_id"] == "brief"
+    assert node_starts[1][1]["node_id"] == "agent"
+    assert node_dones[0][1]["node_id"] == "brief"
+    assert node_dones[1][1]["node_id"] == "agent"
+
+
+def test_generate_stream_token_events_carry_variant_id(client, tmp_path, monkeypatch):
+    """token events must carry variant_id so the UI can route them to the right card."""
+    import json as _json
+
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_STREAM_TICK_SECONDS", 0.0)
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 2, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    # Parse (event, data) pairs
+    pairs = []
+    pending_event = None
+    for line in raw.splitlines():
+        if line.startswith("event: "):
+            pending_event = line[len("event: "):]
+        elif line.startswith("data: ") and pending_event:
+            try:
+                pairs.append((pending_event, _json.loads(line[len("data: "):])))
+            except _json.JSONDecodeError:
+                pass
+            pending_event = None
+
+    token_events = [(ev, d) for ev, d in pairs if ev == "token"]
+    assert len(token_events) > 0, "No token events found in stream"
+
+    for _, d in token_events:
+        assert "node_id" in d, f"token event missing node_id: {d}"
+        assert "variant_id" in d, f"token event missing variant_id: {d}"
+        assert "text" in d, f"token event missing text: {d}"
+
+    # variant_id values in token events must correspond to ids in variant_done events
+    token_variant_ids = {d["variant_id"] for _, d in token_events}
+    variant_done_ids = {d["id"] for ev, d in pairs if ev == "variant_done"}
+    assert token_variant_ids <= variant_done_ids, (
+        f"token variant_ids {token_variant_ids} not a subset of variant_done ids {variant_done_ids}"
+    )
