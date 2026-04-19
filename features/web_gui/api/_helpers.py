@@ -15,9 +15,19 @@ from features.web_gui.settings import projects_yaml_path
 def find_ad_key(ads_data: dict, ad_id: str) -> str:
     """Return the YAML key whose ads entry has id == ad_id.
 
+    Raises HTTPException(500, ADS_FILE_MALFORMED) if ads key is missing.
     Raises HTTPException(404, AD_NOT_FOUND) if not found.
     """
-    for key, ad in ads_data.get("ads", {}).items():
+    ads = ads_data.get("ads")
+    if ads is None:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "ads.yaml missing top-level 'ads' key",
+                "code": "ADS_FILE_MALFORMED",
+            },
+        )
+    for key, ad in ads.items():
         if ad.get("id") == ad_id:
             return key
     raise HTTPException(

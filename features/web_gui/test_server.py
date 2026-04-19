@@ -880,6 +880,47 @@ def test_patch_variant_persists_headline(client, tmp_path):
     assert v1["headline"] == "New headline"
 
 
+def test_patch_variant_500_when_variants_key_null(client, tmp_path):
+    """PATCH returns 500 ADS_VARIANTS_MISSING when variants is explicitly null."""
+    ads = tmp_path / "ads.yaml"
+    run_id = "run-null-variants"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "brief": {"product": "p", "audience": "a", "pain": "pa",
+                          "social_proof": "sp", "ctas": ["Message me"]},
+                "trace": {"last_run": run_id, "confidence": 0.9},
+                "variants": None,
+            }
+        }
+    }))
+    r = client.patch(f"/api/v1/variants/{run_id}/v1", json={"selected": True})
+    assert r.status_code == 500
+    assert r.json()["code"] == "ADS_VARIANTS_MISSING"
+
+
+def test_patch_variant_500_when_ads_file_missing_on_disk(tmp_path, monkeypatch):
+    """PATCH returns 500 ADS_FILE_NOT_FOUND when projects.yaml references a missing ads file."""
+    projects = tmp_path / "projects.yaml"
+    missing_ads = tmp_path / "no_such_ads.yaml"
+    projects.write_text(yaml.safe_dump({
+        "projects": {"vibeweb": {
+            "slug": "vibeweb", "name": "Vibe Web", "description": "",
+            "ads_path": str(missing_ads),
+            "renders_path": str(tmp_path / "renders"),
+            "brand_path": str(tmp_path / "brand"),
+            "created_at": "2026-04-18T00:00:00Z",
+        }}
+    }))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    from fastapi.testclient import TestClient
+    c = TestClient(create_app())
+    r = c.patch("/api/v1/variants/run-any/v1", json={"selected": True})
+    assert r.status_code == 500
+    assert r.json()["code"] == "ADS_FILE_NOT_FOUND"
+
+
 # ---------------------------------------------------------------------------
 # Traces GET tests — /api/v1/traces/{run_id}
 # ---------------------------------------------------------------------------
@@ -892,7 +933,6 @@ def test_get_trace_returns_persisted(client, tmp_path, monkeypatch):
     traces_tmp = tmp_path / "traces"
     traces_tmp.mkdir()
     monkeypatch.setattr("features.web_gui.services.trace_store.traces_dir", lambda: traces_tmp)
-    monkeypatch.setattr("features.web_gui.api.traces.traces_dir", lambda: traces_tmp)
 
     r = client.post("/api/v1/generate", json={
         "project_slug": "vibeweb", "ad_id": "01",
@@ -911,7 +951,7 @@ def test_get_trace_returns_persisted(client, tmp_path, monkeypatch):
 def test_get_trace_404_unknown_run_id(client, tmp_path, monkeypatch):
     traces_tmp = tmp_path / "traces"
     traces_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.traces.traces_dir", lambda: traces_tmp)
+    monkeypatch.setattr("features.web_gui.services.trace_store.traces_dir", lambda: traces_tmp)
 
     r = client.get("/api/v1/traces/run-does-not-exist")
     assert r.status_code == 404
@@ -936,7 +976,6 @@ def test_get_trace_400_invalid_run_id_chars(client):
 def test_upload_asset_stores_file(client, tmp_path, monkeypatch):
     uploads_tmp = tmp_path / "uploads"
     uploads_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
     monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
 
     import io
@@ -958,10 +997,6 @@ def test_upload_asset_stores_file(client, tmp_path, monkeypatch):
 
 
 def test_upload_asset_404_unknown_project(client, tmp_path, monkeypatch):
-    uploads_tmp = tmp_path / "uploads"
-    uploads_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
-
     import io
     r = client.post(
         "/api/v1/assets/upload",
@@ -975,7 +1010,6 @@ def test_upload_asset_404_unknown_project(client, tmp_path, monkeypatch):
 def test_upload_asset_415_disallowed_type(client, tmp_path, monkeypatch):
     uploads_tmp = tmp_path / "uploads"
     uploads_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
     monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
 
     import io
@@ -991,7 +1025,6 @@ def test_upload_asset_415_disallowed_type(client, tmp_path, monkeypatch):
 def test_upload_asset_strips_path_in_filename(client, tmp_path, monkeypatch):
     uploads_tmp = tmp_path / "uploads"
     uploads_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
     monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
 
     import io
@@ -1011,7 +1044,6 @@ def test_upload_asset_strips_path_in_filename(client, tmp_path, monkeypatch):
 def test_upload_asset_413_too_large(client, tmp_path, monkeypatch):
     uploads_tmp = tmp_path / "uploads"
     uploads_tmp.mkdir()
-    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
     monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
 
     import io

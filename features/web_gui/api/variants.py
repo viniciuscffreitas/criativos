@@ -37,8 +37,14 @@ def patch_variant(run_id: str, variant_id: str, payload: VariantPatch):
     for _slug, ads_path in iter_ads_paths():
         try:
             ads_data = yaml_rw.read(ads_path)
-        except FileNotFoundError:
-            continue
+        except FileNotFoundError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": f"ads file referenced by projects.yaml not found on disk: {ads_path}",
+                    "code": "ADS_FILE_NOT_FOUND",
+                },
+            ) from exc
 
         # Find the ad whose last_run matches our run_id.
         target_key: str | None = None
@@ -57,7 +63,16 @@ def patch_variant(run_id: str, variant_id: str, payload: VariantPatch):
         result_carrier: list[dict] = []
 
         def _mutate(data: dict) -> dict:
-            variants = data["ads"][target_key].get("variants") or []
+            raw_variants = data["ads"][target_key].get("variants")
+            if raw_variants is None:
+                raise HTTPException(
+                    status_code=500,
+                    detail={
+                        "error": f"ad {target_key!r} has no variants list (ads.yaml malformed)",
+                        "code": "ADS_VARIANTS_MISSING",
+                    },
+                )
+            variants = raw_variants
             for i, v in enumerate(variants):
                 if v.get("id") == variant_id:
                     patched = {**v, **patch}

@@ -12,7 +12,6 @@ import re
 from fastapi import APIRouter, HTTPException
 
 from features.web_gui.services import trace_store
-from features.web_gui.settings import traces_dir
 
 router = APIRouter(tags=["traces"])
 

@@ -15,7 +15,6 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import asset_store
-from features.web_gui.settings import uploads_dir
 
 router = APIRouter(tags=["assets"])
 
