@@ -2,6 +2,9 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  // FastAPI serves the built bundle from `features/web_gui/static/` at `/ui/` —
+  // declaring base here makes build AND preview emit matching asset paths.
+  base: '/ui/',
   plugins: [react()],
   build: {
     outDir: '../static',

@@ -23,6 +23,9 @@ _TIMEOUT_S = 15
 @pytest.fixture(scope="session")
 def ui_server():
     env = {**os.environ, "VIBEWEB_DRY_RUN": "1"}
+    # stderr→stdout merges streams onto one pipe so we can drain (and include)
+    # everything uvicorn emitted if the readiness check fails. Without draining,
+    # a full pipe buffer would hang the subprocess and make the timeout misleading.
     proc = subprocess.Popen(
         [
             sys.executable, "-m", "uvicorn",
@@ -33,7 +36,7 @@ def ui_server():
         ],
         env=env,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
 
     deadline = time.monotonic() + _TIMEOUT_S
@@ -48,10 +51,15 @@ def ui_server():
         time.sleep(0.5)
     else:
         proc.terminate()
-        proc.wait(timeout=5)
+        try:
+            captured, _ = proc.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            captured, _ = proc.communicate()
         raise RuntimeError(
             f"uvicorn failed to respond within {_TIMEOUT_S}s on :{_PORT}. "
-            f"Last error: {last_exc}"
+            f"Last error: {last_exc}\n"
+            f"Uvicorn output:\n{captured.decode(errors='replace')}"
         )
 
     base_url = f"http://localhost:{_PORT}"
@@ -59,7 +67,11 @@ def ui_server():
         yield base_url
     finally:
         proc.terminate()
+        # communicate() drains the stdout pipe so the subprocess can exit cleanly
+        # — otherwise a full pipe buffer (e.g., accumulated request logs) would
+        # deadlock the shutdown.
         try:
-            proc.wait(timeout=10)
+            proc.communicate(timeout=10)
         except subprocess.TimeoutExpired:
             proc.kill()
+            proc.communicate()
