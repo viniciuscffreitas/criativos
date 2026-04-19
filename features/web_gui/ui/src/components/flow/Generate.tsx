@@ -20,11 +20,18 @@ export function Generate({ projectSlug, adId, methodology, nVariants, onDone }: 
   const [streamError, setStreamError] = useState<string | null>(null);
   const tokenPanelRef = useRef<HTMLDivElement>(null);
 
+  // Ref keeps the latest onDone without re-subscribing the stream on every
+  // render (parent passes an inline arrow). Effect depends on stream keys only.
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+
   useEffect(() => {
     const abort = streamGenerate(
       { project_slug: projectSlug, ad_id: adId, methodology, n_variants: nVariants, persist: true },
       (e: StreamEvent) => {
-        if (e.type === 'token') {
+        if (e.type === 'run_start') {
+          // Stream boundary marker — no UI effect. Explicit branch documents intent.
+        } else if (e.type === 'token') {
           setTokens(t => t + e.payload.text);
         } else if (e.type === 'variant_done') {
           setVariants(v => [...v, e.payload]);
@@ -47,10 +54,14 @@ export function Generate({ projectSlug, adId, methodology, nVariants, onDone }: 
             output_preview: e.payload.output_preview,
           } : x));
         } else if (e.type === 'done') {
-          onDone(e.payload);
+          onDoneRef.current(e.payload);
         } else if (e.type === 'error') {
           console.error('[Generate] stream error', e.payload);
           setStreamError(`${e.payload.code}: ${e.payload.error}`);
+        } else {
+          // Exhaustiveness guard — compile error if StreamEvent gains a variant.
+          const _never: never = e;
+          throw new Error(`[Generate] unhandled StreamEvent: ${JSON.stringify(_never)}`);
         }
       },
     );

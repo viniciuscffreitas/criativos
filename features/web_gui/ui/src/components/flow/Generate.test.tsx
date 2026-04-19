@@ -113,6 +113,25 @@ describe('Generate', () => {
     );
   });
 
+  it('renders a node pill with label/tokens/duration on node_start → node_done', () => {
+    render(<Generate {...BASE_PROPS} />);
+    act(() => {
+      emit!({ type: 'node_start', payload: { node_id: 'n1', label: 'headline-gen', start_ms: 100 } });
+    });
+    expect(screen.getByText('headline-gen')).toBeInTheDocument();
+    act(() => {
+      emit!({
+        type: 'node_done',
+        payload: { node_id: 'n1', end_ms: 450, tokens: 128, confidence: 0.82, output_preview: 'preview' },
+      });
+    });
+    expect(screen.getByText('headline-gen')).toBeInTheDocument();
+    expect(screen.getByText(/128 tok/)).toBeInTheDocument();
+    expect(screen.getByText(/350 ms/)).toBeInTheDocument();
+    // high confidence (>= 0.75) renders ✅
+    expect(screen.getAllByText('✅').length).toBeGreaterThan(0);
+  });
+
   it('calls the returned abort function on unmount', () => {
     const { unmount } = render(<Generate {...BASE_PROPS} />);
     unmount();
