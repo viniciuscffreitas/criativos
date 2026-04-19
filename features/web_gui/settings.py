@@ -22,3 +22,7 @@ def uploads_dir() -> Path:
 
 def static_dir() -> Path:
     return ROOT / "features" / "web_gui" / "static"
+
+
+def renders_dir() -> Path:
+    return ROOT / "renders"

@@ -181,3 +181,124 @@ def test_put_brief_returns_404_when_ad_id_unknown(client, tmp_path):
     r = client.put("/api/v1/projects/vibeweb/ads/99/brief", json=new_brief)
     assert r.status_code == 404
     assert r.json()["code"] == "AD_NOT_FOUND"
+
+
+# ---------------------------------------------------------------------------
+# Creatives route tests
+# ---------------------------------------------------------------------------
+
+def test_list_creatives_shapes_match_contract(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "kind": "image", "placement": "Instagram Feed · 1:1",
+                "format": "1080×1080 png",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "Hero text"},
+                "meta": {"headline": "H", "primary_text": "PT", "description": "D"},
+                "variants": [],
+            }
+        }
+    }))
+    r = client.get("/api/v1/projects/vibeweb/creatives")
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["creatives"]) == 1
+    c = body["creatives"][0]
+    assert c["id"] == "portfolio-grid-base"
+    assert c["kind"] == "image"
+    assert c["thumbnail_url"] == "/renders/01-portfolio-grid.png"
+    assert c["ctas"] == ["Click"]
+
+
+def test_list_creatives_unknown_project_returns_404(client):
+    r = client.get("/api/v1/projects/ghost/creatives")
+    assert r.status_code == 404
+    assert r.json()["code"] == "PROJECT_NOT_FOUND"
+
+
+def test_list_creatives_missing_ads_yaml_returns_500(tmp_path, monkeypatch):
+    projects = tmp_path / "projects.yaml"
+    missing_ads = tmp_path / "no_such_ads.yaml"
+    projects.write_text(yaml.safe_dump({
+        "projects": {"vibeweb": {
+            "slug": "vibeweb", "name": "Vibe Web", "description": "",
+            "ads_path": str(missing_ads),
+            "renders_path": str(tmp_path / "renders"),
+            "brand_path": str(tmp_path / "brand"),
+            "created_at": "2026-04-18T00:00:00Z",
+        }}
+    }))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    from fastapi.testclient import TestClient
+    c = TestClient(create_app())
+    r = c.get("/api/v1/projects/vibeweb/creatives")
+    assert r.status_code == 500
+    assert r.json()["code"] == "ADS_FILE_NOT_FOUND"
+
+
+def test_list_creatives_kind_filter(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "kind": "image", "placement": "IG Feed", "format": "1080×1080 png",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "Hero"}, "meta": {}, "variants": [],
+            }
+        }
+    }))
+    r = client.get("/api/v1/projects/vibeweb/creatives?kind=video")
+    assert r.status_code == 200
+    assert r.json()["creatives"] == []
+
+
+def test_list_creatives_returns_500_when_project_missing_ads_path(tmp_path, monkeypatch):
+    projects = tmp_path / "projects.yaml"
+    projects.write_text(yaml.safe_dump({
+        "projects": {"vibeweb": {
+            "slug": "vibeweb", "name": "Vibe Web", "description": "",
+            # ads_path intentionally absent
+            "renders_path": str(tmp_path / "renders"),
+            "brand_path": str(tmp_path / "brand"),
+            "created_at": "2026-04-18T00:00:00Z",
+        }}
+    }))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    from fastapi.testclient import TestClient
+    c = TestClient(create_app())
+    r = c.get("/api/v1/projects/vibeweb/creatives")
+    assert r.status_code == 500
+    assert r.json()["code"] == "PROJECT_MISCONFIGURED"
+
+
+def test_list_creatives_variant_expansion(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "kind": "image", "placement": "IG Feed", "format": "1080×1080 png",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "Hero"}, "meta": {},
+                "variants": [
+                    {"id": "A", "headline": "Headline A", "primary_text": "PT A", "ctas": ["Buy A"]},
+                    {"id": "B", "headline": "Headline B", "primary_text": "PT B", "ctas": ["Buy B"]},
+                ],
+            }
+        }
+    }))
+    r = client.get("/api/v1/projects/vibeweb/creatives")
+    assert r.status_code == 200
+    creatives = r.json()["creatives"]
+    assert len(creatives) == 3
+    ids = [c["id"] for c in creatives]
+    assert "portfolio-grid-base" in ids
+    assert "portfolio-grid-a" in ids
+    assert "portfolio-grid-b" in ids

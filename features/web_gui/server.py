@@ -5,13 +5,17 @@ Routes:
   /api/v1/projects                              (projects.py)
   /api/v1/projects/{slug}                       (projects.py)
   /api/v1/projects/{slug}/ads/{ad_id}/brief     [GET, PUT]  (briefs.py)
+  /api/v1/projects/{slug}/creatives             [GET]       (creatives.py) ?kind= &status= filters
   [later tasks add]:
-    /api/v1/projects/{slug}/creatives                (creatives.py)
     /api/v1/generate          [POST]                 (generate.py)
     /api/v1/generate/stream   [POST SSE]             (generate.py)
     /api/v1/variants/{run_id}/{variant_id}  [PATCH]  (variants.py)
     /api/v1/traces/{run_id}                          (traces.py)
     /api/v1/assets/upload                            (assets.py)
+
+Mounted routes:
+  /renders   StaticFiles — pre-rendered PNG creatives (renders_dir())
+  /ui        StaticFiles — Vite build (static_dir()); gated by VIBEWEB_REQUIRE_UI=1
 """
 from __future__ import annotations
 import logging
@@ -21,8 +25,8 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from features.web_gui.api import briefs, projects
-from features.web_gui.settings import static_dir, traces_dir, uploads_dir
+from features.web_gui.api import briefs, creatives, projects
+from features.web_gui.settings import renders_dir, static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Vibe Web Criativos", version="0.1.0")
     app.include_router(projects.router, prefix="/api/v1")
     app.include_router(briefs.router, prefix="/api/v1")
+    app.include_router(creatives.router, prefix="/api/v1")
 
     @app.exception_handler(HTTPException)
     async def http_exc_handler(_, exc: HTTPException):
@@ -55,6 +60,14 @@ def create_app() -> FastAPI:
                 f"VIBEWEB_REQUIRE_UI=1 but static dir not found: {sdir}"
             )
         _log.warning("Static dir %s not found — /ui will not be served", sdir)
+
+    rdir = renders_dir()
+    if rdir.exists():
+        app.mount("/renders", StaticFiles(directory=str(rdir)), name="renders")
+    else:
+        if os.getenv("VIBEWEB_REQUIRE_RENDERS", "0") == "1":
+            raise RuntimeError(f"renders dir not found: {rdir}")
+        _log.warning("Renders dir %s not found — /renders will not be served", rdir)
 
     return app
 
