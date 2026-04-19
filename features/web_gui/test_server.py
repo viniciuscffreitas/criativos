@@ -863,6 +863,23 @@ def test_patch_variant_404_unknown_variant_id_but_known_run(client, tmp_path):
     assert r.json()["code"] == "VARIANT_NOT_FOUND"
 
 
+def test_patch_variant_persists_headline(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    run_id = "run-headline-test"
+    _seed_ad_with_variants(ads, run_id)
+
+    r = client.patch(f"/api/v1/variants/{run_id}/v1", json={"headline": "New headline"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["id"] == "v1"
+    assert body["headline"] == "New headline"
+
+    data = yaml.safe_load(ads.read_text())
+    variants = data["ads"]["01_portfolio_grid"]["variants"]
+    v1 = next(v for v in variants if v["id"] == "v1")
+    assert v1["headline"] == "New headline"
+
+
 # ---------------------------------------------------------------------------
 # Traces GET tests — /api/v1/traces/{run_id}
 # ---------------------------------------------------------------------------
@@ -989,3 +1006,22 @@ def test_upload_asset_strips_path_in_filename(client, tmp_path, monkeypatch):
     assert item["filename"] == "evil.png"
     assert "/" not in item["filename"]
     assert "\\" not in item["filename"]
+
+
+def test_upload_asset_413_too_large(client, tmp_path, monkeypatch):
+    uploads_tmp = tmp_path / "uploads"
+    uploads_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
+    monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
+
+    import io
+    large_size = (10 * 1024 * 1024) + 1
+    # PNG magic bytes so MIME check passes; size rejection fires after MIME check.
+    oversized = b"\x89PNG\r\n\x1a\n" + b"0" * large_size
+    r = client.post(
+        "/api/v1/assets/upload",
+        data={"project_slug": "vibeweb"},
+        files={"files": ("big.png", io.BytesIO(oversized), "image/png")},
+    )
+    assert r.status_code == 413
+    assert r.json()["code"] == "FILE_TOO_LARGE"

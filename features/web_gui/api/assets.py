@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import asset_store
@@ -33,7 +33,7 @@ _ALLOWED_MIME: frozenset[str] = frozenset({
 @router.post("/assets/upload")
 async def upload_assets(
     project_slug: str = Form(...),
-    files: list[UploadFile] = Form(...),
+    files: list[UploadFile] = File(...),
 ):
     # Validate project exists (also guards path traversal on slug).
     resolve_ads_path(project_slug)

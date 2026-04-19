@@ -13,7 +13,3 @@ def test_variant_patch_all_none_produces_empty_dict():
     p = VariantPatch()
     assert p.model_dump(exclude_none=True) == {}
 
-
-def test_variant_patch_approved_field():
-    p = VariantPatch(approved=True)
-    assert p.model_dump(exclude_none=True) == {"approved": True}

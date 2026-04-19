@@ -19,7 +19,10 @@ router = APIRouter(tags=["variants"])
 
 class VariantPatch(BaseModel):
     selected: bool | None = None
-    approved: bool | None = None
+    headline: str | None = None
+    primary_text: str | None = None
+    description: str | None = None
+    ctas: list[str] | None = None
 
 
 @router.patch("/variants/{run_id}/{variant_id}")
