@@ -1,0 +1,15 @@
+services:
+  criativos:
+    build: .
+    container_name: criativos
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:8000"
+    volumes:
+      - ./config:/app/config
+      - ./features/web_gui/traces:/app/features/web_gui/traces
+      - ./features/web_gui/uploads:/app/features/web_gui/uploads
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
