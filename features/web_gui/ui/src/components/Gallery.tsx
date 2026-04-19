@@ -119,11 +119,14 @@ export function Gallery({ projectSlug, onOpenCreative, onOpenTrace }: GalleryPro
           gridAutoRows: 'max-content',
           gap: 16,
         }}>
-          {filtered.map((c, i) => (
-            <GalleryCard key={c.id} creative={c} idx={i}
-              onOpen={() => onOpenCreative(c)}
-              onOpenTrace={c.last_run_id ? () => onOpenTrace(c.last_run_id!) : null}/>
-          ))}
+          {filtered.map((c, i) => {
+            const runId = c.last_run_id;
+            return (
+              <GalleryCard key={c.id} creative={c} idx={i}
+                onOpen={() => onOpenCreative(c)}
+                onOpenTrace={runId ? () => onOpenTrace(runId) : null}/>
+            );
+          })}
         </div>
       </div>
     </div>

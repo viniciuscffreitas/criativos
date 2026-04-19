@@ -29,7 +29,6 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<UploadState>({ kind: 'idle' });
 
-  // Auto-clear the success banner after 3s so the UI returns to idle.
   useEffect(() => {
     if (upload.kind !== 'success') return;
     const t = setTimeout(() => setUpload({ kind: 'idle' }), 3000);
