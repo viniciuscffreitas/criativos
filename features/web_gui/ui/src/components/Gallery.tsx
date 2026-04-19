@@ -1,6 +1,6 @@
 // Gallery view — grid of all generated creatives, filterable by kind.
 // Data is fetched from the backend via fetchCreatives; no hardcoded samples.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Creative } from '../types';
 import { fetchCreatives } from '../data/creatives';
 import {
@@ -75,29 +75,7 @@ export function Gallery({ projectSlug, onOpenCreative, onOpenTrace }: GalleryPro
         <button style={btnPrimary}><IconPlus size={13}/> Novo criativo</button>
       </div>
 
-      {/* Filter tabs */}
-      <div style={{
-        padding: '12px 20px 0', background: '#fff',
-        borderBottom: '1px solid #e7e5e4',
-        display: 'flex', gap: 4,
-      }}>
-        {tabs.map(t => (
-          <div key={t.id} onClick={() => setFilter(t.id)} style={{
-            padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-            color: filter === t.id ? '#1c1917' : '#78716c',
-            fontWeight: filter === t.id ? 500 : 400,
-            borderBottom: filter === t.id ? '2px solid var(--accent)' : '2px solid transparent',
-            marginBottom: -1,
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}>
-            {t.label}
-            <span style={{
-              fontSize: 10, color: '#6f6a64',
-              fontFamily: '"Geist Mono", monospace',
-            }}>{t.count}</span>
-          </div>
-        ))}
-      </div>
+      <FilterTabs tabs={tabs} filter={filter} onChange={setFilter} />
 
       {/* Error state */}
       {error && (
@@ -129,6 +107,76 @@ export function Gallery({ projectSlug, onOpenCreative, onOpenTrace }: GalleryPro
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+interface FilterTab {
+  id: string;
+  label: string;
+  count: number;
+}
+
+interface FilterTabsProps {
+  tabs: FilterTab[];
+  filter: string;
+  onChange: (id: string) => void;
+}
+
+function FilterTabs({ tabs, filter, onChange }: FilterTabsProps) {
+  const refs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    const i = tabs.findIndex(t => t.id === filter);
+    let next = i;
+    if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    onChange(tabs[next].id);
+    refs.current[next]?.focus();
+  };
+
+  return (
+    <div role="tablist" style={{
+      padding: '12px 20px 0', background: '#fff',
+      borderBottom: '1px solid #e7e5e4',
+      display: 'flex', gap: 4,
+    }}>
+      {tabs.map((t, i) => {
+        const active = filter === t.id;
+        return (
+          <button
+            key={t.id}
+            ref={el => { refs.current[i] = el; }}
+            role="tab"
+            type="button"
+            aria-selected={active}
+            tabIndex={active ? 0 : -1}
+            onClick={() => onChange(t.id)}
+            onKeyDown={onKeyDown}
+            style={{
+              padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+              color: active ? '#1c1917' : '#78716c',
+              fontWeight: active ? 500 : 400,
+              borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
+              borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+              background: 'transparent',
+              marginBottom: -1,
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontFamily: 'inherit',
+            }}
+          >
+            {t.label}
+            <span style={{
+              fontSize: 10, color: '#6f6a64',
+              fontFamily: '"Geist Mono", monospace',
+            }}>{t.count}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
