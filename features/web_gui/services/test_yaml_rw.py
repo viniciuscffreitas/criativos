@@ -61,3 +61,18 @@ def test_write_rename_failure_raises_runtime_error(tmp_path: Path):
     with patch("pathlib.Path.replace", side_effect=[None, OSError("disk full")]):
         with pytest.raises(RuntimeError, match="atomic rename failed"):
             yaml_rw.write(f, {"updated": True})
+
+
+def test_modify_non_dict_raises_value_error(tmp_path: Path):
+    f = tmp_path / "list.yaml"
+    f.write_text("- item1\n- item2\n")
+    with pytest.raises(ValueError, match="expected a YAML mapping"):
+        yaml_rw.modify(f, lambda d: d)
+
+
+def test_modify_round_trip(tmp_path: Path):
+    f = tmp_path / "data.yaml"
+    f.write_text("count: 1\n")
+    result = yaml_rw.modify(f, lambda d: {**d, "count": d["count"] + 1})
+    assert result == {"count": 2}
+    assert yaml_rw.read(f) == {"count": 2}

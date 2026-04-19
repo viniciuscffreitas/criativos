@@ -60,7 +60,14 @@ def modify(path: Path, fn: Callable[[dict], dict]) -> dict:
     with path.open("r+", encoding="utf-8") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
-            data = yaml.safe_load(f) or {}
+            data = yaml.safe_load(f)
+            if data is None:
+                data = {}
+            elif not isinstance(data, dict):
+                raise ValueError(
+                    f"yaml_rw.modify: expected a YAML mapping in {str(path)!r}, "
+                    f"got {type(data).__name__}"
+                )
             new_data = fn(data)
             content = yaml.safe_dump(new_data, sort_keys=False, allow_unicode=True)
             f.seek(0)
