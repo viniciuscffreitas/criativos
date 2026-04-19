@@ -31,6 +31,7 @@ ads/.rendered/
 # web_gui runtime artifacts
 features/web_gui/traces/
 features/web_gui/uploads/
+features/web_gui/.golden-bootstrap/
 
 # Web UI
 features/web_gui/ui/node_modules/
