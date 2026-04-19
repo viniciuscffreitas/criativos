@@ -9,7 +9,7 @@ Each ad in ads.yaml yields one base creative plus one entry per variant.
 from __future__ import annotations
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from features.web_gui.services import yaml_rw
@@ -64,7 +64,11 @@ def _resolve_ads_path(slug: str) -> Path:
 
 
 @router.get("", response_model=CreativeListOut)
-def list_creatives(slug: str, kind: str | None = None, status: str | None = None):
+def list_creatives(
+    slug: str,
+    kind: str | None = Query(default=None, min_length=1),
+    status: str | None = Query(default=None, min_length=1),
+):
     ads_path = _resolve_ads_path(slug)
     try:
         data = yaml_rw.read(ads_path)
@@ -120,6 +124,7 @@ def _variant_to_creative(ad: dict, v: dict) -> CreativeOut:
         body=v.get("primary_text", ""),
         hero=ad.get("copy", {}).get("hero", ""),
         ctas=v.get("ctas", []),
+        # Variants share the base ad's render in MVP — no per-variant render pipeline yet.
         thumbnail_url=f"/renders/{ad['id']}-{ad['slug']}.png",
         status="ready",
         ad_id=ad["id"],

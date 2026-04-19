@@ -316,11 +316,14 @@ def test_list_creatives_variant_expansion(client, tmp_path):
     r = client.get("/api/v1/projects/vibeweb/creatives")
     assert r.status_code == 200
     creatives = r.json()["creatives"]
-    assert len(creatives) == 3
     ids = [c["id"] for c in creatives]
-    assert "portfolio-grid-base" in ids
-    assert "portfolio-grid-a" in ids
-    assert "portfolio-grid-b" in ids
     # Ordering: base at index 0, variants follow in YAML order
     assert ids == ["portfolio-grid-base", "portfolio-grid-a", "portfolio-grid-b"]
     assert [c["variant_id"] for c in creatives] == [None, "A", "B"]
+
+
+def test_list_creatives_empty_kind_returns_422(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.get("/api/v1/projects/vibeweb/creatives?kind=")
+    assert r.status_code == 422
