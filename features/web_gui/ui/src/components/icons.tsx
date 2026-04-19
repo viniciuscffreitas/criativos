@@ -3,10 +3,10 @@ import type { SVGProps } from 'react';
 
 type IconProps = { size?: number } & SVGProps<SVGSVGElement>;
 
-function Icon({ d, size = 16, stroke = 'currentColor', strokeWidth: sw = 1.5, fill = 'none', children, ...rest }: IconProps & { d?: string; sw?: number }) {
+function Icon({ d, size = 16, stroke = 'currentColor', strokeWidth = 1.5, fill = 'none', children, ...rest }: IconProps & { d?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke}
-      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" {...rest}>
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...rest}>
       {d ? <path d={d} /> : children}
     </svg>
   );

@@ -2,9 +2,11 @@
 import type { Project } from '../types';
 import { IconSparkle, IconGrid, IconBrand, IconChevronDown, IconSettings } from './icons';
 
+export type NavSection = 'flow' | 'gallery' | 'brand';
+
 interface SidebarProps {
-  active: 'flow' | 'gallery' | 'brand';
-  onNav: (nav: 'flow' | 'gallery' | 'brand') => void;
+  active: NavSection;
+  onNav: (nav: NavSection) => void;
   projects: Project[];
   activeProjectSlug: string;
   onSelectProject: (slug: string) => void;
