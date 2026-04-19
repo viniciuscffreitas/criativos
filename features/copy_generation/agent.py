@@ -150,13 +150,16 @@ def _parse_cli_envelope(
         )
 
     # Strip outer markdown fence if present — model sometimes ignores the
-    # "no markdown fences" directive in the system prompt.
+    # "no markdown fences" directive in the system prompt. Only consume the
+    # closing fence when the opening fence was actually consumed (newline
+    # after it); otherwise fall through to json.loads which will raise with
+    # the full payload visible.
     if raw.startswith("```"):
         first_newline = raw.find("\n")
         if first_newline != -1:
             raw = raw[first_newline + 1:]
-        if raw.endswith("```"):
-            raw = raw[:-3].rstrip()
+            if raw.endswith("```"):
+                raw = raw[:-3].rstrip()
 
     try:
         payload = json.loads(raw)

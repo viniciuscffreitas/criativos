@@ -14,7 +14,11 @@ import time
 from dataclasses import asdict
 from typing import Iterator
 
-from features.copy_generation.agent import _dry_run_variants, _stream_claude  # noqa: F401 — _stream_claude used via monkeypatch target
+# _stream_claude is called directly by real_stream_events below AND must stay
+# exposed on this module's namespace so test_streaming tests can monkeypatch
+# streaming._stream_claude (the higher-level mock target documented in
+# features/copy_generation/CLAUDE.md).
+from features.copy_generation.agent import _dry_run_variants, _stream_claude
 from features.copy_generation.schema import Brief
 
 
