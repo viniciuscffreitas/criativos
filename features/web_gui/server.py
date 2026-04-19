@@ -14,13 +14,17 @@ Routes:
     /api/v1/assets/upload                            (assets.py)
 """
 from __future__ import annotations
+import logging
+import os
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from features.web_gui.api import projects
-from features.web_gui.settings import static_dir
+from features.web_gui.settings import static_dir, traces_dir, uploads_dir
+
+_log = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -34,10 +38,27 @@ def create_app() -> FastAPI:
         }
         return JSONResponse(status_code=exc.status_code, content=detail)
 
+    # Ensure writable dirs exist at startup (fail-loud if creation impossible)
+    for d in (traces_dir(), uploads_dir()):
+        try:
+            d.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise RuntimeError(f"failed to create {d}: {e}") from e
+
     sdir = static_dir()
     if sdir.exists():
         app.mount("/ui", StaticFiles(directory=str(sdir), html=True), name="ui")
+    else:
+        if os.getenv("VIBEWEB_REQUIRE_UI", "0") == "1":
+            raise RuntimeError(
+                f"VIBEWEB_REQUIRE_UI=1 but static dir not found: {sdir}"
+            )
+        _log.warning("Static dir %s not found — /ui will not be served", sdir)
+
     return app
 
 
+# NOTE: module-level `app` exists for `uvicorn features.web_gui.server:app`.
+# Tests MUST call `create_app()` directly — never `from ... import app` —
+# so env/monkeypatch state applies to the store factory each test run.
 app = create_app()

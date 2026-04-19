@@ -13,15 +13,11 @@ def projects_yaml_path() -> Path:
 
 
 def traces_dir() -> Path:
-    p = ROOT / "features" / "web_gui" / "traces"
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    return ROOT / "features" / "web_gui" / "traces"
 
 
 def uploads_dir() -> Path:
-    p = ROOT / "features" / "web_gui" / "uploads"
-    p.mkdir(parents=True, exist_ok=True)
-    return p
+    return ROOT / "features" / "web_gui" / "uploads"
 
 
 def static_dir() -> Path:

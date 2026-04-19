@@ -17,4 +17,4 @@ class ProjectListOut(BaseModel):
 class ErrorOut(BaseModel):
     error: str
     code: str
-    raw: str = ""
+    raw: str | None = None

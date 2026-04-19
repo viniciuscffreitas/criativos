@@ -13,8 +13,14 @@ def _store() -> ProjectStore:
 
 @router.get("", response_model=ProjectListOut)
 def list_projects():
-    items = _store().list()
-    return ProjectListOut(projects=[ProjectOut(**p.__dict__) for p in items])
+    try:
+        items = _store().list()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail={
+            "error": str(e),
+            "code": "ADS_FILE_NOT_FOUND",
+        })
+    return ProjectListOut(projects=[ProjectOut.model_validate(p.__dict__) for p in items])
 
 
 @router.get("/{slug}", response_model=ProjectOut, responses={404: {"model": ErrorOut}})
@@ -26,4 +32,9 @@ def get_project(slug: str):
             "error": f"Project {slug!r} not found in projects.yaml",
             "code": "PROJECT_NOT_FOUND",
         })
-    return ProjectOut(**p.__dict__)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail={
+            "error": str(e),
+            "code": "ADS_FILE_NOT_FOUND",
+        })
+    return ProjectOut.model_validate(p.__dict__)
