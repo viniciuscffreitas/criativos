@@ -327,3 +327,137 @@ def test_list_creatives_empty_kind_returns_422(client, tmp_path):
     _seed_ad(ads)
     r = client.get("/api/v1/projects/vibeweb/creatives?kind=")
     assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Generate route tests
+# ---------------------------------------------------------------------------
+
+def test_generate_dry_run_returns_n_variants(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)  # existing helper from Task 6 — has 1 CTA
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 3, "persist": False,
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["variants"]) == 3
+    assert body["methodology"] == "pas"
+    assert body["model"] == "dry-run"
+    assert body["run_id"]  # non-empty
+
+
+def test_generate_unknown_methodology_501(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "aida", "n_variants": 3, "persist": False,
+    })
+    assert r.status_code == 501
+    assert r.json()["code"] == "METHODOLOGY_NOT_IMPLEMENTED"
+
+
+def test_generate_npqel_stub_501(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "npqel", "n_variants": 3, "persist": False,
+    })
+    assert r.status_code == 501
+
+
+def test_generate_unknown_project_returns_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "ghost", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "PROJECT_NOT_FOUND"
+
+
+def test_generate_unknown_ad_returns_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "99",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "AD_NOT_FOUND"
+
+
+def test_generate_missing_brief_returns_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({"ads": {
+        "01_portfolio_grid": {"id": "01", "slug": "portfolio-grid", "variants": []}
+    }}))
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "BRIEF_NOT_FOUND"
+
+
+def test_generate_invalid_brief_empty_ctas_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({"ads": {
+        "01_portfolio_grid": {
+            "id": "01", "slug": "portfolio-grid",
+            "brief": {"product": "p", "audience": "a", "pain": "x",
+                      "ctas": [], "social_proof": None},
+            "variants": [],
+        }
+    }}))
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 400
+    assert r.json()["code"] == "BRIEF_INVALID"
+
+
+def test_generate_persist_true_writes_variants_and_trace(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 2, "persist": True,
+    })
+    assert r.status_code == 200
+    run_id = r.json()["run_id"]
+    data = yaml.safe_load(ads.read_text())
+    assert len(data["ads"]["01_portfolio_grid"]["variants"]) == 2
+    assert data["ads"]["01_portfolio_grid"]["trace"]["last_run"] == run_id
+    assert isinstance(data["ads"]["01_portfolio_grid"]["trace"]["confidence"], float)
+
+
+def test_generate_trace_saved_even_when_not_persisted(client, tmp_path, monkeypatch):
+    # trace_store.save is ALWAYS called, regardless of persist flag
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    # Override traces_dir to a predictable tmp location
+    traces_tmp = tmp_path / "traces"
+    traces_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.services.trace_store.traces_dir",
+                        lambda: traces_tmp)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 200
+    run_id = r.json()["run_id"]
+    trace_file = traces_tmp / f"{run_id}.json"
+    assert trace_file.exists()
+    import json
+    loaded = json.loads(trace_file.read_text())
+    assert loaded["run_id"] == run_id
