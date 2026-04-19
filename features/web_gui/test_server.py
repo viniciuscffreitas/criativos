@@ -698,12 +698,54 @@ def test_generate_stream_done_payload_matches_variant_count(client, tmp_path, mo
     assert len(done_data["variants"]) == 3
 
 
-def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path, monkeypatch):
-    """Non-dry-run (_replay_events) must emit brief node events matching dry_run_events shape."""
+def test_generate_stream_real_mode_emits_token_events(client, tmp_path, monkeypatch):
+    """Real-mode /generate/stream must emit token SSE frames during streaming, not just at the end."""
     import json as _json
-    from features.copy_generation.schema import (
-        AgentResult, CopyVariant, VariantAxes, TraceNode,
+    from features.copy_generation.schema import AgentResult, CopyVariant, VariantAxes
+
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "0")
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-stub")
+
+    fake_variant = CopyVariant(
+        id="V1", headline="H", primary_text="P", description="D",
+        ctas=["go"], confidence="high", confidence_score=0.9,
+        axes=VariantAxes(0.9, 0.8, 0.7), reasoning="r",
     )
+    fake_result = AgentResult(
+        run_id="abc", variants=[fake_variant], trace="t", trace_structured=[],
+        methodology="pas", model="x",
+        pipeline_version="copy_generation@test",
+        seed=None, created_at="2026-04-19T00:00:00Z",
+    )
+
+    def _fake_stream_claude(methodology, user_prompt, n, model):
+        yield ("token", "tok1")
+        yield ("token", "tok2")
+        yield ("result", fake_result)
+
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_stream_claude", _fake_stream_claude)
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    events = _parse_sse_events(raw)
+    assert events[0] == "run_start", f"first event must be run_start, got {events[0]!r}"
+    assert raw.count("event: token\n") >= 2, f"expected >= 2 token events, got: {raw.count('event: token' + chr(10))}"
+    assert "event: done" in raw, "missing done event"
+
+
+def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path, monkeypatch):
+    """Real-mode /generate/stream must emit brief node events matching dry_run_events shape."""
+    import json as _json
+    from features.copy_generation.schema import AgentResult, CopyVariant, VariantAxes
 
     fake_variant = CopyVariant(
         id="v1", headline="Test headline", primary_text="Body", description="Desc",
@@ -713,18 +755,20 @@ def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path
     )
     fake_result = AgentResult(
         run_id="test123", variants=[fake_variant], trace="trace",
-        trace_structured=[TraceNode(id="agent", label="Agente criativo",
-                                    start_ms=0, end_ms=10, tokens=5,
-                                    confidence=0.9, output_preview="Test")],
-        methodology="pas", model="dry-run", pipeline_version="v0",
+        trace_structured=[],
+        methodology="pas", model="claude-sonnet-4-6", pipeline_version="v0",
         seed=None, created_at="2026-04-18T00:00:00",
     )
 
-    monkeypatch.setattr("features.web_gui.api.generate.agent._is_dry_run", lambda: False)
-    monkeypatch.setattr(
-        "features.web_gui.api.generate.agent.generate",
-        lambda brief, methodology, n: fake_result,
-    )
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "0")
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-stub")
+
+    def _fake_stream_claude(methodology, user_prompt, n, model):
+        yield ("token", "tok")
+        yield ("result", fake_result)
+
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_stream_claude", _fake_stream_claude)
 
     ads = tmp_path / "ads.yaml"
     _seed_ad(ads)
@@ -739,11 +783,9 @@ def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path
     events = _parse_sse_events(raw)
     assert events[0] == "run_start"
     assert events[-1] == "done"
-    # brief node events must appear before agent node events
     assert "node_start" in events
     assert "node_done" in events
 
-    # Parse (event, data) pairs
     pairs = []
     pending_event = None
     for line in raw.splitlines():
@@ -815,18 +857,16 @@ def test_generate_stream_token_events_carry_variant_id(client, tmp_path, monkeyp
 
 
 def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, monkeypatch):
-    """_replay_events must propagate real trace values, not hardcoded zeros.
+    """real_stream_events node_done(agent) must carry correct values from the stream.
 
     Asserts that node_done(agent) carries:
-      - tokens from trace_structured (not hardcoded 0)
-      - confidence from the "agent" TraceNode (not hardcoded None)
-      - output_preview from variants[0].headline[:80] (not hardcoded "")
-      - end_ms > 0 (real wall-clock, not hardcoded 0)
+      - tokens = count of "token" events received from _stream_claude (not hardcoded 0)
+      - confidence = None (real_stream_events has no per-token confidence signal)
+      - output_preview = variants[0].headline[:80] (not hardcoded "")
+      - end_ms >= 0 (real wall-clock, not hardcoded 0)
     """
     import json as _json
-    from features.copy_generation.schema import (
-        AgentResult, CopyVariant, VariantAxes, TraceNode,
-    )
+    from features.copy_generation.schema import AgentResult, CopyVariant, VariantAxes
 
     fake_variant = CopyVariant(
         id="v1", headline="Real mode headline", primary_text="Body text",
@@ -837,20 +877,22 @@ def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, mon
     )
     fake_result = AgentResult(
         run_id="replay_test_run", variants=[fake_variant], trace="trace text",
-        trace_structured=[
-            TraceNode(id="agent", label="Agente criativo",
-                      start_ms=0, end_ms=150, tokens=42,
-                      confidence=0.85, output_preview="xxx"),
-        ],
-        methodology="pas", model="claude-sonnet-test", pipeline_version="v0",
+        trace_structured=[],
+        methodology="pas", model="claude-sonnet-4-6", pipeline_version="v0",
         seed=None, created_at="2026-04-18T00:00:00Z",
     )
 
-    monkeypatch.setattr("features.web_gui.api.generate.agent._is_dry_run", lambda: False)
-    monkeypatch.setattr(
-        "features.web_gui.api.generate.agent.generate",
-        lambda brief, methodology, n: fake_result,
-    )
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "0")
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-stub")
+
+    def _fake_stream_claude(methodology, user_prompt, n, model):
+        yield ("token", "chunk1")
+        yield ("token", "chunk2")
+        yield ("token", "chunk3")
+        yield ("result", fake_result)
+
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_stream_claude", _fake_stream_claude)
 
     ads = tmp_path / "ads.yaml"
     _seed_ad(ads)
@@ -862,7 +904,6 @@ def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, mon
         assert r.status_code == 200
         raw = r.read().decode()
 
-    # Parse (event, data) pairs
     pairs = []
     pending_event = None
     for line in raw.splitlines():
@@ -879,13 +920,13 @@ def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, mon
     assert len(agent_done_events) == 1, f"expected exactly one node_done(agent), got {agent_done_events}"
     _, agent_done = agent_done_events[0]
 
-    assert agent_done["tokens"] == 42, f"expected tokens=42 from trace_structured, got {agent_done['tokens']}"
-    assert agent_done["confidence"] == 0.85, f"expected confidence=0.85, got {agent_done['confidence']}"
+    # tokens = count of streaming "token" events (3 chunks above)
+    assert agent_done["tokens"] == 3, f"expected tokens=3 (count of token events), got {agent_done['tokens']}"
+    # real_stream_events has no per-token confidence signal — always None
+    assert agent_done["confidence"] is None, f"expected confidence=None, got {agent_done['confidence']}"
     assert agent_done["output_preview"] == "Real mode headline"[:80], (
         f"expected output_preview from headline, got {agent_done['output_preview']!r}"
     )
-    # end_ms must be a real wall-clock int (>= 0), not a hardcoded sentinel.
-    # Mock runs complete in sub-millisecond time so 0 is a valid honest value here.
     assert isinstance(agent_done["end_ms"], int) and agent_done["end_ms"] >= 0, (
         f"expected end_ms to be a non-negative int (real wall-clock), got {agent_done['end_ms']!r}"
     )

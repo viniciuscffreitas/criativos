@@ -11,7 +11,6 @@ Routes:
 """
 from __future__ import annotations
 
-import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -21,7 +20,7 @@ from pydantic import BaseModel
 
 from features.copy_generation import agent
 from features.copy_generation.schema import Brief
-from features.copy_generation.streaming import dry_run_events, sse, _serialize_result
+from features.copy_generation.streaming import dry_run_events
 from features.web_gui.api._helpers import find_ad_key, resolve_ads_path
 from features.web_gui.services import trace_store, yaml_rw
 
@@ -196,33 +195,11 @@ def post_generate_stream(payload: GenerateIn):
 
 
 def _replay_events(brief: Brief, payload: GenerateIn):
-    """Non-dry-run streaming placeholder: one non-streaming call, replay as events.
-
-    Task 9b will replace this with anthropic.messages.stream().text_stream consumption.
-    """
-    run_start = time.monotonic()
-    result = agent.generate(brief, methodology=payload.methodology, n=payload.n_variants)
-    yield sse("run_start", {
-        "run_id": result.run_id,
-        "pipeline_version": result.pipeline_version,
-        "started_at": result.created_at,
-    })
-    yield sse("node_start", {"node_id": "brief", "label": "Briefing", "start_ms": 0})
-    yield sse("node_done", {
-        "node_id": "brief", "end_ms": 20, "tokens": 0,
-        "confidence": None, "output_preview": brief.pain[:80],
-    })
-    yield sse("node_start", {"node_id": "agent", "label": "Agente criativo", "start_ms": 20})
-    for v in result.variants:
-        yield sse("variant_done", {
-            **asdict(v), "axes": asdict(v.axes), "confidence_symbol": v.confidence_symbol,
-        })
-    # Token/confidence come from agent.trace_structured; populated by Task 9b.
-    yield sse("node_done", {
-        "node_id": "agent",
-        "end_ms": int((time.monotonic() - run_start) * 1000),
-        "tokens": sum(t.tokens for t in result.trace_structured) if result.trace_structured else 0,
-        "confidence": next((t.confidence for t in result.trace_structured if t.id == "agent"), None),
-        "output_preview": result.variants[0].headline[:80] if result.variants else "",
-    })
-    yield sse("done", _serialize_result(result))
+    """Real-mode SSE stream via claude --output-format stream-json (Task 9b)."""
+    from features.copy_generation.streaming import real_stream_events
+    yield from real_stream_events(
+        brief,
+        methodology=payload.methodology,
+        n=payload.n_variants,
+        model="claude-sonnet-4-6",
+    )
