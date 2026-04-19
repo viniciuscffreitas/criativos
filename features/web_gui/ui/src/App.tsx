@@ -79,7 +79,7 @@ export function App() {
           />
         )}
         {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected} onOpenTrace={setTraceRunId}/>}
-        {nav === 'brand' && <BrandLibrary/>}
+        {nav === 'brand' && <BrandLibrary projectSlug={activeProject}/>}
         {selected && <DetailPanel creative={selected} onClose={() => setSelected(null)}/>}
       </div>
       <CommandPalette

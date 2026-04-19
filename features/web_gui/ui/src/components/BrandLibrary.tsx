@@ -1,9 +1,64 @@
 // Brand library view — palette, typography specimen, and asset grid.
 // Colors derived from src/tokens.ts (mirrors brand/tokens.css).
+import { useEffect, useRef, useState } from 'react';
+import { api } from '../api';
 import { tokens } from '../tokens';
 import { IconUpload } from './icons';
 
-export function BrandLibrary() {
+interface BrandLibraryProps {
+  projectSlug: string;
+}
+
+type UploadState =
+  | { kind: 'idle' }
+  | { kind: 'uploading'; count: number }
+  | { kind: 'success'; count: number }
+  | { kind: 'error'; message: string };
+
+const MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED_MIME = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/svg+xml',
+  'application/pdf',
+  'video/mp4',
+]);
+const ACCEPT_ATTR = Array.from(ALLOWED_MIME).join(',');
+
+export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [upload, setUpload] = useState<UploadState>({ kind: 'idle' });
+
+  // Auto-clear the success banner after 3s so the UI returns to idle.
+  useEffect(() => {
+    if (upload.kind !== 'success') return;
+    const t = setTimeout(() => setUpload({ kind: 'idle' }), 3000);
+    return () => clearTimeout(t);
+  }, [upload]);
+
+  const onPick = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const list = Array.from(files);
+    for (const f of list) {
+      if (!ALLOWED_MIME.has(f.type)) {
+        setUpload({ kind: 'error', message: `tipo não suportado: ${f.name} (${f.type || 'desconhecido'})` });
+        return;
+      }
+      if (f.size > MAX_BYTES) {
+        setUpload({ kind: 'error', message: `${f.name} excede 10 MB` });
+        return;
+      }
+    }
+    setUpload({ kind: 'uploading', count: list.length });
+    try {
+      await api.uploadAssets(projectSlug, list);
+      setUpload({ kind: 'success', count: list.length });
+    } catch (err) {
+      console.error('[BrandLibrary] uploadAssets failed', err);
+      setUpload({ kind: 'error', message: err instanceof Error ? err.message : String(err) });
+    }
+  };
+
   const colors = [
     { name: 'Accent', hex: tokens.accent, role: 'Destaque verde' },
     { name: 'Background', hex: tokens.bg, role: 'Fundo escuro' },
@@ -45,8 +100,63 @@ export function BrandLibrary() {
           background: '#f5f5f4', color: '#78716c',
         }}>Vibe Web</span>
         <div style={{ flex: 1 }}/>
-        <button style={btnSecondary}><IconUpload size={13}/> Subir ativo</button>
+        <input
+          ref={inputRef}
+          data-testid="brand-upload-input"
+          type="file"
+          multiple
+          accept={ACCEPT_ATTR}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const picked = e.target.files;
+            void onPick(picked);
+            e.target.value = '';
+          }}
+        />
+        <button
+          style={{ ...btnSecondary, opacity: upload.kind === 'uploading' ? 0.6 : 1 }}
+          disabled={upload.kind === 'uploading'}
+          onClick={() => inputRef.current?.click()}
+        >
+          <IconUpload size={13}/> Subir ativo
+        </button>
       </div>
+
+      {upload.kind === 'uploading' && (
+        <div style={{
+          padding: '8px 20px', fontSize: 12, color: '#78716c',
+          background: '#f5f5f4', borderBottom: '1px solid #e7e5e4',
+          fontFamily: '"Geist Mono", monospace',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: 'var(--accent)',
+            animation: 'pulse 1.2s ease-in-out infinite',
+          }}/>
+          enviando {upload.count} {upload.count === 1 ? 'ativo' : 'ativos'}…
+        </div>
+      )}
+      {upload.kind === 'success' && (
+        <div style={{
+          padding: '8px 20px', fontSize: 12,
+          background: '#dcfce7', color: '#166534',
+          borderBottom: '1px solid #bbf7d0',
+          fontFamily: '"Geist Mono", monospace',
+        }}>
+          {upload.count} {upload.count === 1 ? 'ativo enviado' : 'ativos enviados'}
+        </div>
+      )}
+      {upload.kind === 'error' && (
+        <div role="alert" style={{
+          padding: '8px 20px', fontSize: 12, color: '#dc2626',
+          background: 'rgba(220, 38, 38, 0.10)',
+          borderBottom: '1px solid rgba(220, 38, 38, 0.2)',
+          fontFamily: '"Geist Mono", monospace',
+        }}>
+          erro no envio: {upload.message}
+        </div>
+      )}
 
       <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 28 }}>
         {/* Colors */}
