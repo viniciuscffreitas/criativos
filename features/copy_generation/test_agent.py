@@ -319,3 +319,25 @@ def test_parse_cli_envelope_returns_agent_result_from_well_formed_envelope():
     assert result.variants[0].confidence == "high"
     assert result.methodology == "pas"
     assert result.model == "x"
+
+
+def test_parse_cli_envelope_uses_injected_run_id_and_started_at():
+    """Callers that know subprocess start time can inject timestamps — needed for streaming path."""
+    from features.copy_generation.agent import _parse_cli_envelope
+    from features.copy_generation.methodologies import by_name
+
+    envelope = {
+        "is_error": False,
+        "result": json.dumps([{
+            "headline": "h", "primary_text": "p", "description": "d",
+            "ctas": ["go"], "confidence": "high", "confidence_score": 0.9,
+            "axes": {"relevance": 0.9, "originality": 0.8, "brand_fit": 0.7},
+            "reasoning": "r",
+        }]),
+    }
+    result = _parse_cli_envelope(
+        envelope, methodology=by_name("pas"), model="x",
+        run_id="fixed123", started_at="2026-04-19T00:00:00Z",
+    )
+    assert result.run_id == "fixed123"
+    assert result.created_at == "2026-04-19T00:00:00Z"

@@ -109,14 +109,23 @@ def _run_cli(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess
     )
 
 
-def _parse_cli_envelope(envelope: dict, methodology, model: str) -> AgentResult:
+def _parse_cli_envelope(
+    envelope: dict,
+    methodology,
+    model: str,
+    *,
+    run_id: str | None = None,
+    started_at: str | None = None,
+) -> AgentResult:
     """Parse a claude CLI result envelope into an AgentResult.
 
     Shared by _call_claude (json output) and _stream_claude (stream-json final
-    envelope, added in Task 2) — same envelope shape.
+    envelope, Task 9b) — same envelope shape. Callers that know the subprocess
+    start time should pass run_id + started_at to keep timing accurate;
+    defaults mint fresh values at parse time.
     """
-    run_id = uuid.uuid4().hex[:8]
-    started_at = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    run_id = run_id or uuid.uuid4().hex[:8]
+    started_at = started_at or datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     if envelope.get("is_error"):
         raise RuntimeError(
