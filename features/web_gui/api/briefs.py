@@ -19,6 +19,11 @@ from features.web_gui.settings import projects_yaml_path
 router = APIRouter(prefix="/projects/{slug}/ads/{ad_id}/brief", tags=["briefs"])
 
 
+class _AdNotFound(Exception):
+    """Raised inside a yaml_rw.modify callback when the target ad_id is missing.
+    Caller translates to HTTPException 404 — keeps yaml_rw HTTP-agnostic."""
+
+
 class BriefIn(BaseModel):
     product: str
     audience: str
@@ -41,7 +46,16 @@ def _resolve_ads_path(slug: str) -> Path:
             status_code=404,
             detail={"error": f"project {slug!r} not found", "code": "PROJECT_NOT_FOUND"},
         )
-    ads_path = Path(projects[slug]["ads_path"])
+    entry = projects[slug]
+    if "ads_path" not in entry:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"project {slug!r} has no ads_path configured in projects.yaml",
+                "code": "PROJECT_MISCONFIGURED",
+            },
+        )
+    ads_path = Path(entry["ads_path"])
     if not ads_path.is_absolute():
         ads_path = projects_path.parent / ads_path
     return ads_path
@@ -82,9 +96,17 @@ def put_brief(slug: str, ad_id: str, payload: BriefIn):
     ads_path = _resolve_ads_path(slug)
 
     def mutate(data: dict) -> dict:
-        key = _find_ad_key(data, ad_id)
-        data["ads"][key]["brief"] = payload.model_dump()
-        return data
+        for key, ad in data.get("ads", {}).items():
+            if ad.get("id") == ad_id:
+                data["ads"][key]["brief"] = payload.model_dump()
+                return data
+        raise _AdNotFound(ad_id)
 
-    yaml_rw.modify(ads_path, mutate)
+    try:
+        yaml_rw.modify(ads_path, mutate)
+    except _AdNotFound as exc:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"ad {str(exc)!r} not found in project", "code": "AD_NOT_FOUND"},
+        ) from exc
     return {"updated": True, "brief": payload.model_dump()}

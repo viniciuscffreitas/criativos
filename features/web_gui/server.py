@@ -2,10 +2,10 @@
 FastAPI entry point — verbose route registration, no middleware magic.
 
 Routes:
-  /api/v1/projects            (projects.py)
-  /api/v1/projects/{slug}     (projects.py)
+  /api/v1/projects                              (projects.py)
+  /api/v1/projects/{slug}                       (projects.py)
+  /api/v1/projects/{slug}/ads/{ad_id}/brief     [GET, PUT]  (briefs.py)
   [later tasks add]:
-    /api/v1/projects/{slug}/ads/{ad_id}/brief        [GET, PUT]  (briefs.py)
     /api/v1/projects/{slug}/creatives                (creatives.py)
     /api/v1/generate          [POST]                 (generate.py)
     /api/v1/generate/stream   [POST SSE]             (generate.py)

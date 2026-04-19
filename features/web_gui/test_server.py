@@ -1,4 +1,5 @@
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from features.web_gui.server import create_app
@@ -6,7 +7,6 @@ from features.web_gui.server import create_app
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    import yaml
     projects = tmp_path / "projects.yaml"
     ads = tmp_path / "ads.yaml"
     projects.write_text(yaml.safe_dump({
@@ -113,10 +113,7 @@ def test_get_project_returns_500_when_ads_path_missing(tmp_path, monkeypatch):
     assert r.json()["code"] == "ADS_FILE_NOT_FOUND"
 
 
-import yaml
-
-
-def _seed_ad(client, ads_path):
+def _seed_ad(ads_path):
     ads_path.write_text(yaml.safe_dump({
         "ads": {
             "01_portfolio_grid": {
@@ -131,7 +128,7 @@ def _seed_ad(client, ads_path):
 
 def test_get_brief(client, tmp_path):
     ads = tmp_path / "ads.yaml"
-    _seed_ad(client, ads)
+    _seed_ad(ads)
     r = client.get("/api/v1/projects/vibeweb/ads/01/brief")
     assert r.status_code == 200
     assert r.json()["ctas"] == ["Message me"]
@@ -139,7 +136,7 @@ def test_get_brief(client, tmp_path):
 
 def test_put_brief_persists(client, tmp_path):
     ads = tmp_path / "ads.yaml"
-    _seed_ad(client, ads)
+    _seed_ad(ads)
     new_brief = {
         "product": "new product", "audience": "new aud", "pain": "new pain",
         "social_proof": None, "ctas": ["Click me", "Order now"],
@@ -149,3 +146,38 @@ def test_put_brief_persists(client, tmp_path):
     assert r.json()["updated"] is True
     data = yaml.safe_load(ads.read_text())
     assert data["ads"]["01_portfolio_grid"]["brief"]["ctas"] == ["Click me", "Order now"]
+
+
+def test_get_brief_returns_404_when_ad_has_no_brief(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "variants": [],
+            }
+        }
+    }))
+    r = client.get("/api/v1/projects/vibeweb/ads/01/brief")
+    assert r.status_code == 404
+    assert r.json()["code"] == "BRIEF_NOT_FOUND"
+
+
+def test_get_brief_returns_404_when_ad_id_unknown(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.get("/api/v1/projects/vibeweb/ads/99/brief")
+    assert r.status_code == 404
+    assert r.json()["code"] == "AD_NOT_FOUND"
+
+
+def test_put_brief_returns_404_when_ad_id_unknown(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    new_brief = {
+        "product": "x", "audience": "y", "pain": "z",
+        "social_proof": None, "ctas": ["c"],
+    }
+    r = client.put("/api/v1/projects/vibeweb/ads/99/brief", json=new_brief)
+    assert r.status_code == 404
+    assert r.json()["code"] == "AD_NOT_FOUND"
