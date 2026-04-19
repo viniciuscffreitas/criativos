@@ -111,6 +111,7 @@ export function Generate({ projectSlug, adId, methodology, nVariants, onDone }: 
           }}>Stream de tokens</div>
           <div
             ref={tokenPanelRef}
+            data-testid="token-stream"
             style={{
               flex: 1, minHeight: 0,
               background: '#1c1917',

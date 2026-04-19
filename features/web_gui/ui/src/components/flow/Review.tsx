@@ -31,7 +31,7 @@ export function Review({ result, onFinish }: ReviewProps) {
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+    <div data-testid="review-screen" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         padding: '14px 24px',
@@ -127,6 +127,7 @@ function VariantCard({ variant: v, onToggle }: VariantCardProps) {
   return (
     <div
       onClick={onToggle}
+      data-testid="variant-card"
       style={{
         borderRadius: 8,
         border: v.selected ? '2px solid #1c1917' : '1px solid #e7e5e4',

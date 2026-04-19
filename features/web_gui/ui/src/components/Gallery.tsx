@@ -138,6 +138,7 @@ function GalleryCard({ creative, idx, onOpen }: GalleryCardProps) {
   const [hover, setHover] = useState(false);
   return (
     <div onClick={onOpen}
+      data-testid="creative-card"
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{
         background: '#fff', borderRadius: 10,

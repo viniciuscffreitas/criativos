@@ -14,7 +14,9 @@ interface DetailPanelProps {
 
 export function DetailPanel({ creative, onClose }: DetailPanelProps) {
   return (
-    <div style={{
+    <div
+      data-testid="detail-panel"
+      style={{
       width: 420, flexShrink: 0,
       background: '#ffffff',
       borderLeft: '1px solid #e7e5e4',
