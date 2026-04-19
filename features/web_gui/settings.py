@@ -25,4 +25,4 @@ def static_dir() -> Path:
 
 
 def renders_dir() -> Path:
-    return ROOT / "renders"
+    return ROOT / "ads" / "renders"

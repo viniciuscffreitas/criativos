@@ -65,6 +65,25 @@ def test_create_app_raises_when_ui_required_but_missing(tmp_path, monkeypatch):
         create_app()
 
 
+def test_create_app_raises_when_renders_required_but_missing(tmp_path, monkeypatch):
+    import yaml
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    monkeypatch.setenv("VIBEWEB_REQUIRE_RENDERS", "1")
+
+    monkeypatch.setattr(
+        "features.web_gui.server.renders_dir",
+        lambda: tmp_path / "definitely_missing_renders",
+    )
+
+    from features.web_gui.server import create_app
+    with pytest.raises(RuntimeError, match="renders dir not found"):
+        create_app()
+
+
 def test_list_projects_returns_500_when_ads_path_missing(tmp_path, monkeypatch):
     import yaml
     projects = tmp_path / "projects.yaml"
@@ -302,3 +321,6 @@ def test_list_creatives_variant_expansion(client, tmp_path):
     assert "portfolio-grid-base" in ids
     assert "portfolio-grid-a" in ids
     assert "portfolio-grid-b" in ids
+    # Ordering: base at index 0, variants follow in YAML order
+    assert ids == ["portfolio-grid-base", "portfolio-grid-a", "portfolio-grid-b"]
+    assert [c["variant_id"] for c in creatives] == [None, "A", "B"]
