@@ -21,7 +21,7 @@ import logging
 import os
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from features.web_gui.api import assets, briefs, creatives, generate, projects, traces, variants
@@ -57,6 +57,10 @@ def create_app() -> FastAPI:
     sdir = static_dir()
     if sdir.exists():
         app.mount("/ui", StaticFiles(directory=str(sdir), html=True), name="ui")
+
+        @app.get("/", include_in_schema=False)
+        async def _root_to_ui():
+            return RedirectResponse(url="/ui/", status_code=308)
     else:
         if os.getenv("VIBEWEB_REQUIRE_UI", "0") == "1":
             raise RuntimeError(

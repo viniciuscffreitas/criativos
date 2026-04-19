@@ -1146,3 +1146,68 @@ def test_upload_asset_413_too_large(client, tmp_path, monkeypatch):
     )
     assert r.status_code == 413
     assert r.json()["code"] == "FILE_TOO_LARGE"
+
+
+# ---------------------------------------------------------------------------
+# Root redirect tests — GET / -> /ui/
+# ---------------------------------------------------------------------------
+
+def _make_client_with_ui(tmp_path, monkeypatch):
+    """Build a TestClient with a real static dir mounted at /ui."""
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({
+        "projects": {"vibeweb": {
+            "slug": "vibeweb", "name": "Vibe Web", "description": "",
+            "ads_path": str(ads), "renders_path": str(tmp_path / "renders"),
+            "brand_path": str(tmp_path / "brand"),
+            "created_at": "2026-04-18T00:00:00Z",
+        }}
+    }))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "index.html").write_text(
+        '<!doctype html><html><body><div id="root"></div></body></html>'
+    )
+    monkeypatch.setattr("features.web_gui.server.static_dir", lambda: static)
+    return TestClient(create_app())
+
+
+def test_root_redirects_to_ui(tmp_path, monkeypatch):
+    c = _make_client_with_ui(tmp_path, monkeypatch)
+    r = c.get("/", follow_redirects=False)
+    assert r.status_code == 308
+    assert r.headers["location"] == "/ui/"
+
+
+def test_ui_index_still_served(tmp_path, monkeypatch):
+    c = _make_client_with_ui(tmp_path, monkeypatch)
+    r = c.get("/ui/")
+    assert r.status_code == 200
+    assert '<div id="root"' in r.text
+
+
+def test_api_404_not_redirected(tmp_path, monkeypatch):
+    c = _make_client_with_ui(tmp_path, monkeypatch)
+    r = c.get("/api/v1/bogus", follow_redirects=False)
+    assert r.status_code == 404
+    assert "location" not in {k.lower() for k in r.headers}
+
+
+def test_root_without_ui_mount_returns_404(tmp_path, monkeypatch):
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    monkeypatch.delenv("VIBEWEB_REQUIRE_UI", raising=False)
+    monkeypatch.setattr(
+        "features.web_gui.server.static_dir",
+        lambda: tmp_path / "definitely_no_static",
+    )
+    c = TestClient(create_app())
+    r = c.get("/", follow_redirects=False)
+    assert r.status_code == 404
