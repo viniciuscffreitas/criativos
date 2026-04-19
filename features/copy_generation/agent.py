@@ -149,6 +149,15 @@ def _parse_cli_envelope(
             f"full envelope: {envelope!r}"
         )
 
+    # Strip outer markdown fence if present — model sometimes ignores the
+    # "no markdown fences" directive in the system prompt.
+    if raw.startswith("```"):
+        first_newline = raw.find("\n")
+        if first_newline != -1:
+            raw = raw[first_newline + 1:]
+        if raw.endswith("```"):
+            raw = raw[:-3].rstrip()
+
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError as e:

@@ -343,6 +343,40 @@ def test_parse_cli_envelope_uses_injected_run_id_and_started_at():
     assert result.created_at == "2026-04-19T00:00:00Z"
 
 
+def test_parse_cli_envelope_strips_markdown_fence_with_json_tag():
+    from features.copy_generation.agent import _parse_cli_envelope
+    from features.copy_generation.methodologies import by_name
+
+    inner = json.dumps([{
+        "headline": "h", "primary_text": "p", "description": "d",
+        "ctas": ["go"], "confidence": "high", "confidence_score": 0.9,
+        "axes": {"relevance": 0.9, "originality": 0.8, "brand_fit": 0.7},
+        "reasoning": "r",
+    }])
+    envelope = {"is_error": False, "result": f"```json\n{inner}\n```"}
+    result = _parse_cli_envelope(envelope, methodology=by_name("pas"), model="x")
+    assert len(result.variants) == 1
+    assert result.variants[0].confidence == "high"
+    assert result.methodology == "pas"
+
+
+def test_parse_cli_envelope_strips_markdown_fence_without_lang_tag():
+    from features.copy_generation.agent import _parse_cli_envelope
+    from features.copy_generation.methodologies import by_name
+
+    inner = json.dumps([{
+        "headline": "h", "primary_text": "p", "description": "d",
+        "ctas": ["go"], "confidence": "high", "confidence_score": 0.9,
+        "axes": {"relevance": 0.9, "originality": 0.8, "brand_fit": 0.7},
+        "reasoning": "r",
+    }])
+    envelope = {"is_error": False, "result": f"```\n{inner}\n```"}
+    result = _parse_cli_envelope(envelope, methodology=by_name("pas"), model="x")
+    assert len(result.variants) == 1
+    assert result.variants[0].confidence == "high"
+    assert result.methodology == "pas"
+
+
 # ---------------------------------------------------------------------------
 # _stream_claude — streaming token + result generator
 # ---------------------------------------------------------------------------
