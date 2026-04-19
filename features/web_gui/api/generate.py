@@ -1,5 +1,5 @@
 """
-Generate route — POST /api/v1/generate.
+Generate routes — POST /api/v1/generate and POST /api/v1/generate/stream.
 
 Resolves project + ad, builds a Brief, calls agent.generate(), persists
 variants + trace metadata to ads.yaml (when persist=True), and ALWAYS saves
@@ -7,16 +7,20 @@ the full trace JSON via trace_store.
 
 Routes:
   POST /api/v1/generate
+  POST /api/v1/generate/stream
 """
 from __future__ import annotations
 
 from dataclasses import asdict
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from features.copy_generation import agent
 from features.copy_generation.schema import Brief
+from features.copy_generation.streaming import dry_run_events, sse, _serialize_result
 from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import trace_store, yaml_rw
 
@@ -53,31 +57,18 @@ def _find_ad_key(ads_data: dict, ad_id: str) -> str:
     )
 
 
-@router.post("/generate")
-def post_generate(payload: GenerateIn):
-    # 1. Check methodology is implemented before any I/O.
-    if payload.methodology not in IMPLEMENTED_METHODOLOGIES:
-        raise HTTPException(
-            status_code=501,
-            detail={
-                "error": (
-                    f"methodology {payload.methodology!r} is not implemented; "
-                    f"available: {sorted(IMPLEMENTED_METHODOLOGIES)}"
-                ),
-                "code": "METHODOLOGY_NOT_IMPLEMENTED",
-            },
-        )
-
-    # 2. Resolve project → ads_path.
+def _resolve_brief(payload: GenerateIn) -> tuple[Path, str, Brief]:
+    """Resolve ads_path, ad key, and constructed Brief. Raises HTTPException on invalid input."""
     ads_path = resolve_ads_path(payload.project_slug)
-
-    # 3. Load ads YAML, find ad by id.
-    ads_data = yaml_rw.read(ads_path)
+    try:
+        ads_data = yaml_rw.read(ads_path)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": f"ads file not found: {ads_path}", "code": "ADS_FILE_NOT_FOUND"},
+        ) from exc
     key = _find_ad_key(ads_data, payload.ad_id)
-    ad = ads_data["ads"][key]
-
-    # 4. Extract brief, merge overrides.
-    raw_brief = ad.get("brief")
+    raw_brief = ads_data["ads"][key].get("brief")
     if raw_brief is None:
         raise HTTPException(
             status_code=404,
@@ -85,9 +76,6 @@ def post_generate(payload: GenerateIn):
         )
     if payload.brief_overrides:
         raw_brief = {**raw_brief, **payload.brief_overrides}
-
-    # 5. Construct Brief — maps KeyError (missing field) and ValueError (empty ctas)
-    # to a single 400 BRIEF_INVALID contract so callers never see an opaque 500.
     try:
         brief = Brief(
             product=raw_brief["product"],
@@ -110,6 +98,26 @@ def post_generate(payload: GenerateIn):
             status_code=400,
             detail={"error": str(exc), "code": "BRIEF_INVALID", "raw": str(exc)},
         ) from exc
+    return ads_path, key, brief
+
+
+@router.post("/generate")
+def post_generate(payload: GenerateIn):
+    # 1. Check methodology is implemented before any I/O.
+    if payload.methodology not in IMPLEMENTED_METHODOLOGIES:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": (
+                    f"methodology {payload.methodology!r} is not implemented; "
+                    f"available: {sorted(IMPLEMENTED_METHODOLOGIES)}"
+                ),
+                "code": "METHODOLOGY_NOT_IMPLEMENTED",
+            },
+        )
+
+    # 2–5. Resolve project, ad, brief via shared helper.
+    ads_path, key, brief = _resolve_brief(payload)
 
     # 6. Call the agent. NotImplementedError surfaces for stubs like NPQEL
     # even though we gate at step 1 — leave as an unhandled 500 for anything
@@ -162,3 +170,57 @@ def post_generate(payload: GenerateIn):
 
     # 10. Return serialized result.
     return serialized
+
+
+@router.post("/generate/stream")
+def post_generate_stream(payload: GenerateIn):
+    # 1. Methodology gate BEFORE any I/O.
+    if payload.methodology not in IMPLEMENTED_METHODOLOGIES:
+        raise HTTPException(
+            status_code=501,
+            detail={
+                "error": (
+                    f"methodology {payload.methodology!r} is not implemented; "
+                    f"available: {sorted(IMPLEMENTED_METHODOLOGIES)}"
+                ),
+                "code": "METHODOLOGY_NOT_IMPLEMENTED",
+            },
+        )
+    # 2. Resolve project, ad, brief — raises HTTPException synchronously if invalid.
+    _, _, brief = _resolve_brief(payload)
+
+    # 3. Dispatch to dry-run generator. Real streaming = Task 9b follow-up.
+    if not agent._is_dry_run():
+        # For now, non-dry-run streaming replays from a single non-streaming call.
+        # This keeps the UI contract stable; real token streaming lands in Task 9b.
+        return StreamingResponse(
+            _replay_events(brief, payload),
+            media_type="text/event-stream",
+        )
+    return StreamingResponse(
+        dry_run_events(brief, payload.methodology, payload.n_variants),
+        media_type="text/event-stream",
+    )
+
+
+def _replay_events(brief: Brief, payload: GenerateIn):
+    """Non-dry-run streaming placeholder: one non-streaming call, replay as events.
+
+    Task 9b will replace this with anthropic.messages.stream().text_stream consumption.
+    """
+    result = agent.generate(brief, methodology=payload.methodology, n=payload.n_variants)
+    yield sse("run_start", {
+        "run_id": result.run_id,
+        "pipeline_version": result.pipeline_version,
+        "started_at": result.created_at,
+    })
+    yield sse("node_start", {"node_id": "agent", "label": "Agente criativo", "start_ms": 0})
+    for v in result.variants:
+        yield sse("variant_done", {
+            **asdict(v), "axes": asdict(v.axes), "confidence_symbol": v.confidence_symbol,
+        })
+    yield sse("node_done", {
+        "node_id": "agent", "end_ms": 0, "tokens": 0,
+        "confidence": None, "output_preview": "",
+    })
+    yield sse("done", _serialize_result(result))

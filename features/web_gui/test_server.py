@@ -481,3 +481,129 @@ def test_generate_trace_saved_even_when_not_persisted(client, tmp_path, monkeypa
     import json
     loaded = json.loads(trace_file.read_text())
     assert loaded["run_id"] == run_id
+
+
+# ---------------------------------------------------------------------------
+# Streaming route tests — POST /api/v1/generate/stream
+# ---------------------------------------------------------------------------
+
+def _parse_sse_events(raw: str) -> list[str]:
+    """Return list of event names in order from raw SSE text."""
+    events = []
+    for line in raw.splitlines():
+        if line.startswith("event: "):
+            events.append(line[len("event: "):])
+    return events
+
+
+def test_generate_stream_emits_ordered_events(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_STREAM_TICK_SECONDS", 0.0)
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 2, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    events = _parse_sse_events(raw)
+    assert events[0] == "run_start"
+    assert events[-1] == "done"
+    assert "variant_done" in events
+    assert events.count("variant_done") == 2
+
+
+def test_generate_stream_methodology_501(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "aida", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 501
+    assert r.json()["code"] == "METHODOLOGY_NOT_IMPLEMENTED"
+
+
+def test_generate_stream_unknown_project_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "ghost", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "PROJECT_NOT_FOUND"
+
+
+def test_generate_stream_unknown_ad_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "99",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "AD_NOT_FOUND"
+
+
+def test_generate_stream_missing_brief_404(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({"ads": {
+        "01_portfolio_grid": {"id": "01", "slug": "portfolio-grid", "variants": []}
+    }}))
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 404
+    assert r.json()["code"] == "BRIEF_NOT_FOUND"
+
+
+def test_generate_stream_invalid_brief_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({"ads": {
+        "01_portfolio_grid": {
+            "id": "01", "slug": "portfolio-grid",
+            "brief": {"audience": "a", "pain": "x", "ctas": ["Click"]},
+            "variants": [],
+        }
+    }}))
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 400
+    assert r.json()["code"] == "BRIEF_INVALID"
+
+
+def test_generate_stream_done_payload_matches_variant_count(client, tmp_path, monkeypatch):
+    import json as _json
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    import features.copy_generation.streaming as _s
+    monkeypatch.setattr(_s, "_STREAM_TICK_SECONDS", 0.0)
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 3, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    # Find the `done` event's data line
+    lines = raw.splitlines()
+    done_data = None
+    for i, line in enumerate(lines):
+        if line == "event: done" and i + 1 < len(lines):
+            done_data = _json.loads(lines[i + 1][len("data: "):])
+            break
+    assert done_data is not None, "No 'done' event found in stream"
+    assert len(done_data["variants"]) == 3

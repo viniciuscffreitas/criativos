@@ -7,8 +7,8 @@ Routes:
   /api/v1/projects/{slug}/ads/{ad_id}/brief     [GET, PUT]  (briefs.py)
   /api/v1/projects/{slug}/creatives             [GET]       (creatives.py) ?kind= &status= filters
   /api/v1/generate                              [POST]      (generate.py)
+  /api/v1/generate/stream                       [POST SSE]  (generate.py)
   [later tasks add]:
-    /api/v1/generate/stream   [POST SSE]             (generate.py)
     /api/v1/variants/{run_id}/{variant_id}  [PATCH]  (variants.py)
     /api/v1/traces/{run_id}                          (traces.py)
     /api/v1/assets/upload                            (assets.py)
