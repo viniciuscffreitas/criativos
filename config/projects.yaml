@@ -1,0 +1,9 @@
+projects:
+  vibeweb:
+    slug: vibeweb
+    name: "Vibe Web"
+    description: "Agência web — freelancers EU"
+    ads_path: config/ads.yaml
+    renders_path: ads/renders/
+    brand_path: brand/
+    created_at: "2026-04-18T00:00:00Z"
