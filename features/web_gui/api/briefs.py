@@ -8,13 +8,12 @@ Routes:
 PUT uses yaml_rw.modify() so the full read-mutate-write is held under LOCK_EX.
 """
 from __future__ import annotations
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import yaml_rw
-from features.web_gui.settings import projects_yaml_path
 
 router = APIRouter(prefix="/projects/{slug}/ads/{ad_id}/brief", tags=["briefs"])
 
@@ -36,30 +35,6 @@ class BriefOut(BriefIn):
     pass
 
 
-def _resolve_ads_path(slug: str) -> Path:
-    """Read projects.yaml and resolve the ads_path for this slug (relative to config dir)."""
-    projects_path = projects_yaml_path()
-    data = yaml_rw.read(projects_path)
-    projects = data.get("projects", {})
-    if slug not in projects:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": f"project {slug!r} not found", "code": "PROJECT_NOT_FOUND"},
-        )
-    entry = projects[slug]
-    if "ads_path" not in entry:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": f"project {slug!r} has no ads_path configured in projects.yaml",
-                "code": "PROJECT_MISCONFIGURED",
-            },
-        )
-    ads_path = Path(entry["ads_path"])
-    if not ads_path.is_absolute():
-        ads_path = projects_path.parent / ads_path
-    return ads_path
-
 
 def _find_ad_key(ads_data: dict, ad_id: str) -> str:
     for key, ad in ads_data.get("ads", {}).items():
@@ -73,7 +48,7 @@ def _find_ad_key(ads_data: dict, ad_id: str) -> str:
 
 @router.get("", response_model=BriefOut)
 def get_brief(slug: str, ad_id: str):
-    ads_path = _resolve_ads_path(slug)
+    ads_path = resolve_ads_path(slug)
     data = yaml_rw.read(ads_path)
     key = _find_ad_key(data, ad_id)
     brief = data["ads"][key].get("brief")
@@ -93,7 +68,7 @@ def get_brief(slug: str, ad_id: str):
 
 @router.put("")
 def put_brief(slug: str, ad_id: str, payload: BriefIn):
-    ads_path = _resolve_ads_path(slug)
+    ads_path = resolve_ads_path(slug)
 
     def mutate(data: dict) -> dict:
         for key, ad in data.get("ads", {}).items():

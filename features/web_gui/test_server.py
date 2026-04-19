@@ -422,6 +422,26 @@ def test_generate_invalid_brief_empty_ctas_returns_400(client, tmp_path, monkeyp
     })
     assert r.status_code == 400
     assert r.json()["code"] == "BRIEF_INVALID"
+    assert "cta" in r.json()["error"].lower()
+
+
+def test_generate_invalid_brief_missing_product_returns_400(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({"ads": {
+        "01_portfolio_grid": {
+            "id": "01", "slug": "portfolio-grid",
+            "brief": {"audience": "a", "pain": "x", "ctas": ["Click"]},
+            "variants": [],
+        }
+    }}))
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 400
+    assert r.json()["code"] == "BRIEF_INVALID"
+    assert "product" in r.json()["error"]
 
 
 def test_generate_persist_true_writes_variants_and_trace(client, tmp_path, monkeypatch):

@@ -11,20 +11,21 @@ Routes:
 from __future__ import annotations
 
 from dataclasses import asdict
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from features.copy_generation import agent
 from features.copy_generation.schema import Brief
+from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import trace_store, yaml_rw
-from features.web_gui.settings import projects_yaml_path
 
 router = APIRouter(tags=["generate"])
 
-# Only methodologies with complete implementations are accepted at the route
-# boundary. NPQEL and others return 501 even when present in the agent registry.
+# Lists methodologies whose prompts + parsers are fully wired. Registered-but-stubbed
+# ones (e.g. NPQEL) live in copy_generation/methodologies/__init__.py but raise
+# NotImplementedError; this gate converts those to 501 before the agent is invoked.
+# Keep in sync with the registry when a methodology graduates from stub to live.
 IMPLEMENTED_METHODOLOGIES: frozenset[str] = frozenset({"pas"})
 
 
@@ -40,37 +41,6 @@ class GenerateIn(BaseModel):
 class _AdNotFound(Exception):
     """Raised inside a yaml_rw.modify callback when the target ad_id is missing.
     Caller translates to HTTPException 404 — keeps yaml_rw HTTP-agnostic."""
-
-
-class _BriefNotFound(Exception):
-    """Raised inside a yaml_rw.modify callback when the ad has no brief key.
-    Caller translates to HTTPException 404 — keeps yaml_rw HTTP-agnostic."""
-
-
-# Duplicated from briefs.py/creatives.py — extraction deferred to post-MVP shared helper.
-def _resolve_ads_path(slug: str) -> Path:
-    """Read projects.yaml and resolve the ads_path for this slug (relative to config dir)."""
-    projects_path = projects_yaml_path()
-    data = yaml_rw.read(projects_path)
-    projects = data.get("projects", {})
-    if slug not in projects:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": f"project {slug!r} not found", "code": "PROJECT_NOT_FOUND"},
-        )
-    entry = projects[slug]
-    if "ads_path" not in entry:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": f"project {slug!r} has no ads_path configured in projects.yaml",
-                "code": "PROJECT_MISCONFIGURED",
-            },
-        )
-    ads_path = Path(entry["ads_path"])
-    if not ads_path.is_absolute():
-        ads_path = projects_path.parent / ads_path
-    return ads_path
 
 
 def _find_ad_key(ads_data: dict, ad_id: str) -> str:
@@ -99,7 +69,7 @@ def post_generate(payload: GenerateIn):
         )
 
     # 2. Resolve project → ads_path.
-    ads_path = _resolve_ads_path(payload.project_slug)
+    ads_path = resolve_ads_path(payload.project_slug)
 
     # 3. Load ads YAML, find ad by id.
     ads_data = yaml_rw.read(ads_path)
@@ -116,7 +86,8 @@ def post_generate(payload: GenerateIn):
     if payload.brief_overrides:
         raw_brief = {**raw_brief, **payload.brief_overrides}
 
-    # 5. Construct Brief — may raise ValueError for empty ctas.
+    # 5. Construct Brief — maps KeyError (missing field) and ValueError (empty ctas)
+    # to a single 400 BRIEF_INVALID contract so callers never see an opaque 500.
     try:
         brief = Brief(
             product=raw_brief["product"],
@@ -125,6 +96,15 @@ def post_generate(payload: GenerateIn):
             ctas=raw_brief.get("ctas") or [],
             social_proof=raw_brief.get("social_proof"),
         )
+    except KeyError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"brief missing required field: {exc.args[0]!r}",
+                "code": "BRIEF_INVALID",
+                "raw": str(exc),
+            },
+        ) from exc
     except ValueError as exc:
         raise HTTPException(
             status_code=400,

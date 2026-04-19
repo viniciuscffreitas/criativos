@@ -1,0 +1,41 @@
+"""HTTP-layer helpers shared across api/ routes.
+
+Private module (leading underscore) — not part of the public API surface.
+"""
+from __future__ import annotations
+from pathlib import Path
+
+from fastapi import HTTPException
+
+from features.web_gui.services import yaml_rw
+from features.web_gui.settings import projects_yaml_path
+
+
+def resolve_ads_path(slug: str) -> Path:
+    """Look up `slug` in projects.yaml and return the resolved ads_path.
+
+    Raises HTTPException(404) for unknown slug, HTTPException(500) when the
+    project entry is missing the required `ads_path` key. Relative paths are
+    resolved against projects.yaml's directory, matching ProjectStore behavior.
+    """
+    projects_path = projects_yaml_path()
+    data = yaml_rw.read(projects_path)
+    projects = data.get("projects", {})
+    if slug not in projects:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"project {slug!r} not found", "code": "PROJECT_NOT_FOUND"},
+        )
+    entry = projects[slug]
+    if "ads_path" not in entry:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": f"project {slug!r} has no ads_path configured in projects.yaml",
+                "code": "PROJECT_MISCONFIGURED",
+            },
+        )
+    ads_path = Path(entry["ads_path"])
+    if not ads_path.is_absolute():
+        ads_path = projects_path.parent / ads_path
+    return ads_path

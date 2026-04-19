@@ -7,13 +7,12 @@ Routes:
 Each ad in ads.yaml yields one base creative plus one entry per variant.
 """
 from __future__ import annotations
-from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
+from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import yaml_rw
-from features.web_gui.settings import projects_yaml_path
 
 router = APIRouter(prefix="/projects/{slug}/creatives", tags=["creatives"])
 
@@ -38,38 +37,13 @@ class CreativeListOut(BaseModel):
     creatives: list[CreativeOut]
 
 
-def _resolve_ads_path(slug: str) -> Path:
-    """Read projects.yaml, assert slug exists and has ads_path, resolve to absolute Path."""
-    projects_path = projects_yaml_path()
-    data = yaml_rw.read(projects_path)
-    projects = data.get("projects", {})
-    if slug not in projects:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": f"project {slug!r} not found", "code": "PROJECT_NOT_FOUND"},
-        )
-    entry = projects[slug]
-    if "ads_path" not in entry:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": f"project {slug!r} has no ads_path configured in projects.yaml",
-                "code": "PROJECT_MISCONFIGURED",
-            },
-        )
-    ads_path = Path(entry["ads_path"])
-    if not ads_path.is_absolute():
-        ads_path = projects_path.parent / ads_path
-    return ads_path
-
-
 @router.get("", response_model=CreativeListOut)
 def list_creatives(
     slug: str,
     kind: str | None = Query(default=None, min_length=1),
     status: str | None = Query(default=None, min_length=1),
 ):
-    ads_path = _resolve_ads_path(slug)
+    ads_path = resolve_ads_path(slug)
     try:
         data = yaml_rw.read(ads_path)
     except FileNotFoundError as exc:
