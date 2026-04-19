@@ -13,7 +13,6 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   listProjects: () => req<{ projects: Project[] }>('/projects'),
-  getProject: (slug: string) => req<Project>(`/projects/${slug}`),
   listCreatives: (slug: string, kind?: string) =>
     req<{ creatives: Creative[] }>(`/projects/${slug}/creatives${kind ? `?kind=${kind}` : ''}`),
   getBrief: (slug: string, adId: string) =>
@@ -22,8 +21,6 @@ export const api = {
     req<{ updated: boolean; brief: Brief }>(`/projects/${slug}/ads/${adId}/brief`, {
       method: 'PUT', body: JSON.stringify(brief),
     }),
-  generate: (payload: GenerateRequest) =>
-    req<AgentResult>('/generate', { method: 'POST', body: JSON.stringify(payload) }),
   patchVariant: (
     runId: string,
     variantId: string,
