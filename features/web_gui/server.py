@@ -8,10 +8,9 @@ Routes:
   /api/v1/projects/{slug}/creatives             [GET]       (creatives.py) ?kind= &status= filters
   /api/v1/generate                              [POST]      (generate.py)
   /api/v1/generate/stream                       [POST SSE]  (generate.py)
-  [later tasks add]:
-    /api/v1/variants/{run_id}/{variant_id}  [PATCH]  (variants.py)
-    /api/v1/traces/{run_id}                          (traces.py)
-    /api/v1/assets/upload                            (assets.py)
+  /api/v1/variants/{run_id}/{variant_id}        [PATCH]     (variants.py)
+  /api/v1/traces/{run_id}                       [GET]       (traces.py)
+  /api/v1/assets/upload                         [POST]      (assets.py)
 
 Mounted routes:
   /renders   StaticFiles — pre-rendered PNG creatives (renders_dir())
@@ -25,7 +24,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from features.web_gui.api import briefs, creatives, generate, projects
+from features.web_gui.api import assets, briefs, creatives, generate, projects, traces, variants
 from features.web_gui.settings import renders_dir, static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
@@ -37,6 +36,9 @@ def create_app() -> FastAPI:
     app.include_router(briefs.router, prefix="/api/v1")
     app.include_router(creatives.router, prefix="/api/v1")
     app.include_router(generate.router, prefix="/api/v1")
+    app.include_router(variants.router, prefix="/api/v1")
+    app.include_router(traces.router, prefix="/api/v1")
+    app.include_router(assets.router, prefix="/api/v1")
 
     @app.exception_handler(HTTPException)
     async def http_exc_handler(_, exc: HTTPException):

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from features.copy_generation import agent
 from features.copy_generation.schema import Brief
 from features.copy_generation.streaming import dry_run_events, sse, _serialize_result
-from features.web_gui.api._helpers import resolve_ads_path
+from features.web_gui.api._helpers import find_ad_key, resolve_ads_path
 from features.web_gui.services import trace_store, yaml_rw
 
 router = APIRouter(tags=["generate"])
@@ -48,16 +48,6 @@ class _AdNotFound(Exception):
     Caller translates to HTTPException 404 — keeps yaml_rw HTTP-agnostic."""
 
 
-def _find_ad_key(ads_data: dict, ad_id: str) -> str:
-    for key, ad in ads_data.get("ads", {}).items():
-        if ad.get("id") == ad_id:
-            return key
-    raise HTTPException(
-        status_code=404,
-        detail={"error": f"ad {ad_id!r} not found in project", "code": "AD_NOT_FOUND"},
-    )
-
-
 def _resolve_brief(payload: GenerateIn) -> tuple[Path, str, Brief]:
     """Resolve ads_path, ad key, and constructed Brief. Raises HTTPException on invalid input."""
     ads_path = resolve_ads_path(payload.project_slug)
@@ -68,7 +58,7 @@ def _resolve_brief(payload: GenerateIn) -> tuple[Path, str, Brief]:
             status_code=500,
             detail={"error": f"ads file not found: {ads_path}", "code": "ADS_FILE_NOT_FOUND"},
         ) from exc
-    key = _find_ad_key(ads_data, payload.ad_id)
+    key = find_ad_key(ads_data, payload.ad_id)
     raw_brief = ads_data["ads"][key].get("brief")
     if raw_brief is None:
         raise HTTPException(

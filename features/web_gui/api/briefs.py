@@ -12,7 +12,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from features.web_gui.api._helpers import resolve_ads_path
+from features.web_gui.api._helpers import find_ad_key, resolve_ads_path
 from features.web_gui.services import yaml_rw
 
 router = APIRouter(prefix="/projects/{slug}/ads/{ad_id}/brief", tags=["briefs"])
@@ -36,21 +36,11 @@ class BriefOut(BriefIn):
 
 
 
-def _find_ad_key(ads_data: dict, ad_id: str) -> str:
-    for key, ad in ads_data.get("ads", {}).items():
-        if ad.get("id") == ad_id:
-            return key
-    raise HTTPException(
-        status_code=404,
-        detail={"error": f"ad {ad_id!r} not found in project", "code": "AD_NOT_FOUND"},
-    )
-
-
 @router.get("", response_model=BriefOut)
 def get_brief(slug: str, ad_id: str):
     ads_path = resolve_ads_path(slug)
     data = yaml_rw.read(ads_path)
-    key = _find_ad_key(data, ad_id)
+    key = find_ad_key(data, ad_id)
     brief = data["ads"][key].get("brief")
     if brief is None:
         raise HTTPException(

@@ -800,3 +800,192 @@ def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, mon
     assert isinstance(agent_done["end_ms"], int) and agent_done["end_ms"] >= 0, (
         f"expected end_ms to be a non-negative int (real wall-clock), got {agent_done['end_ms']!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Variants PATCH tests — /api/v1/variants/{run_id}/{variant_id}
+# ---------------------------------------------------------------------------
+
+def _seed_ad_with_variants(ads_path, run_id: str):
+    """Seed an ad with two variants and a trace.last_run pointing to run_id."""
+    ads_path.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "brief": {"product": "p", "audience": "a", "pain": "pa",
+                          "social_proof": "sp", "ctas": ["Message me"]},
+                "trace": {"last_run": run_id, "confidence": 0.9},
+                "variants": [
+                    {"id": "v1", "headline": "H1", "primary_text": "PT1",
+                     "ctas": ["Buy"], "selected": False},
+                    {"id": "v2", "headline": "H2", "primary_text": "PT2",
+                     "ctas": ["Order"], "selected": False},
+                ],
+            }
+        }
+    }))
+
+
+def test_patch_variant_persists_selection(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    run_id = "run-abc-123"
+    _seed_ad_with_variants(ads, run_id)
+
+    r = client.patch(f"/api/v1/variants/{run_id}/v1", json={"selected": True})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["id"] == "v1"
+    assert body["selected"] is True
+
+    data = yaml.safe_load(ads.read_text())
+    variants = data["ads"]["01_portfolio_grid"]["variants"]
+    v1 = next(v for v in variants if v["id"] == "v1")
+    assert v1["selected"] is True
+
+
+def test_patch_variant_404_unknown_run_id(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad_with_variants(ads, "run-known")
+
+    r = client.patch("/api/v1/variants/run-unknown/v1", json={"selected": True})
+    assert r.status_code == 404
+    assert r.json()["code"] == "VARIANT_NOT_FOUND"
+
+
+def test_patch_variant_404_unknown_variant_id_but_known_run(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    run_id = "run-abc-456"
+    _seed_ad_with_variants(ads, run_id)
+
+    r = client.patch(f"/api/v1/variants/{run_id}/no-such-variant", json={"selected": True})
+    assert r.status_code == 404
+    assert r.json()["code"] == "VARIANT_NOT_FOUND"
+
+
+# ---------------------------------------------------------------------------
+# Traces GET tests — /api/v1/traces/{run_id}
+# ---------------------------------------------------------------------------
+
+def test_get_trace_returns_persisted(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("VIBEWEB_DRY_RUN", "1")
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+
+    traces_tmp = tmp_path / "traces"
+    traces_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.services.trace_store.traces_dir", lambda: traces_tmp)
+    monkeypatch.setattr("features.web_gui.api.traces.traces_dir", lambda: traces_tmp)
+
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 200
+    run_id = r.json()["run_id"]
+
+    r2 = client.get(f"/api/v1/traces/{run_id}")
+    assert r2.status_code == 200
+    body = r2.json()
+    assert body["run_id"] == run_id
+    assert "variants" in body
+
+
+def test_get_trace_404_unknown_run_id(client, tmp_path, monkeypatch):
+    traces_tmp = tmp_path / "traces"
+    traces_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.traces.traces_dir", lambda: traces_tmp)
+
+    r = client.get("/api/v1/traces/run-does-not-exist")
+    assert r.status_code == 404
+    assert r.json()["code"] == "TRACE_NOT_FOUND"
+
+
+def test_get_trace_400_invalid_run_id_chars(client):
+    # run_id with a dot bypasses Starlette path normalisation but fails our
+    # regex guard ([A-Za-z0-9_-]{1,64}), returning 400 INVALID_RUN_ID.
+    # Note: ..%2F.. is blocked at the routing layer (404) before our handler
+    # runs — Starlette's own path traversal protection. Our guard covers the
+    # remaining surface (dots, slashes in decoded form, etc.).
+    r = client.get("/api/v1/traces/run.id.with.dots")
+    assert r.status_code == 400
+    assert r.json()["code"] == "INVALID_RUN_ID"
+
+
+# ---------------------------------------------------------------------------
+# Assets upload tests — POST /api/v1/assets/upload
+# ---------------------------------------------------------------------------
+
+def test_upload_asset_stores_file(client, tmp_path, monkeypatch):
+    uploads_tmp = tmp_path / "uploads"
+    uploads_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
+    monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
+
+    import io
+    png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 20  # minimal fake PNG
+    r = client.post(
+        "/api/v1/assets/upload",
+        data={"project_slug": "vibeweb"},
+        files={"files": ("test.png", io.BytesIO(png_bytes), "image/png")},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert "uploaded" in body
+    assert len(body["uploaded"]) == 1
+    item = body["uploaded"][0]
+    assert "file_id" in item
+    assert item["filename"] == "test.png"
+    assert item["size"] == len(png_bytes)
+    assert item["kind"] == "image"
+
+
+def test_upload_asset_404_unknown_project(client, tmp_path, monkeypatch):
+    uploads_tmp = tmp_path / "uploads"
+    uploads_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
+
+    import io
+    r = client.post(
+        "/api/v1/assets/upload",
+        data={"project_slug": "ghost"},
+        files={"files": ("test.png", io.BytesIO(b"data"), "image/png")},
+    )
+    assert r.status_code == 404
+    assert r.json()["code"] == "PROJECT_NOT_FOUND"
+
+
+def test_upload_asset_415_disallowed_type(client, tmp_path, monkeypatch):
+    uploads_tmp = tmp_path / "uploads"
+    uploads_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
+    monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
+
+    import io
+    r = client.post(
+        "/api/v1/assets/upload",
+        data={"project_slug": "vibeweb"},
+        files={"files": ("malware.exe", io.BytesIO(b"MZ\x90\x00"), "application/octet-stream")},
+    )
+    assert r.status_code == 415
+    assert r.json()["code"] == "UNSUPPORTED_MEDIA_TYPE"
+
+
+def test_upload_asset_strips_path_in_filename(client, tmp_path, monkeypatch):
+    uploads_tmp = tmp_path / "uploads"
+    uploads_tmp.mkdir()
+    monkeypatch.setattr("features.web_gui.api.assets.uploads_dir", lambda: uploads_tmp)
+    monkeypatch.setattr("features.web_gui.services.asset_store.uploads_dir", lambda: uploads_tmp)
+
+    import io
+    png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 20
+    r = client.post(
+        "/api/v1/assets/upload",
+        data={"project_slug": "vibeweb"},
+        files={"files": ("../../evil.png", io.BytesIO(png_bytes), "image/png")},
+    )
+    assert r.status_code == 200
+    item = r.json()["uploaded"][0]
+    assert item["filename"] == "evil.png"
+    assert "/" not in item["filename"]
+    assert "\\" not in item["filename"]
