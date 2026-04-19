@@ -341,3 +341,123 @@ def test_parse_cli_envelope_uses_injected_run_id_and_started_at():
     )
     assert result.run_id == "fixed123"
     assert result.created_at == "2026-04-19T00:00:00Z"
+
+
+# ---------------------------------------------------------------------------
+# _stream_claude — streaming token + result generator
+# ---------------------------------------------------------------------------
+
+class _BaseFakePopen:
+    """Minimal Popen stand-in for _stream_claude tests.
+
+    Patches subprocess.Popen globally, so _pipeline_version()'s internal
+    subprocess.check_output call also hits this fake. communicate() returns a
+    plausible git sha so _pipeline_version() succeeds without touching disk.
+    """
+    stdout = iter([])
+    returncode = 0
+    args: list = []  # required by subprocess.run → CompletedProcess(process.args, ...)
+
+    class _Stderr:
+        def read(self_inner): return ""
+
+    stderr = _Stderr()
+
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def wait(self, timeout=None): return self.returncode
+    def kill(self): pass
+    def communicate(self, input=None, timeout=None): return ("fake-sha\n", "")
+    def poll(self): return self.returncode
+
+
+def test_stream_claude_yields_text_deltas_then_agent_result(monkeypatch):
+    """stream-json: two text_deltas then a result envelope → 2 token yields + 1 result yield."""
+    from features.copy_generation import agent
+    from features.copy_generation.methodologies import by_name
+
+    lines = [
+        '{"type":"stream_event","event":{"type":"message_start","message":{}}}',
+        '{"type":"stream_event","event":{"type":"content_block_start","index":0,"content_block":{"type":"text"}}}',
+        '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"[{\\"h"}}}',
+        '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"eadl"}}}',
+        json.dumps({
+            "type": "result", "subtype": "success", "is_error": False,
+            "result": json.dumps([{
+                "headline": "H", "primary_text": "P", "description": "D",
+                "ctas": ["go"], "confidence": "high", "confidence_score": 0.8,
+                "axes": {"relevance": 0.9, "originality": 0.8, "brand_fit": 0.7},
+                "reasoning": "r",
+            }]),
+        }),
+    ]
+
+    class FakePopen(_BaseFakePopen):
+        def __init__(self, *a, **kw):
+            self.stdout = iter(l + "\n" for l in lines)
+
+    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    events = list(agent._stream_claude(by_name("pas"), "prompt", n=1, model="x"))
+    kinds = [e[0] for e in events]
+    assert kinds.count("token") == 2
+    assert kinds[-1] == "result"
+    assert events[0] == ("token", '[{"h')
+    result = events[-1][1]
+    assert len(result.variants) == 1
+    assert result.variants[0].headline == "H"
+    assert result.model == "x"
+    assert result.methodology == "pas"
+
+
+def test_stream_claude_raises_on_missing_result_envelope(monkeypatch):
+    """No result envelope in stream → RuntimeError."""
+    from features.copy_generation import agent
+    from features.copy_generation.methodologies import by_name
+
+    lines = [
+        '{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"hi"}}}',
+    ]
+
+    class FakePopen(_BaseFakePopen):
+        def __init__(self, *a, **kw):
+            self.stdout = iter(l + "\n" for l in lines)
+
+    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    with pytest.raises(RuntimeError, match="without a 'result' envelope"):
+        list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))
+
+
+def test_stream_claude_raises_on_non_zero_exit(monkeypatch):
+    """CLI exits with error → RuntimeError with stderr context."""
+    from features.copy_generation import agent
+    from features.copy_generation.methodologies import by_name
+
+    class FakePopen(_BaseFakePopen):
+        def __init__(self, *a, **kw):
+            self.stdout = iter([])
+            self.returncode = 2
+
+        class _Stderr:
+            def read(self_inner): return "auth failed"
+
+        stderr = _Stderr()
+
+        def wait(self, timeout=None): return 2
+
+    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    with pytest.raises(RuntimeError, match=r"exited 2.*auth failed"):
+        list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))
+
+
+def test_stream_claude_raises_on_malformed_line(monkeypatch):
+    """Non-JSON line in stream → RuntimeError with the bad line embedded."""
+    from features.copy_generation import agent
+    from features.copy_generation.methodologies import by_name
+
+    class FakePopen(_BaseFakePopen):
+        def __init__(self, *a, **kw):
+            self.stdout = iter(["not-json\n"])
+
+    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    with pytest.raises(RuntimeError, match="non-JSON line"):
+        list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))

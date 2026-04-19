@@ -22,6 +22,7 @@ import os
 import subprocess
 import uuid
 from pathlib import Path
+from typing import Any, Iterator
 
 from features.copy_generation.methodologies import by_name
 from features.copy_generation.schema import AgentResult, Brief, CopyVariant, VariantAxes
@@ -244,6 +245,84 @@ def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResu
         ) from e
 
     return _parse_cli_envelope(envelope, methodology, model)
+
+
+def _stream_claude(methodology, user_prompt: str, n: int, model: str) -> Iterator[tuple[str, Any]]:
+    """Yield ('token', str) during stream, then ('result', AgentResult) at end.
+
+    Spawns `claude -p … --output-format stream-json --include-partial-messages --verbose`
+    and iterates stdout line-by-line so tokens surface as soon as the CLI emits them.
+    Raises RuntimeError with full CLI context on any CLI or parse failure — no
+    silent fallbacks (CLAUDE.md §2.7).
+    """
+    system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
+    run_id = uuid.uuid4().hex[:8]
+    started_at = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    cmd = [
+        "claude", "-p", user_prompt,
+        "--append-system-prompt", system_text,
+        "--output-format", "stream-json",
+        "--include-partial-messages", "--verbose",
+        "--model", model,
+    ]
+
+    final_envelope: dict | None = None
+    with subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        env=_build_cli_env(),
+    ) as proc:
+        assert proc.stdout is not None  # PIPE set above — narrows for type-checkers
+        for raw in proc.stdout:
+            raw = raw.strip()
+            if not raw:
+                continue
+            try:
+                event = json.loads(raw)
+            except json.JSONDecodeError as e:
+                raise RuntimeError(
+                    f"claude stream emitted non-JSON line for methodology "
+                    f"{methodology.name!r}: {raw!r}"
+                ) from e
+            etype = event.get("type")
+            if etype == "stream_event":
+                inner = event.get("event", {})
+                if inner.get("type") == "content_block_delta":
+                    delta = inner.get("delta", {})
+                    if delta.get("type") == "text_delta":
+                        text = delta.get("text", "")
+                        if text:
+                            yield ("token", text)
+            elif etype == "result":
+                final_envelope = event
+        try:
+            proc.wait(timeout=_CLI_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired as e:
+            proc.kill()
+            raise RuntimeError(
+                f"claude stream timed out after {_CLI_TIMEOUT_SECONDS}s "
+                f"for methodology {methodology.name!r}"
+            ) from e
+        if proc.returncode != 0:
+            stderr = proc.stderr.read() if proc.stderr else ""
+            raise RuntimeError(
+                f"claude CLI stream exited {proc.returncode} for methodology "
+                f"{methodology.name!r}. stderr: {stderr!r}"
+            )
+
+    if final_envelope is None:
+        raise RuntimeError(
+            f"claude stream finished without a 'result' envelope for "
+            f"methodology {methodology.name!r}"
+        )
+    yield ("result", _parse_cli_envelope(
+        final_envelope, methodology, model,
+        run_id=run_id, started_at=started_at,
+    ))
 
 
 def _pipeline_version() -> str:
