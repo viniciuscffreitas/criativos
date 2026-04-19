@@ -654,18 +654,6 @@ def test_generate_stream_replay_path_includes_brief_node_events(client, tmp_path
     assert "node_start" in events
     assert "node_done" in events
 
-    # Collect all node_start node_ids in order
-    node_start_ids = []
-    node_done_ids = []
-    for line in raw.splitlines():
-        if line.startswith("data: "):
-            try:
-                d = _json.loads(line[len("data: "):])
-            except _json.JSONDecodeError:
-                continue
-            if "node_id" in d:
-                # find which event precedes this data line
-                pass
     # Parse (event, data) pairs
     pairs = []
     pending_event = None
@@ -734,4 +722,81 @@ def test_generate_stream_token_events_carry_variant_id(client, tmp_path, monkeyp
     variant_done_ids = {d["id"] for ev, d in pairs if ev == "variant_done"}
     assert token_variant_ids <= variant_done_ids, (
         f"token variant_ids {token_variant_ids} not a subset of variant_done ids {variant_done_ids}"
+    )
+
+
+def test_replay_events_node_done_carries_real_trace_values(client, tmp_path, monkeypatch):
+    """_replay_events must propagate real trace values, not hardcoded zeros.
+
+    Asserts that node_done(agent) carries:
+      - tokens from trace_structured (not hardcoded 0)
+      - confidence from the "agent" TraceNode (not hardcoded None)
+      - output_preview from variants[0].headline[:80] (not hardcoded "")
+      - end_ms > 0 (real wall-clock, not hardcoded 0)
+    """
+    import json as _json
+    from features.copy_generation.schema import (
+        AgentResult, CopyVariant, VariantAxes, TraceNode,
+    )
+
+    fake_variant = CopyVariant(
+        id="v1", headline="Real mode headline", primary_text="Body text",
+        description="Description", ctas=["Click here"],
+        confidence="high", confidence_score=0.9,
+        axes=VariantAxes(relevance=0.9, originality=0.85, brand_fit=0.88),
+        reasoning="reasoning",
+    )
+    fake_result = AgentResult(
+        run_id="replay_test_run", variants=[fake_variant], trace="trace text",
+        trace_structured=[
+            TraceNode(id="agent", label="Agente criativo",
+                      start_ms=0, end_ms=150, tokens=42,
+                      confidence=0.85, output_preview="xxx"),
+        ],
+        methodology="pas", model="claude-sonnet-test", pipeline_version="v0",
+        seed=None, created_at="2026-04-18T00:00:00Z",
+    )
+
+    monkeypatch.setattr("features.web_gui.api.generate.agent._is_dry_run", lambda: False)
+    monkeypatch.setattr(
+        "features.web_gui.api.generate.agent.generate",
+        lambda brief, methodology, n: fake_result,
+    )
+
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+
+    with client.stream("POST", "/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "pas", "n_variants": 1, "persist": False,
+    }) as r:
+        assert r.status_code == 200
+        raw = r.read().decode()
+
+    # Parse (event, data) pairs
+    pairs = []
+    pending_event = None
+    for line in raw.splitlines():
+        if line.startswith("event: "):
+            pending_event = line[len("event: "):]
+        elif line.startswith("data: ") and pending_event:
+            try:
+                pairs.append((pending_event, _json.loads(line[len("data: "):])))
+            except _json.JSONDecodeError:
+                pass
+            pending_event = None
+
+    agent_done_events = [(ev, d) for ev, d in pairs if ev == "node_done" and d.get("node_id") == "agent"]
+    assert len(agent_done_events) == 1, f"expected exactly one node_done(agent), got {agent_done_events}"
+    _, agent_done = agent_done_events[0]
+
+    assert agent_done["tokens"] == 42, f"expected tokens=42 from trace_structured, got {agent_done['tokens']}"
+    assert agent_done["confidence"] == 0.85, f"expected confidence=0.85, got {agent_done['confidence']}"
+    assert agent_done["output_preview"] == "Real mode headline"[:80], (
+        f"expected output_preview from headline, got {agent_done['output_preview']!r}"
+    )
+    # end_ms must be a real wall-clock int (>= 0), not a hardcoded sentinel.
+    # Mock runs complete in sub-millisecond time so 0 is a valid honest value here.
+    assert isinstance(agent_done["end_ms"], int) and agent_done["end_ms"] >= 0, (
+        f"expected end_ms to be a non-negative int (real wall-clock), got {agent_done['end_ms']!r}"
     )

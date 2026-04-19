@@ -11,6 +11,7 @@ Routes:
 """
 from __future__ import annotations
 
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -187,6 +188,7 @@ def post_generate_stream(payload: GenerateIn):
             },
         )
     # 2. Resolve project, ad, brief — raises HTTPException synchronously if invalid.
+    # ads_path + key only needed for persist=True; streaming route doesn't support persistence yet.
     _, _, brief = _resolve_brief(payload)
 
     # 3. Dispatch to dry-run generator. Real streaming = Task 9b follow-up.
@@ -208,6 +210,7 @@ def _replay_events(brief: Brief, payload: GenerateIn):
 
     Task 9b will replace this with anthropic.messages.stream().text_stream consumption.
     """
+    run_start = time.monotonic()
     result = agent.generate(brief, methodology=payload.methodology, n=payload.n_variants)
     yield sse("run_start", {
         "run_id": result.run_id,
@@ -224,8 +227,12 @@ def _replay_events(brief: Brief, payload: GenerateIn):
         yield sse("variant_done", {
             **asdict(v), "axes": asdict(v.axes), "confidence_symbol": v.confidence_symbol,
         })
+    # Token/confidence come from agent.trace_structured; populated by Task 9b.
     yield sse("node_done", {
-        "node_id": "agent", "end_ms": 0, "tokens": 0,
-        "confidence": None, "output_preview": "",
+        "node_id": "agent",
+        "end_ms": int((time.monotonic() - run_start) * 1000),
+        "tokens": sum(t.tokens for t in result.trace_structured) if result.trace_structured else 0,
+        "confidence": next((t.confidence for t in result.trace_structured if t.id == "agent"), None),
+        "output_preview": result.variants[0].headline[:80] if result.variants else "",
     })
     yield sse("done", _serialize_result(result))
