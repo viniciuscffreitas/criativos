@@ -208,7 +208,7 @@ function GalleryCard({ creative, idx, onOpen }: GalleryCardProps) {
             <div style={{
               position: 'absolute', top: 10, right: 10, zIndex: 4,
               padding: '3px 8px', borderRadius: 4,
-              background: 'rgba(255,255,255,0.95)', color: 'oklch(0.5 0.18 25)',
+              background: 'rgba(255,255,255,0.95)', color: 'var(--accent)',
               fontSize: 10, fontWeight: 600,
               display: 'flex', alignItems: 'center', gap: 4,
               fontFamily: '"Geist Mono", monospace',

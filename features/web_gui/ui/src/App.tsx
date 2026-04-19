@@ -15,8 +15,16 @@ export function App() {
     () => (localStorage.getItem('cr_nav') as NavSection | null) ?? 'flow',
   );
   const [selected, setSelected] = useState<Creative | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => { api.listProjects().then(r => setProjects(r.projects)); }, []);
+  useEffect(() => {
+    api.listProjects()
+      .then(r => setProjects(r.projects))
+      .catch((e: Error) => {
+        console.error('[App] listProjects failed', e);
+        setLoadError(e.message);
+      });
+  }, []);
   useEffect(() => { localStorage.setItem('cr_nav', nav); }, [nav]);
 
   const chromeW = Math.min(1480, window.innerWidth - 48);
@@ -27,6 +35,14 @@ export function App() {
       <Sidebar active={nav} onNav={setNav} projects={projects}
                activeProjectSlug={activeProject} onSelectProject={setActiveProject}/>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', position: 'relative' }}>
+        {loadError && (
+          <div role="alert" style={{
+            position: 'absolute', top: 8, left: 8, right: 8, zIndex: 10,
+            padding: '8px 12px', borderRadius: 6,
+            background: 'rgba(220, 38, 38, 0.12)', color: '#f87171',
+            fontFamily: '"Geist Mono", monospace', fontSize: 12,
+          }}>erro ao carregar projetos: {loadError}</div>
+        )}
         {nav === 'flow' && <div>Flow view — Task 14</div>}
         {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected}/>}
         {nav === 'brand' && <BrandLibrary/>}
