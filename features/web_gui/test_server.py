@@ -329,6 +329,53 @@ def test_list_creatives_empty_kind_returns_422(client, tmp_path):
     assert r.status_code == 422
 
 
+def test_list_creatives_exposes_last_run_id(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    ads.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "kind": "image", "placement": "IG", "format": "1080",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "H"}, "meta": {},
+                "trace": {"last_run": "run-abc-123", "confidence": 0.9},
+                "variants": [
+                    {"id": "A", "headline": "HA", "primary_text": "PA", "ctas": ["B"]},
+                ],
+            },
+            "02_no_trace_yet": {
+                "id": "02", "slug": "no-trace-yet",
+                "kind": "image", "placement": "IG", "format": "1080",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "H"}, "meta": {},
+                # no `trace` key at all
+                "variants": [],
+            },
+            "03_trace_null": {
+                "id": "03", "slug": "trace-null",
+                "kind": "image", "placement": "IG", "format": "1080",
+                "brief": {"product": "p", "audience": "a", "pain": "x",
+                          "ctas": ["Click"], "social_proof": None},
+                "copy": {"hero": "H"}, "meta": {},
+                "trace": {"last_run": None, "confidence": None},
+                "variants": [],
+            },
+        }
+    }))
+    r = client.get("/api/v1/projects/vibeweb/creatives")
+    assert r.status_code == 200
+    by_id = {c["id"]: c for c in r.json()["creatives"]}
+    # Base + variant inherit the ad's last_run_id
+    assert by_id["portfolio-grid-base"]["last_run_id"] == "run-abc-123"
+    assert by_id["portfolio-grid-a"]["last_run_id"] == "run-abc-123"
+    # Missing trace block -> null
+    assert by_id["no-trace-yet-base"]["last_run_id"] is None
+    # Explicit null -> null
+    assert by_id["trace-null-base"]["last_run_id"] is None
+
+
 # ---------------------------------------------------------------------------
 # Generate route tests
 # ---------------------------------------------------------------------------

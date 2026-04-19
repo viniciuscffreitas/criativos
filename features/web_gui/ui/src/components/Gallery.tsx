@@ -10,9 +10,10 @@ import {
 interface GalleryProps {
   projectSlug: string;
   onOpenCreative: (c: Creative) => void;
+  onOpenTrace: (runId: string) => void;
 }
 
-export function Gallery({ projectSlug, onOpenCreative }: GalleryProps) {
+export function Gallery({ projectSlug, onOpenCreative, onOpenTrace }: GalleryProps) {
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [filter, setFilter] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,8 @@ export function Gallery({ projectSlug, onOpenCreative }: GalleryProps) {
         }}>
           {filtered.map((c, i) => (
             <GalleryCard key={c.id} creative={c} idx={i}
-              onOpen={() => onOpenCreative(c)}/>
+              onOpen={() => onOpenCreative(c)}
+              onOpenTrace={c.last_run_id ? () => onOpenTrace(c.last_run_id!) : null}/>
           ))}
         </div>
       </div>
@@ -132,9 +134,10 @@ interface GalleryCardProps {
   creative: Creative;
   idx: number;
   onOpen: () => void;
+  onOpenTrace: (() => void) | null;
 }
 
-function GalleryCard({ creative, idx, onOpen }: GalleryCardProps) {
+function GalleryCard({ creative, idx, onOpen, onOpenTrace }: GalleryCardProps) {
   const [hover, setHover] = useState(false);
   return (
     <div onClick={onOpen}
@@ -234,10 +237,10 @@ function GalleryCard({ creative, idx, onOpen }: GalleryCardProps) {
           textTransform: 'uppercase', letterSpacing: 0.4,
         }}>{creative.kind}</div>
 
-        {/* Hover action: ver trace */}
-        {hover && (
+        {/* Hover action: ver trace — only when this creative has been generated */}
+        {hover && onOpenTrace && (
           <button
-            onClick={(e) => { e.stopPropagation(); }}
+            onClick={(e) => { e.stopPropagation(); onOpenTrace(); }}
             style={{
               position: 'absolute', bottom: 10, right: 10, zIndex: 2,
               padding: '5px 9px', borderRadius: 6,

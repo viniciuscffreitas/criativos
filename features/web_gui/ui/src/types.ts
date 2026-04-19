@@ -49,6 +49,7 @@ export interface Creative {
   status: 'ready' | 'streaming' | 'failed';
   ad_id: string;
   variant_id: string | null;
+  last_run_id: string | null;
 }
 
 export interface AgentResult {

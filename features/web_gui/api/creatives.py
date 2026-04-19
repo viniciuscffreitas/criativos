@@ -31,6 +31,7 @@ class CreativeOut(BaseModel):
     status: str
     ad_id: str
     variant_id: str | None
+    last_run_id: str | None
 
 
 class CreativeListOut(BaseModel):
@@ -84,6 +85,7 @@ def _ad_to_creative_base(ad: dict) -> CreativeOut:
         status="ready",
         ad_id=ad["id"],
         variant_id=None,
+        last_run_id=ad.get("trace", {}).get("last_run"),
     )
 
 
@@ -103,4 +105,5 @@ def _variant_to_creative(ad: dict, v: dict) -> CreativeOut:
         status="ready",
         ad_id=ad["id"],
         variant_id=v["id"],
+        last_run_id=ad.get("trace", {}).get("last_run"),
     )

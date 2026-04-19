@@ -78,7 +78,7 @@ export function App() {
             onGenerated={setLastRunId}
           />
         )}
-        {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected}/>}
+        {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected} onOpenTrace={setTraceRunId}/>}
         {nav === 'brand' && <BrandLibrary/>}
         {selected && <DetailPanel creative={selected} onClose={() => setSelected(null)}/>}
       </div>
