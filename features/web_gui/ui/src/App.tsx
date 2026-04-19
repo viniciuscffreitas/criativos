@@ -7,6 +7,7 @@ import { DetailPanel } from './components/DetailPanel';
 import { BrandLibrary } from './components/BrandLibrary';
 import { api } from './api';
 import type { Creative, Project } from './types';
+import { FlowView } from './components/FlowView';
 
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,7 +44,7 @@ export function App() {
             fontFamily: '"Geist Mono", monospace', fontSize: 12,
           }}>erro ao carregar projetos: {loadError}</div>
         )}
-        {nav === 'flow' && <div>Flow view — Task 14</div>}
+        {nav === 'flow' && <FlowView projectSlug={activeProject} adId="01" onFinish={() => setNav('gallery')}/>}
         {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected}/>}
         {nav === 'brand' && <BrandLibrary/>}
         {selected && <DetailPanel creative={selected} onClose={() => setSelected(null)}/>}

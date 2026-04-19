@@ -6,6 +6,9 @@ import { App } from './App';
 describe('App — §2.7 error surface', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Keep FlowView in loading state so loadBrief never resolves/rejects,
+    // preventing a second role="alert" from interfering with App-level tests.
+    vi.spyOn(api, 'getBrief').mockReturnValue(new Promise(() => {}));
   });
   afterEach(() => {
     vi.restoreAllMocks();
