@@ -26,13 +26,6 @@ def test_find_ad_key_raises_404_on_missing_id():
     assert exc_info.value.detail["code"] == "AD_NOT_FOUND"
 
 
-def test_find_ad_key_empty_ads_raises_404():
-    with pytest.raises(HTTPException) as exc_info:
-        find_ad_key({}, "01")
-    assert exc_info.value.status_code == 500
-    assert exc_info.value.detail["code"] == "ADS_FILE_MALFORMED"
-
-
 def test_find_ad_key_500_when_ads_key_missing():
     with pytest.raises(HTTPException) as exc_info:
         find_ad_key({}, "01")
