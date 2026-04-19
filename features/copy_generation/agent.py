@@ -110,6 +110,14 @@ def _run_cli(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess
     )
 
 
+def _spawn_cli(cmd: list[str], env: dict[str, str]) -> subprocess.Popen:
+    """Thin Popen wrapper — mock surface for streaming tests (parallel to _run_cli)."""
+    return subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, bufsize=1, env=env,
+    )
+
+
 def _parse_cli_envelope(
     envelope: dict,
     methodology,
@@ -268,14 +276,7 @@ def _stream_claude(methodology, user_prompt: str, n: int, model: str) -> Iterato
     ]
 
     final_envelope: dict | None = None
-    with subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-        env=_build_cli_env(),
-    ) as proc:
+    with _spawn_cli(cmd, _build_cli_env()) as proc:
         assert proc.stdout is not None  # PIPE set above — narrows for type-checkers
         for raw in proc.stdout:
             raw = raw.strip()

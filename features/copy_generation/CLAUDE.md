@@ -24,9 +24,11 @@ carrying variants + chain-of-thought trace + methodology tag + model used.
   `CLAUDE_CODE_OAUTH_TOKEN` (sk-ant-oat*) which only the CLI knows how to
   route. Runtime dep: `npm i -g @anthropic-ai/claude-code` (baked into the
   Dockerfile).
-- **Mock surface for tests is `_run_cli`.** Monkeypatch
-  `features.copy_generation.agent._run_cli` — not `subprocess.run` directly —
-  so `_pipeline_version()`'s `git rev-parse` call isn't intercepted.
+- **Mock surface for tests is `_run_cli` (blocking) and `_spawn_cli` (streaming).**
+  Monkeypatch `features.copy_generation.agent._run_cli` for non-streaming CLI
+  tests, or `features.copy_generation.agent._spawn_cli` for stream-json tests —
+  not `subprocess.run` / `subprocess.Popen` directly — so `_pipeline_version()`'s
+  `git rev-parse` call isn't intercepted.
 - **Dry-run is the default in tests.** `_is_dry_run()` returns True when
   `VIBEWEB_DRY_RUN=1` OR (both `ANTHROPIC_API_KEY` and
   `CLAUDE_CODE_OAUTH_TOKEN` are unset). Never write tests that assume the

@@ -350,13 +350,11 @@ def test_parse_cli_envelope_uses_injected_run_id_and_started_at():
 class _BaseFakePopen:
     """Minimal Popen stand-in for _stream_claude tests.
 
-    Patches subprocess.Popen globally, so _pipeline_version()'s internal
-    subprocess.check_output call also hits this fake. communicate() returns a
-    plausible git sha so _pipeline_version() succeeds without touching disk.
+    Monkeypatches agent._spawn_cli — not subprocess.Popen — so
+    _pipeline_version()'s git rev-parse call isn't intercepted.
     """
     stdout = iter([])
     returncode = 0
-    args: list = []  # required by subprocess.run → CompletedProcess(process.args, ...)
 
     class _Stderr:
         def read(self_inner): return ""
@@ -367,7 +365,6 @@ class _BaseFakePopen:
     def __exit__(self, *a): return False
     def wait(self, timeout=None): return self.returncode
     def kill(self): pass
-    def communicate(self, input=None, timeout=None): return ("fake-sha\n", "")
     def poll(self): return self.returncode
 
 
@@ -396,7 +393,7 @@ def test_stream_claude_yields_text_deltas_then_agent_result(monkeypatch):
         def __init__(self, *a, **kw):
             self.stdout = iter(l + "\n" for l in lines)
 
-    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    monkeypatch.setattr("features.copy_generation.agent._spawn_cli", lambda cmd, env: FakePopen())
     events = list(agent._stream_claude(by_name("pas"), "prompt", n=1, model="x"))
     kinds = [e[0] for e in events]
     assert kinds.count("token") == 2
@@ -422,7 +419,7 @@ def test_stream_claude_raises_on_missing_result_envelope(monkeypatch):
         def __init__(self, *a, **kw):
             self.stdout = iter(l + "\n" for l in lines)
 
-    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    monkeypatch.setattr("features.copy_generation.agent._spawn_cli", lambda cmd, env: FakePopen())
     with pytest.raises(RuntimeError, match="without a 'result' envelope"):
         list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))
 
@@ -444,7 +441,7 @@ def test_stream_claude_raises_on_non_zero_exit(monkeypatch):
 
         def wait(self, timeout=None): return 2
 
-    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    monkeypatch.setattr("features.copy_generation.agent._spawn_cli", lambda cmd, env: FakePopen())
     with pytest.raises(RuntimeError, match=r"exited 2.*auth failed"):
         list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))
 
@@ -458,6 +455,6 @@ def test_stream_claude_raises_on_malformed_line(monkeypatch):
         def __init__(self, *a, **kw):
             self.stdout = iter(["not-json\n"])
 
-    monkeypatch.setattr("subprocess.Popen", lambda *a, **kw: FakePopen())
+    monkeypatch.setattr("features.copy_generation.agent._spawn_cli", lambda cmd, env: FakePopen())
     with pytest.raises(RuntimeError, match="non-JSON line"):
         list(agent._stream_claude(by_name("pas"), "p", n=1, model="x"))
