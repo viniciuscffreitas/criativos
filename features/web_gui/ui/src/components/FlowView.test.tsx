@@ -1,5 +1,5 @@
 // FlowView — §2.7 error surface + loading state + Setup step render.
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { api } from '../api';
 import { FlowView } from './FlowView';
@@ -46,6 +46,20 @@ describe('FlowView', () => {
       expect(screen.getByText('Novo fluxo criativo')).toBeInTheDocument();
       // Setup form present — product field bound to brief value
       expect(screen.getByDisplayValue(BRIEF.product)).toBeInTheDocument();
+    });
+  });
+
+  it('surfaces a role="alert" when saveBrief rejects on "Próximo"', async () => {
+    vi.spyOn(api, 'getBrief').mockResolvedValueOnce(BRIEF);
+    vi.spyOn(api, 'putBrief').mockRejectedValueOnce(
+      new Error('HTTP_500: write failed'),
+    );
+    render(<FlowView projectSlug="vibeweb" adId="01" onFinish={() => {}} />);
+    const btn = await screen.findByRole('button', { name: /próximo/i });
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(/erro ao salvar briefing/i);
+      expect(screen.getByRole('alert')).toHaveTextContent(/HTTP_500/);
     });
   });
 });

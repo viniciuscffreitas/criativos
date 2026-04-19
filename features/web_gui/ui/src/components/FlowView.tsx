@@ -17,6 +17,7 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
   const [step, setStep] = useState<Step>(0);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [briefError, setBriefError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [methodology, setMethodology] = useState<'pas' | 'aida' | 'bab'>('pas');
   const [nVariants, setNVariants] = useState<number>(3);
 
@@ -29,6 +30,17 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
       });
   }, [projectSlug, adId]);
 
+  async function handleNext(current: Brief) {
+    setSaveError(null);
+    try {
+      await saveBrief(projectSlug, adId, current);
+      setStep(1);
+    } catch (e) {
+      console.error('[FlowView] saveBrief failed', e);
+      setSaveError((e as Error).message);
+    }
+  }
+
   if (briefError) {
     return (
       <div role="alert" style={{ padding: 24, color: '#f87171' }}>
@@ -38,7 +50,7 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
   }
   if (!brief) {
     return (
-      <div style={{ padding: 24, color: 'var(--text-muted, #a3a3a3)' }}>
+      <div style={{ padding: 24, color: '#78716c' }}>
         Carregando briefing…
       </div>
     );
@@ -47,6 +59,14 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <StepHeader step={step} />
+      {saveError && (
+        <div role="alert" style={{
+          padding: '8px 24px',
+          background: 'rgba(220, 38, 38, 0.12)', color: '#dc2626',
+          fontFamily: '"Geist Mono", monospace', fontSize: 12,
+          borderBottom: '1px solid #e7e5e4',
+        }}>erro ao salvar briefing: {saveError}</div>
+      )}
       {step === 0 && (
         <Setup
           projectSlug={projectSlug}
@@ -57,10 +77,7 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
           setMethodology={setMethodology}
           nVariants={nVariants}
           setNVariants={setNVariants}
-          onNext={async () => {
-            await saveBrief(projectSlug, adId, brief);
-            setStep(1);
-          }}
+          onNext={() => handleNext(brief)}
         />
       )}
       {step === 1 && <div style={{ padding: 24 }}>Generate — Task 15</div>}
@@ -83,7 +100,7 @@ function StepHeader({ step }: { step: Step }) {
   return (
     <div style={{
       padding: '14px 24px', background: '#ffffff',
-      borderBottom: '1px solid var(--border, #e7e5e4)',
+      borderBottom: '1px solid #e7e5e4',
       display: 'flex', alignItems: 'center', gap: 0,
     }}>
       <h1 style={{
