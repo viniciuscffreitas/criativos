@@ -25,9 +25,12 @@ class ProjectStore:
 
     def list(self) -> list[Project]:
         data = yaml_rw.read(self.path)
+        config_dir = self.path.parent
         out: list[Project] = []
         for slug, entry in data.get("projects", {}).items():
             ads_path = Path(entry["ads_path"])
+            if not ads_path.is_absolute():
+                ads_path = config_dir / ads_path
             ad_count, variant_count = _ad_and_variant_counts(ads_path)
             out.append(Project(
                 slug=slug,
@@ -48,7 +51,9 @@ class ProjectStore:
 
 def _ad_and_variant_counts(ads_path: Path) -> tuple[int, int]:
     if not ads_path.exists():
-        return 0, 0
+        raise FileNotFoundError(
+            f"ads_path {str(ads_path)!r} configured in projects.yaml does not exist"
+        )
     data = yaml_rw.read(ads_path)
     ads = data.get("ads", {})
     ad_count = len(ads)

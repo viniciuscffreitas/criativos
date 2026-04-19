@@ -17,7 +17,15 @@ def read(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_SH)
         try:
-            return yaml.safe_load(f) or {}
+            result = yaml.safe_load(f)
+            if result is None:
+                return {}
+            if not isinstance(result, dict):
+                raise ValueError(
+                    f"yaml_rw.read: expected a YAML mapping in {str(path)!r}, "
+                    f"got {type(result).__name__}"
+                )
+            return result
         finally:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
@@ -26,6 +34,8 @@ def write(path: Path, data: dict) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     bak = path.with_suffix(path.suffix + ".bak")
     content = yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+    # NOTE: flock here guards only the write to .tmp, not the final rename.
+    # Concurrent writers may still race on the rename. Safe for single-process use.
     with tmp.open("w", encoding="utf-8") as f:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
         try:
@@ -36,7 +46,13 @@ def write(path: Path, data: dict) -> None:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
     if path.exists():
         path.replace(bak)
-    tmp.replace(path)
+    try:
+        tmp.replace(path)
+    except OSError as e:
+        raise RuntimeError(
+            f"yaml_rw.write: atomic rename failed for {str(path)!r}; "
+            f"previous content is at {str(bak)!r}"
+        ) from e
 
 
 def modify(path: Path, fn: Callable[[dict], dict]) -> dict:
