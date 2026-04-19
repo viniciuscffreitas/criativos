@@ -31,3 +31,9 @@ ads/.rendered/
 # web_gui runtime artifacts
 features/web_gui/traces/
 features/web_gui/uploads/
+
+# Web UI
+features/web_gui/ui/node_modules/
+features/web_gui/static/
+features/web_gui/ui/dist/
+features/web_gui/ui/.vite/
