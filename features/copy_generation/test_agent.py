@@ -299,3 +299,23 @@ def test_real_mode_cli_reports_is_error_true(brief, monkeypatch):
 
     with pytest.raises(RuntimeError, match="is_error"):
         generate(brief, methodology="pas", n=1)
+
+
+def test_parse_cli_envelope_returns_agent_result_from_well_formed_envelope():
+    from features.copy_generation.agent import _parse_cli_envelope
+    from features.copy_generation.methodologies import by_name
+
+    envelope = {
+        "is_error": False,
+        "result": json.dumps([{
+            "headline": "h", "primary_text": "p", "description": "d",
+            "ctas": ["go"], "confidence": "high", "confidence_score": 0.9,
+            "axes": {"relevance": 0.9, "originality": 0.8, "brand_fit": 0.7},
+            "reasoning": "r",
+        }]),
+    }
+    result = _parse_cli_envelope(envelope, methodology=by_name("pas"), model="x")
+    assert len(result.variants) == 1
+    assert result.variants[0].confidence == "high"
+    assert result.methodology == "pas"
+    assert result.model == "x"

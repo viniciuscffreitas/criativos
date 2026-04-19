@@ -109,32 +109,14 @@ def _run_cli(cmd: list[str], env: dict[str, str]) -> subprocess.CompletedProcess
     )
 
 
-def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResult:
-    system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
+def _parse_cli_envelope(envelope: dict, methodology, model: str) -> AgentResult:
+    """Parse a claude CLI result envelope into an AgentResult.
+
+    Shared by _call_claude (json output) and _stream_claude (stream-json final
+    envelope, added in Task 2) — same envelope shape.
+    """
     run_id = uuid.uuid4().hex[:8]
     started_at = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    cmd = [
-        "claude", "-p", user_prompt,
-        "--append-system-prompt", system_text,
-        "--output-format", "json",
-        "--model", model,
-    ]
-    completed = _run_cli(cmd, _build_cli_env())
-
-    if completed.returncode != 0:
-        raise RuntimeError(
-            f"claude CLI exited {completed.returncode} for methodology {methodology.name!r}. "
-            f"stderr: {completed.stderr!r}\nstdout: {completed.stdout!r}"
-        )
-
-    try:
-        envelope = json.loads(completed.stdout)
-    except json.JSONDecodeError as e:
-        raise RuntimeError(
-            f"claude CLI returned non-JSON wrapper for methodology {methodology.name!r}:\n---\n"
-            f"{completed.stdout}\n---"
-        ) from e
 
     if envelope.get("is_error"):
         raise RuntimeError(
@@ -225,6 +207,34 @@ def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResu
         seed=None,
         created_at=started_at,
     )
+
+
+def _call_claude(methodology, user_prompt: str, n: int, model: str) -> AgentResult:
+    system_text = methodology.system_prompt_path.read_text(encoding="utf-8")
+
+    cmd = [
+        "claude", "-p", user_prompt,
+        "--append-system-prompt", system_text,
+        "--output-format", "json",
+        "--model", model,
+    ]
+    completed = _run_cli(cmd, _build_cli_env())
+
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"claude CLI exited {completed.returncode} for methodology {methodology.name!r}. "
+            f"stderr: {completed.stderr!r}\nstdout: {completed.stdout!r}"
+        )
+
+    try:
+        envelope = json.loads(completed.stdout)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"claude CLI returned non-JSON wrapper for methodology {methodology.name!r}:\n---\n"
+            f"{completed.stdout}\n---"
+        ) from e
+
+    return _parse_cli_envelope(envelope, methodology, model)
 
 
 def _pipeline_version() -> str:
