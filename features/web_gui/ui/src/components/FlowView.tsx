@@ -1,9 +1,10 @@
 // Multi-step flow: Setup → Generate → Review → Export.
-// Only Step 0 (Setup) is wired in this task; steps 1-3 are placeholders.
+// Steps 0 (Setup) and 1 (Generate) are wired; steps 2-3 are placeholders.
 import { useEffect, useState } from 'react';
-import type { Brief } from '../types';
+import type { AgentResult, Brief } from '../types';
 import { loadBrief, saveBrief } from '../data/brief';
 import { Setup } from './flow/Setup';
+import { Generate } from './flow/Generate';
 
 type Step = 0 | 1 | 2 | 3;
 
@@ -20,6 +21,7 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
   const [saveError, setSaveError] = useState<string | null>(null);
   const [methodology, setMethodology] = useState<'pas' | 'aida' | 'bab'>('pas');
   const [nVariants, setNVariants] = useState<number>(3);
+  const [result, setResult] = useState<AgentResult | null>(null);
 
   useEffect(() => {
     loadBrief(projectSlug, adId)
@@ -80,9 +82,17 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
           onNext={() => handleNext(brief)}
         />
       )}
-      {step === 1 && <div style={{ padding: 24 }}>Generate — Task 15</div>}
-      {step === 2 && <div style={{ padding: 24 }}>Review — Task 16</div>}
-      {step === 3 && <div style={{ padding: 24 }}>Export — Task 17</div>}
+      {step === 1 && (
+        <Generate
+          projectSlug={projectSlug}
+          adId={adId}
+          methodology={methodology}
+          nVariants={nVariants}
+          onDone={r => { setResult(r); setStep(2); }}
+        />
+      )}
+      {step === 2 && result && <div style={{ padding: 24 }}>Review — Task 16 (run: {result.run_id})</div>}
+      {step === 3 && result && <div style={{ padding: 24 }}>Export — Task 17 (run: {result.run_id})</div>}
     </div>
   );
 }
