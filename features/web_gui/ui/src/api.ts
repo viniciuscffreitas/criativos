@@ -66,7 +66,11 @@ export function streamGenerate(
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
-    if (!r.body) return;
+    if (!r.body) {
+      onEvent({ type: 'error', payload: { error: 'SSE response has no body', code: 'NO_BODY' } });
+      onComplete?.();
+      return;
+    }
     const reader = r.body.getReader();
     const decoder = new TextDecoder();
     let buf = '';

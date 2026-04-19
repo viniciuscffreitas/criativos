@@ -1,0 +1,13 @@
+# Emitted by `tsc -b` (Vite handles the real bundle)
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+*.tsbuildinfo
+vite.config.js
+
+# Vite dev output
+.vite/
+dist/
+
+# Deps
+node_modules/
