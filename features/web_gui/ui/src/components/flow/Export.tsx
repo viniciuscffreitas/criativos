@@ -31,7 +31,7 @@ export function Export({ projectSlug, adId, result, onFinish }: ExportProps) {
           fontSize: 12, color: '#78716c',
           fontFamily: '"Geist Mono", monospace',
         }}>
-          {selectedVariants.length} variantes selecionadas
+          {selectedVariants.length} {selectedVariants.length === 1 ? 'variante selecionada' : 'variantes selecionadas'}
         </span>
       </div>
 

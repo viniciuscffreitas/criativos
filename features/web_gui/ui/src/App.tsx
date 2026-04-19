@@ -38,15 +38,21 @@ export function App() {
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(o => !o); }
+      // ⌘K always toggles the palette (even to close it from inside).
+      if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(o => !o); return; }
+      // While the palette is open, nav shortcuts belong to it — don't also fire here.
+      if (paletteOpen) {
+        if (e.key === 'Escape') { setPaletteOpen(false); }
+        return;
+      }
       if (mod && e.key === '1') { e.preventDefault(); setNav('flow'); }
       if (mod && e.key === '2') { e.preventDefault(); setNav('gallery'); }
       if (mod && e.key === '3') { e.preventDefault(); setNav('brand'); }
-      if (e.key === 'Escape') { setPaletteOpen(false); setSelected(null); setTweaksOpen(false); setTraceRunId(null); }
+      if (e.key === 'Escape') { setSelected(null); setTweaksOpen(false); setTraceRunId(null); }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, []);
+  }, [paletteOpen]);
 
   const chromeW = Math.min(1480, window.innerWidth - 48);
   const chromeH = Math.min(900, window.innerHeight - 48);

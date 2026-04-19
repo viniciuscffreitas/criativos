@@ -65,10 +65,10 @@ describe('Export', () => {
     expect(screen.getByText(/etapa 4 · export/i)).toBeInTheDocument();
   });
 
-  it('shows "{n} variantes selecionadas" based on result.variants filter', () => {
+  it('shows singular "1 variante selecionada" when exactly one is selected', () => {
     render(<Export {...BASE_PROPS} />);
     // Only VARIANT_SEL has selected:true → 1
-    expect(screen.getByText('1 variantes selecionadas')).toBeInTheDocument();
+    expect(screen.getByText('1 variante selecionada')).toBeInTheDocument();
   });
 
   it('PNG <img> has correct src /renders/{adId}-{slug}.png', () => {

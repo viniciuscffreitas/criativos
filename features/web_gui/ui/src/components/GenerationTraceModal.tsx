@@ -29,13 +29,6 @@ export function GenerationTraceModal({ runId, onClose }: GenerationTraceModalPro
       });
   }, [runId]);
 
-  useEffect(() => {
-    if (!runId) return;
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [runId, onClose]);
-
   if (!runId) return null;
 
   return (

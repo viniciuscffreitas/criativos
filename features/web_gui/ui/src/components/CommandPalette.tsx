@@ -64,7 +64,7 @@ export function CommandPalette({ open, onClose, onNav, onOpenTweaks, onOpenTrace
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (!open) return;
-      if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
+      if (e.key === 'Escape')    { onClose(); return; }
       if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, filtered.length - 1)); }
       if (e.key === 'ArrowUp')   { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
       if (e.key === 'Enter') {
