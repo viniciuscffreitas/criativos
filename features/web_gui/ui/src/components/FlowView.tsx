@@ -5,6 +5,7 @@ import type { AgentResult, Brief } from '../types';
 import { loadBrief, saveBrief } from '../data/brief';
 import { Setup } from './flow/Setup';
 import { Generate } from './flow/Generate';
+import { Review } from './flow/Review';
 
 type Step = 0 | 1 | 2 | 3;
 
@@ -91,7 +92,9 @@ export function FlowView({ projectSlug, adId, onFinish: _onFinish }: FlowViewPro
           onDone={r => { setResult(r); setStep(2); }}
         />
       )}
-      {step === 2 && result && <div style={{ padding: 24 }}>Review — Task 16 (run: {result.run_id})</div>}
+      {step === 2 && result && (
+        <Review result={result} onFinish={() => setStep(3)} />
+      )}
       {step === 3 && result && <div style={{ padding: 24 }}>Export — Task 17 (run: {result.run_id})</div>}
     </div>
   );
