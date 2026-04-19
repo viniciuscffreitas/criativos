@@ -111,3 +111,41 @@ def test_get_project_returns_500_when_ads_path_missing(tmp_path, monkeypatch):
     r = client.get("/api/v1/projects/vibeweb")
     assert r.status_code == 500
     assert r.json()["code"] == "ADS_FILE_NOT_FOUND"
+
+
+import yaml
+
+
+def _seed_ad(client, ads_path):
+    ads_path.write_text(yaml.safe_dump({
+        "ads": {
+            "01_portfolio_grid": {
+                "id": "01", "slug": "portfolio-grid",
+                "brief": {"product": "p", "audience": "a", "pain": "pa",
+                          "social_proof": "sp", "ctas": ["Message me"]},
+                "variants": [],
+            }
+        }
+    }))
+
+
+def test_get_brief(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(client, ads)
+    r = client.get("/api/v1/projects/vibeweb/ads/01/brief")
+    assert r.status_code == 200
+    assert r.json()["ctas"] == ["Message me"]
+
+
+def test_put_brief_persists(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(client, ads)
+    new_brief = {
+        "product": "new product", "audience": "new aud", "pain": "new pain",
+        "social_proof": None, "ctas": ["Click me", "Order now"],
+    }
+    r = client.put("/api/v1/projects/vibeweb/ads/01/brief", json=new_brief)
+    assert r.status_code == 200
+    assert r.json()["updated"] is True
+    data = yaml.safe_load(ads.read_text())
+    assert data["ads"]["01_portfolio_grid"]["brief"]["ctas"] == ["Click me", "Order now"]

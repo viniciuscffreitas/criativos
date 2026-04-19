@@ -21,7 +21,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from features.web_gui.api import projects
+from features.web_gui.api import briefs, projects
 from features.web_gui.settings import static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
@@ -30,6 +30,7 @@ _log = logging.getLogger(__name__)
 def create_app() -> FastAPI:
     app = FastAPI(title="Vibe Web Criativos", version="0.1.0")
     app.include_router(projects.router, prefix="/api/v1")
+    app.include_router(briefs.router, prefix="/api/v1")
 
     @app.exception_handler(HTTPException)
     async def http_exc_handler(_, exc: HTTPException):
