@@ -20,7 +20,9 @@ AI agents. Plugs into `features/copy_generation/agent.generate()` over HTTP+SSE.
 - **Traces go to disk.** `features/web_gui/traces/<run_id>.json` — .gitignored.
 - **kind: image only in MVP.** Schema supports video/carousel/copy; UI shows
   empty tabs with "em breve" for those kinds until Spec 2/3 extensions land.
-- **AIDA/BAB/NPQEL return 501.** UI toggles exist but disabled with tooltip.
+- **NPQEL returns 501.** UI chip for NPQEL is absent (only PAS/AIDA/BAB are
+  exposed); the backend whitelist (`IMPLEMENTED_METHODOLOGIES`) gates the stub.
+  PAS, AIDA, BAB are live methodologies — see `features/copy_generation/`.
 - **Ports are fixed.** `:8000` uvicorn (dev + prod-local), `:5173` vite dev,
   `:8765` e2e-only (`conftest.py`). Changing any of these requires updating
   the proxy in `ui/vite.config.ts` and the fixture in `conftest.py`.

@@ -354,10 +354,36 @@ def test_generate_unknown_methodology_501(client, tmp_path):
     _seed_ad(ads)
     r = client.post("/api/v1/generate", json={
         "project_slug": "vibeweb", "ad_id": "01",
-        "methodology": "aida", "n_variants": 3, "persist": False,
+        "methodology": "ghost", "n_variants": 3, "persist": False,
     })
     assert r.status_code == 501
     assert r.json()["code"] == "METHODOLOGY_NOT_IMPLEMENTED"
+
+
+def test_generate_aida_dry_run_returns_200(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "aida", "n_variants": 2, "persist": False,
+    })
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["methodology"] == "aida"
+    assert len(body["variants"]) == 2
+
+
+def test_generate_bab_dry_run_returns_200(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "bab", "n_variants": 2, "persist": False,
+    })
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["methodology"] == "bab"
+    assert len(body["variants"]) == 2
 
 
 def test_generate_npqel_stub_501(client, tmp_path):
@@ -523,10 +549,26 @@ def test_generate_stream_methodology_501(client, tmp_path):
     _seed_ad(ads)
     r = client.post("/api/v1/generate/stream", json={
         "project_slug": "vibeweb", "ad_id": "01",
-        "methodology": "aida", "n_variants": 1, "persist": False,
+        "methodology": "ghost", "n_variants": 1, "persist": False,
     })
     assert r.status_code == 501
     assert r.json()["code"] == "METHODOLOGY_NOT_IMPLEMENTED"
+
+
+def test_generate_stream_aida_emits_events(client, tmp_path):
+    ads = tmp_path / "ads.yaml"
+    _seed_ad(ads)
+    r = client.post("/api/v1/generate/stream", json={
+        "project_slug": "vibeweb", "ad_id": "01",
+        "methodology": "aida", "n_variants": 1, "persist": False,
+    })
+    assert r.status_code == 200
+    assert "text/event-stream" in r.headers["content-type"]
+    events = [line.split("event: ", 1)[1].strip()
+              for line in r.text.splitlines() if line.startswith("event: ")]
+    assert events[0] == "run_start"
+    assert events[-1] == "done"
+    assert "variant_done" in events
 
 
 def test_generate_stream_unknown_project_404(client, tmp_path):

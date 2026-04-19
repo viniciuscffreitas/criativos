@@ -26,10 +26,10 @@ export function Setup({
   methodology,
   setMethodology,
 }: SetupProps) {
-  const methods: { id: 'pas' | 'aida' | 'bab'; name: string; sub: string; disabled?: boolean }[] = [
+  const methods: { id: 'pas' | 'aida' | 'bab'; name: string; sub: string }[] = [
     { id: 'pas',  name: 'PAS',  sub: 'Problem → Agitate → Solve' },
-    { id: 'aida', name: 'AIDA', sub: 'Atenção → Interesse → Desejo → Ação', disabled: true },
-    { id: 'bab',  name: 'BAB',  sub: 'Before → After → Bridge', disabled: true },
+    { id: 'aida', name: 'AIDA', sub: 'Atenção → Interesse → Desejo → Ação' },
+    { id: 'bab',  name: 'BAB',  sub: 'Before → After → Bridge' },
   ];
 
   function set<K extends keyof Brief>(key: K, value: Brief[K]) {
@@ -156,18 +156,16 @@ export function Setup({
           <Field label="Metodologia">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
               {methods.map(m => {
-                const sel = methodology === m.id && !m.disabled;
+                const sel = methodology === m.id;
                 return (
                   <div
                     key={m.id}
-                    onClick={() => { if (!m.disabled) setMethodology(m.id); }}
-                    title={m.disabled ? 'Em breve — Spec 2' : undefined}
+                    onClick={() => setMethodology(m.id)}
                     style={{
                       padding: 12, borderRadius: 8,
-                      cursor: m.disabled ? 'not-allowed' : 'pointer',
+                      cursor: 'pointer',
                       border: `1px solid ${sel ? '#1c1917' : '#e7e5e4'}`,
-                      background: m.disabled ? '#fafaf9' : sel ? '#fafaf9' : '#fff',
-                      opacity: m.disabled ? 0.5 : 1,
+                      background: sel ? '#fafaf9' : '#fff',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

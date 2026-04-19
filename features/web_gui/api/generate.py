@@ -31,7 +31,7 @@ router = APIRouter(tags=["generate"])
 # ones (e.g. NPQEL) live in copy_generation/methodologies/__init__.py but raise
 # NotImplementedError; this gate converts those to 501 before the agent is invoked.
 # Keep in sync with the registry when a methodology graduates from stub to live.
-IMPLEMENTED_METHODOLOGIES: frozenset[str] = frozenset({"pas"})
+IMPLEMENTED_METHODOLOGIES: frozenset[str] = frozenset({"pas", "aida", "bab"})
 
 
 class GenerateIn(BaseModel):

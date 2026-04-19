@@ -5,8 +5,8 @@ Inherits from the root `CLAUDE.md`. This file adds feature-specific rules.
 ## What this does
 
 Generates N copy variants (`CopyVariant`) for a `Brief` using a pluggable
-`Methodology` (PAS live; NPQEL stubbed). Output is an `AgentResult` carrying
-variants + chain-of-thought trace + methodology tag + model used.
+`Methodology` (PAS/AIDA/BAB live; NPQEL stubbed). Output is an `AgentResult`
+carrying variants + chain-of-thought trace + methodology tag + model used.
 
 ## Inputs / outputs
 
