@@ -14,7 +14,7 @@ import time
 from dataclasses import asdict
 from typing import Iterator
 
-from features.copy_generation.agent import _dry_run_variants
+from features.copy_generation.agent import _dry_run_variants, _stream_claude  # noqa: F401 — _stream_claude used via monkeypatch target
 from features.copy_generation.schema import Brief
 
 
@@ -79,5 +79,68 @@ def dry_run_events(brief: Brief, methodology_name: str, n: int) -> Iterator[str]
     yield sse("node_done", {
         "node_id": "agent", "end_ms": end_ms, "tokens": 120,
         "confidence": 0.7, "output_preview": "dry-run",
+    })
+    yield sse("done", _serialize_result(result))
+
+
+def real_stream_events(
+    brief: Brief, methodology: str, n: int, model: str,
+) -> Iterator[str]:
+    """Mirror of dry_run_events backed by the real CLI stream.
+
+    Emits the same SSE event shape so the UI is truly mode-agnostic
+    (CLAUDE.md §2.3 — dry-run parity is load-bearing).
+    """
+    from features.copy_generation.methodologies import by_name
+    m = by_name(methodology)
+    user_prompt = m.build_user_prompt(brief, n=n)
+    run_start = time.monotonic()
+
+    # Emit run_start + brief node_done synchronously so the UI transitions
+    # out of "aguardando…" before the first CLI token arrives. run_id and
+    # pipeline_version are placeholders here — the 'done' frame carries the
+    # canonical values from the AgentResult.
+    yield sse("run_start", {
+        "run_id": "pending",
+        "pipeline_version": "pending",
+        "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    })
+    yield sse("node_start", {"node_id": "brief", "label": "Briefing", "start_ms": 0})
+    yield sse("node_done", {
+        "node_id": "brief", "end_ms": 20, "tokens": 0,
+        "confidence": None, "output_preview": brief.pain[:80],
+    })
+    yield sse("node_start", {
+        "node_id": "agent", "label": "Agente criativo", "start_ms": 20,
+    })
+
+    result = None
+    token_count = 0
+    for kind, payload in _stream_claude(m, user_prompt, n=n, model=model):
+        if kind == "token":
+            yield sse("token", {
+                "node_id": "agent", "variant_id": None, "text": payload,
+            })
+            token_count += 1
+        elif kind == "result":
+            result = payload
+
+    if result is None:
+        raise RuntimeError(
+            "_stream_claude exited without emitting a result — contract broken"
+        )
+
+    for v in result.variants:
+        yield sse("variant_done", {
+            **asdict(v),
+            "axes": asdict(v.axes),
+            "confidence_symbol": v.confidence_symbol,
+        })
+    yield sse("node_done", {
+        "node_id": "agent",
+        "end_ms": int((time.monotonic() - run_start) * 1000),
+        "tokens": token_count,
+        "confidence": None,
+        "output_preview": result.variants[0].headline[:80] if result.variants else "",
     })
     yield sse("done", _serialize_result(result))

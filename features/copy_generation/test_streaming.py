@@ -9,7 +9,10 @@ import os
 
 import pytest
 
-from features.copy_generation.schema import Brief
+import features.copy_generation.streaming as streaming_mod
+from features.copy_generation.schema import (
+    AgentResult, Brief, CopyVariant, VariantAxes,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -112,3 +115,84 @@ def test_dry_run_events_n_variants_matches_input(monkeypatch):
     events = _collect_events(dry_run_events(brief, "pas", 3))
     names = [e[0] for e in events]
     assert names.count("variant_done") == 3
+
+
+# ---------------------------------------------------------------------------
+# real_stream_events tests
+# ---------------------------------------------------------------------------
+
+def _canonical_result(variants: list) -> AgentResult:
+    return AgentResult(
+        run_id="abc123", variants=variants, trace="t", trace_structured=[],
+        methodology="pas", model="claude-sonnet-4-6",
+        pipeline_version="copy_generation@test", seed=None,
+        created_at="2026-04-19T12:00:00Z",
+    )
+
+
+def _canonical_variant(suffix: str = "1") -> CopyVariant:
+    return CopyVariant(
+        id=f"V{suffix}", headline=f"H{suffix}", primary_text="P",
+        description="D", ctas=["go"], confidence="high", confidence_score=0.9,
+        axes=VariantAxes(0.9, 0.8, 0.7), reasoning="r",
+    )
+
+
+def _fake_stream_factory(variants):
+    """Builds a fake _stream_claude: two token yields then a result yield."""
+    def _gen(methodology, user_prompt, n, model):
+        yield ("token", "[PAS v1] Los")
+        yield ("token", "ing clients")
+        yield ("result", _canonical_result(variants))
+    return _gen
+
+
+def test_real_stream_events_emits_expected_sse_sequence(monkeypatch):
+    from features.copy_generation.streaming import real_stream_events
+    v = _canonical_variant()
+    monkeypatch.setattr(streaming_mod, "_stream_claude", _fake_stream_factory([v]))
+
+    brief = Brief(
+        product="p", audience="a", pain="pain text",
+        ctas=["go"], social_proof=None,
+    )
+    frames = list(real_stream_events(brief, methodology="pas", n=1, model="m"))
+    # Each frame is "event: X\ndata: {...}\n\n"
+    kinds = [f.split("\n")[0] for f in frames]
+
+    assert kinds[0] == "event: run_start"
+    assert kinds[1] == "event: node_start"        # brief
+    assert kinds[2] == "event: node_done"         # brief
+    assert kinds[3] == "event: node_start"        # agent
+    # Then 2 tokens, 1 variant_done, 1 node_done (agent), 1 done
+    assert kinds.count("event: token") == 2
+    assert kinds.count("event: variant_done") == 1
+    assert kinds[-2] == "event: node_done"        # agent
+    assert kinds[-1] == "event: done"
+
+
+def test_real_stream_events_passes_tokens_verbatim(monkeypatch):
+    from features.copy_generation.streaming import real_stream_events
+    v = _canonical_variant()
+    monkeypatch.setattr(streaming_mod, "_stream_claude", _fake_stream_factory([v]))
+
+    brief = Brief(product="p", audience="a", pain="x", ctas=["go"], social_proof=None)
+    frames = list(real_stream_events(brief, methodology="pas", n=1, model="m"))
+    token_frames = [f for f in frames if f.startswith("event: token")]
+    assert '"text": "[PAS v1] Los"' in token_frames[0]
+    assert '"text": "ing clients"' in token_frames[1]
+
+
+def test_real_stream_events_raises_if_stream_never_yields_result(monkeypatch):
+    """Defensive: _stream_claude is documented to yield ('result', ...) at end.
+    If it doesn't (contract break), fail loud rather than emit bogus 'done'."""
+    from features.copy_generation.streaming import real_stream_events
+
+    def broken_stream(*a, **kw):
+        yield ("token", "x")
+        # no result yielded
+
+    monkeypatch.setattr(streaming_mod, "_stream_claude", broken_stream)
+    brief = Brief(product="p", audience="a", pain="x", ctas=["go"], social_proof=None)
+    with pytest.raises(RuntimeError, match="without emitting a result"):
+        list(real_stream_events(brief, methodology="pas", n=1, model="m"))
