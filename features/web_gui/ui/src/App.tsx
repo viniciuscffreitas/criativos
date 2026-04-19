@@ -52,6 +52,11 @@ export function App() {
   );
 }
 
-function _title(n: NavSection) {
-  return n === 'flow' ? 'Novo fluxo' : n === 'gallery' ? 'Galeria' : 'Marca';
+const NAV_TITLES: Record<NavSection, string> = {
+  flow: 'Novo fluxo',
+  gallery: 'Galeria',
+  brand: 'Marca',
+};
+function _title(n: NavSection): string {
+  return NAV_TITLES[n];
 }

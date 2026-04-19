@@ -21,7 +21,7 @@ export function BrandLibrary() {
   const assets = [
     { kind: 'logo', label: 'Logo horizontal', color: '#1c1917' },
     { kind: 'logo', label: 'Logo marca', color: 'var(--accent)' },
-    { kind: 'product', label: 'X3 Coral', color: 'linear-gradient(135deg, var(--accent), oklch(0.5 0.18 25))' },
+    { kind: 'product', label: 'X3 Coral', color: 'linear-gradient(135deg, var(--accent), var(--accent-dark))' },
     { kind: 'product', label: 'X3 Preto', color: 'linear-gradient(135deg, #1c1917, #44403c)' },
     { kind: 'product', label: 'X3 Areia', color: 'linear-gradient(135deg, #fed7aa, #fb923c)' },
     { kind: 'lifestyle', label: 'Urbano · pôr do sol', color: 'linear-gradient(135deg, #fbbf24, #dc2626, #1c1917)' },

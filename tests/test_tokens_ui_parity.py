@@ -52,3 +52,9 @@ def test_accent_rgb_matches():
     css = TOKENS_CSS.read_text(encoding="utf-8")
     ts = TOKENS_TS.read_text(encoding="utf-8")
     assert _css_var(css, "accent-rgb") == _ts_prop(ts, "accentRgb")
+
+
+def test_accent_dark_matches():
+    css = TOKENS_CSS.read_text(encoding="utf-8")
+    ts = TOKENS_TS.read_text(encoding="utf-8")
+    assert _css_var(css, "accent-dark") == _ts_prop(ts, "accentDark")

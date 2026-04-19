@@ -332,7 +332,7 @@ function CarouselPreview({ creative }: { creative: Creative }) {
             background: [
               '#e7e5e4',
               'linear-gradient(135deg, #1c1917, #44403c)',
-              'linear-gradient(135deg, var(--accent), oklch(0.5 0.18 25))',
+              'linear-gradient(135deg, var(--accent), var(--accent-dark))',
             ][i],
             borderRadius: 4, padding: 6,
             display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
