@@ -26,3 +26,7 @@ def static_dir() -> Path:
 
 def renders_dir() -> Path:
     return ROOT / "ads" / "renders"
+
+
+def brand_dir() -> Path:
+    return ROOT / "brand"

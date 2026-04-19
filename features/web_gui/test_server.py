@@ -1211,3 +1211,64 @@ def test_root_without_ui_mount_returns_404(tmp_path, monkeypatch):
     c = TestClient(create_app())
     r = c.get("/", follow_redirects=False)
     assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# /brand mount tests — ui/index.html references /brand/tokens.css explicitly
+# ---------------------------------------------------------------------------
+
+def _make_client_with_brand(tmp_path, monkeypatch, *, css_body: str = "body{color:red}"):
+    """Build a TestClient with real static + brand dirs mounted."""
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "index.html").write_text('<!doctype html><div id="root"></div>')
+    monkeypatch.setattr("features.web_gui.server.static_dir", lambda: static)
+
+    brand = tmp_path / "brand"
+    brand.mkdir()
+    (brand / "tokens.css").write_text(css_body)
+    monkeypatch.setattr("features.web_gui.server.brand_dir", lambda: brand)
+    return TestClient(create_app())
+
+
+def test_brand_tokens_css_served(tmp_path, monkeypatch):
+    """UI references /brand/tokens.css — must be served as StaticFiles."""
+    body = ":root{--accent:#04d361}"
+    c = _make_client_with_brand(tmp_path, monkeypatch, css_body=body)
+    r = c.get("/brand/tokens.css")
+    assert r.status_code == 200
+    assert r.text == body
+    assert r.headers["content-type"].startswith("text/css")
+
+
+def test_brand_missing_file_returns_404(tmp_path, monkeypatch):
+    c = _make_client_with_brand(tmp_path, monkeypatch)
+    r = c.get("/brand/does-not-exist.svg")
+    assert r.status_code == 404
+
+
+def test_create_app_raises_when_brand_required_but_missing(tmp_path, monkeypatch):
+    """VIBEWEB_REQUIRE_UI=1 must gate brand dir too — tokens.css is load-bearing."""
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+    monkeypatch.setenv("VIBEWEB_REQUIRE_UI", "1")
+
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "index.html").write_text('<!doctype html><div id="root"></div>')
+    monkeypatch.setattr("features.web_gui.server.static_dir", lambda: static)
+    monkeypatch.setattr(
+        "features.web_gui.server.brand_dir",
+        lambda: tmp_path / "definitely_no_brand",
+    )
+    with pytest.raises(RuntimeError, match="brand dir not found"):
+        create_app()

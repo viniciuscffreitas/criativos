@@ -15,6 +15,7 @@ Routes:
 Mounted routes:
   /renders   StaticFiles — pre-rendered PNG creatives (renders_dir())
   /ui        StaticFiles — Vite build (static_dir()); gated by VIBEWEB_REQUIRE_UI=1
+  /brand     StaticFiles — design tokens + brand assets (brand_dir()); gated by VIBEWEB_REQUIRE_UI=1
 """
 from __future__ import annotations
 import logging
@@ -25,7 +26,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from features.web_gui.api import assets, briefs, creatives, generate, projects, traces, variants
-from features.web_gui.settings import renders_dir, static_dir, traces_dir, uploads_dir
+from features.web_gui.settings import brand_dir, renders_dir, static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
 
@@ -75,6 +76,16 @@ def create_app() -> FastAPI:
         if os.getenv("VIBEWEB_REQUIRE_RENDERS", "0") == "1":
             raise RuntimeError(f"renders dir not found: {rdir}")
         _log.warning("Renders dir %s not found — /renders will not be served", rdir)
+
+    bdir = brand_dir()
+    if bdir.exists():
+        app.mount("/brand", StaticFiles(directory=str(bdir)), name="brand")
+    else:
+        if os.getenv("VIBEWEB_REQUIRE_UI", "0") == "1":
+            raise RuntimeError(
+                f"VIBEWEB_REQUIRE_UI=1 but brand dir not found: {bdir}"
+            )
+        _log.warning("Brand dir %s not found — /brand will not be served", bdir)
 
     return app
 
