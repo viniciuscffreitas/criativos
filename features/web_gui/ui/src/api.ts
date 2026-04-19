@@ -44,7 +44,7 @@ export type StreamEvent =
   | { type: 'run_start'; payload: { run_id: string; pipeline_version: string; started_at: string } }
   | { type: 'node_start'; payload: { node_id: string; label: string; start_ms: number } }
   | { type: 'node_done'; payload: { node_id: string; end_ms: number; tokens: number; confidence: number | null; output_preview: string } }
-  | { type: 'token'; payload: { node_id: string; variant_id: string; text: string } }
+  | { type: 'token'; payload: { node_id: string; variant_id: string | null; text: string } }
   | { type: 'variant_done'; payload: CopyVariant }
   | { type: 'done'; payload: AgentResult }
   | { type: 'error'; payload: { error: string; code: string; raw?: string } };

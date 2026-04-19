@@ -114,10 +114,16 @@ def real_stream_events(
         "node_id": "agent", "label": "Agente criativo", "start_ms": 20,
     })
 
+    # Ordering note: real-mode emits ALL token frames first, then ALL variant_done
+    # frames — because the CLI streams raw text deltas that we can't attribute to
+    # a specific variant until the final result envelope parses. Dry-run interleaves
+    # tokens-per-variant + variant_done because it synthesizes from known variants.
     result = None
     token_count = 0
     for kind, payload in _stream_claude(m, user_prompt, n=n, model=model):
         if kind == "token":
+            # variant_id is null in real-mode: token→variant attribution only becomes
+            # available after the final CLI envelope parses (see variant_done below).
             yield sse("token", {
                 "node_id": "agent", "variant_id": None, "text": payload,
             })
