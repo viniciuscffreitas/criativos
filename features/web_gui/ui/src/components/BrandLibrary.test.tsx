@@ -72,3 +72,67 @@ describe('BrandLibrary — upload wiring', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe('BrandLibrary — real assets (no mock placeholders)', () => {
+  it('does NOT render the Claude-AI-design fictional product placeholders', () => {
+    // Old version had hardcoded "X3 Coral / X3 Preto / X3 Areia" + lifestyle
+    // gradients ("Urbano · pôr do sol", etc) — pure mock data unrelated to
+    // the actual brand. Removed.
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.queryByText(/X3 Coral/i)).toBeNull();
+    expect(screen.queryByText(/X3 Preto/i)).toBeNull();
+    expect(screen.queryByText(/X3 Areia/i)).toBeNull();
+    expect(screen.queryByText(/pôr do sol/i)).toBeNull();
+    expect(screen.queryByText(/Asfalto · noite/i)).toBeNull();
+  });
+
+  it('renders the real logo SVGs from /brand/logos/', () => {
+    const { container } = render(<BrandLibrary projectSlug="vibeweb" />);
+    const imgs = Array.from(container.querySelectorAll('img'));
+    const logoSrcs = imgs.map(i => i.getAttribute('src') ?? '');
+    expect(logoSrcs).toContain('/brand/logos/vibeweb-primary.svg');
+    expect(logoSrcs).toContain('/brand/logos/vibeweb-icon.svg');
+    expect(logoSrcs).toContain('/brand/logos/vibeweb-stacked.svg');
+    expect(logoSrcs).toContain('/brand/logos/vibeweb-wordmark.svg');
+  });
+
+  it('renders the social brand renders from /brand/social/renders/', () => {
+    const { container } = render(<BrandLibrary projectSlug="vibeweb" />);
+    const srcs = Array.from(container.querySelectorAll('img'))
+      .map(i => i.getAttribute('src') ?? '');
+    expect(srcs).toContain('/brand/social/renders/instagram-post.png');
+    expect(srcs).toContain('/brand/social/renders/instagram-story.png');
+    expect(srcs).toContain('/brand/social/renders/linkedin-banner.png');
+    expect(srcs).toContain('/brand/social/renders/og-image.png');
+  });
+
+  it('renders the favicons', () => {
+    const { container } = render(<BrandLibrary projectSlug="vibeweb" />);
+    const srcs = Array.from(container.querySelectorAll('img'))
+      .map(i => i.getAttribute('src') ?? '');
+    expect(srcs).toContain('/brand/favicons/icon-512.png');
+    expect(srcs).toContain('/brand/favicons/apple-touch-icon.png');
+  });
+
+  it('shows the BRAND fonts (Syne / DM Sans / Fira Code), not the UI fonts', () => {
+    // Old version listed Geist / Geist Mono / Fraunces (the webapp's own
+    // chrome typography) as if they were the brand fonts. The brand uses
+    // Syne (display) + DM Sans (body) + Fira Code (mono) — see
+    // brand/tokens.css. The webapp chrome fonts are intentionally different
+    // and are NOT shown in the BrandLibrary preview.
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.getByText('Syne')).toBeInTheDocument();
+    expect(screen.getByText('DM Sans')).toBeInTheDocument();
+    expect(screen.getByText('Fira Code')).toBeInTheDocument();
+    // Old fictitious labels gone
+    expect(screen.queryByText(/^Geist$/)).toBeNull();
+    expect(screen.queryByText(/^Fraunces$/)).toBeNull();
+  });
+
+  it('shows the active project slug, not a hardcoded one', () => {
+    // Old version hardcoded "Vibe Web" badge. Now the badge mirrors the
+    // projectSlug prop so multi-project setups won't show stale label.
+    render(<BrandLibrary projectSlug="otherproject" />);
+    expect(screen.getByText('otherproject')).toBeInTheDocument();
+  });
+});

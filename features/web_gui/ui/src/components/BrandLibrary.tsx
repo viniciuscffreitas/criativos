@@ -1,5 +1,11 @@
-// Brand library view — palette, typography specimen, and asset grid.
-// Colors derived from src/tokens.ts (mirrors brand/tokens.css).
+// Brand library view — palette, typography specimen, and the actual brand
+// assets served by the FastAPI /brand StaticFiles mount (brand/ on disk).
+//
+// IMPORTANT: This view shows the TRUE brand — not mock placeholders. Logos
+// come from /brand/logos/, social renders from /brand/social/renders/,
+// favicons from /brand/favicons/. Fonts shown match the brand fonts in
+// brand/tokens.css (Syne, DM Sans, Fira Code) — not the webapp's chrome
+// typography (Geist/Fraunces).
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { tokens } from '../tokens';
@@ -24,6 +30,46 @@ const ALLOWED_MIME = new Set([
   'video/mp4',
 ]);
 const ACCEPT_ATTR = Array.from(ALLOWED_MIME).join(',');
+
+interface BrandAsset {
+  src: string;
+  label: string;
+  category: 'logo' | 'social' | 'favicon';
+  // Background hint so transparent SVGs render readable on light/dark.
+  bgClass?: 'dark' | 'light';
+}
+
+// Hard-coded list of the brand assets that ship with the repo. Each entry
+// points at a real file under /brand (mounted by features/web_gui/server.py).
+// If you add a new file under brand/, add it here too — there is no API
+// endpoint to enumerate the directory and we keep this explicit so the
+// layout doesn't shift on every disk scan.
+const BRAND_ASSETS: BrandAsset[] = [
+  // Logos (SVG primary; PNG also exists for non-vector consumers)
+  { src: '/brand/logos/vibeweb-primary.svg',  label: 'Logo principal',     category: 'logo', bgClass: 'dark'  },
+  { src: '/brand/logos/vibeweb-icon.svg',     label: 'Marca (símbolo)',    category: 'logo', bgClass: 'dark'  },
+  { src: '/brand/logos/vibeweb-stacked.svg',  label: 'Logo stacked',       category: 'logo', bgClass: 'dark'  },
+  { src: '/brand/logos/vibeweb-wordmark.svg', label: 'Wordmark',           category: 'logo', bgClass: 'dark'  },
+  { src: '/brand/logos/vibeweb-white.svg',    label: 'Versão branca',      category: 'logo', bgClass: 'dark'  },
+  { src: '/brand/logos/vibeweb-black.svg',    label: 'Versão preta',       category: 'logo', bgClass: 'light' },
+
+  // Social renders
+  { src: '/brand/social/renders/instagram-post.png',  label: 'Instagram post (1080×1080)',  category: 'social' },
+  { src: '/brand/social/renders/instagram-story.png', label: 'Instagram story (1080×1920)', category: 'social' },
+  { src: '/brand/social/renders/instagram-highlight-portfolio.png', label: 'Highlight · portfolio', category: 'social' },
+  { src: '/brand/social/renders/instagram-highlight-services.png',  label: 'Highlight · services',  category: 'social' },
+  { src: '/brand/social/renders/instagram-highlight-about.png',     label: 'Highlight · about',     category: 'social' },
+  { src: '/brand/social/renders/instagram-highlight-contact.png',   label: 'Highlight · contact',   category: 'social' },
+  { src: '/brand/social/renders/instagram-highlight-feed.png',      label: 'Highlight · feed',      category: 'social' },
+  { src: '/brand/social/renders/linkedin-banner.png', label: 'LinkedIn banner (1584×396)',  category: 'social' },
+  { src: '/brand/social/renders/og-image.png',        label: 'Open Graph (1200×630)',       category: 'social' },
+
+  // Favicons
+  { src: '/brand/favicons/icon-512.png',        label: 'Favicon 512',  category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/apple-touch-icon.png', label: 'Apple touch', category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/favicon-32.png',      label: 'Favicon 32',   category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/favicon-16.png',      label: 'Favicon 16',   category: 'favicon', bgClass: 'dark' },
+];
 
 export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,27 +106,18 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
 
   const colors = [
     { name: 'Accent', hex: tokens.accent, role: 'Destaque verde' },
+    { name: 'Accent Dark', hex: tokens.accentDark, role: 'Hover/pressed' },
     { name: 'Background', hex: tokens.bg, role: 'Fundo escuro' },
     { name: 'Text', hex: tokens.text, role: 'Texto principal' },
     { name: 'Text Muted', hex: tokens.textMuted, role: 'Texto secundário' },
     { name: 'Border', hex: tokens.border, role: 'Bordas e divisores' },
   ];
 
+  // BRAND fonts — match brand/tokens.css and what the rendered creatives use.
   const fonts = [
-    { name: 'Geist', role: 'UI e títulos', preview: 'Aa', stack: tokens.fontUI },
-    { name: 'Geist Mono', role: 'Técnicos · IDs', preview: 'M0', stack: tokens.fontMono },
-    { name: 'Fraunces', role: 'Headlines emocionais', preview: 'Hh', stack: tokens.fontDisplay },
-  ];
-
-  const assets = [
-    { kind: 'logo', label: 'Logo horizontal', color: '#1c1917' },
-    { kind: 'logo', label: 'Logo marca', color: 'var(--accent)' },
-    { kind: 'product', label: 'X3 Coral', color: 'linear-gradient(135deg, var(--accent), var(--accent-dark))' },
-    { kind: 'product', label: 'X3 Preto', color: 'linear-gradient(135deg, #1c1917, #44403c)' },
-    { kind: 'product', label: 'X3 Areia', color: 'linear-gradient(135deg, #fed7aa, #fb923c)' },
-    { kind: 'lifestyle', label: 'Urbano · pôr do sol', color: 'linear-gradient(135deg, #fbbf24, #dc2626, #1c1917)' },
-    { kind: 'lifestyle', label: 'Asfalto · noite', color: 'linear-gradient(135deg, #292524, #44403c, #78716c)' },
-    { kind: 'lifestyle', label: 'Parque · manhã', color: 'linear-gradient(135deg, #bbf7d0, #fef3c7)' },
+    { name: 'Syne',      role: 'Display · headlines',  preview: 'Aa', stack: tokens.fontDisplayBrand },
+    { name: 'DM Sans',   role: 'Body · UI',            preview: 'Aa', stack: tokens.fontBodyBrand    },
+    { name: 'Fira Code', role: 'Mono · IDs / código',  preview: 'M0', stack: tokens.fontMonoBrand    },
   ];
 
   return (
@@ -97,7 +134,7 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
           fontFamily: '"Geist Mono", monospace', fontSize: 10,
           padding: '2px 6px', borderRadius: 4,
           background: '#f5f5f4', color: '#78716c',
-        }}>Vibe Web</span>
+        }}>{projectSlug}</span>
         <div style={{ flex: 1 }}/>
         <input
           ref={inputRef}
@@ -181,7 +218,7 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
 
         {/* Fonts */}
         <div>
-          <SectionLabel>Tipografia</SectionLabel>
+          <SectionLabel>Tipografia da marca</SectionLabel>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
             {fonts.map(f => (
               <div key={f.name} style={{
@@ -190,7 +227,7 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
-                  fontSize: 40, fontWeight: 600, letterSpacing: -1,
+                  fontSize: 40, fontWeight: 700, letterSpacing: -1,
                   color: '#1c1917', lineHeight: 1,
                   fontFamily: f.stack,
                 }}>{f.preview}</div>
@@ -203,36 +240,61 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
           </div>
         </div>
 
-        {/* Assets */}
-        <div>
-          <SectionLabel>
-            Ativos <span style={{ color: '#6f6a64', fontWeight: 400 }}>({assets.length})</span>
-          </SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-            {assets.map((a, i) => (
-              <div key={i} style={{
-                background: '#fff', border: '1px solid #e7e5e4',
-                borderRadius: 8, overflow: 'hidden',
-              }}>
-                <div style={{
-                  aspectRatio: '1', background: a.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {a.kind === 'logo' && (
-                    <div style={{
-                      color: a.color === '#1c1917' ? '#fafaf9' : '#fff',
-                      fontWeight: 700, fontSize: 18, letterSpacing: -0.5,
-                    }}>VIBE WEB</div>
-                  )}
-                </div>
-                <div style={{ padding: '8px 10px' }}>
-                  <div style={{ fontSize: 12, color: '#1c1917' }}>{a.label}</div>
-                  <div style={{ fontSize: 10, color: '#6f6a64',
-                    fontFamily: '"Geist Mono", monospace', marginTop: 1 }}>{a.kind}</div>
-                </div>
+        {/* Assets — categories rendered separately */}
+        {(['logo', 'social', 'favicon'] as const).map(cat => {
+          const items = BRAND_ASSETS.filter(a => a.category === cat);
+          if (items.length === 0) return null;
+          const titles: Record<typeof cat, string> = {
+            logo: 'Logos',
+            social: 'Social',
+            favicon: 'Favicons',
+          };
+          return (
+            <div key={cat}>
+              <SectionLabel>
+                {titles[cat]} <span style={{ color: '#6f6a64', fontWeight: 400 }}>({items.length})</span>
+              </SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+                {items.map(a => (
+                  <BrandAssetCard key={a.src} asset={a} />
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BrandAssetCard({ asset }: { asset: BrandAsset }) {
+  const bg = asset.bgClass === 'light' ? '#fafaf9'
+           : asset.bgClass === 'dark'  ? '#0a0a0a'
+           : '#fff';
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e7e5e4',
+      borderRadius: 8, overflow: 'hidden',
+    }}>
+      <div style={{
+        aspectRatio: '1', background: bg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, overflow: 'hidden',
+      }}>
+        <img
+          src={asset.src}
+          alt={asset.label}
+          style={{
+            maxWidth: '100%', maxHeight: '100%',
+            objectFit: 'contain',
+          }}
+        />
+      </div>
+      <div style={{ padding: '8px 10px' }}>
+        <div style={{ fontSize: 12, color: '#1c1917' }}>{asset.label}</div>
+        <div style={{ fontSize: 10, color: '#6f6a64',
+          fontFamily: '"Geist Mono", monospace', marginTop: 1 }}>
+          {asset.src.split('/').pop()}
         </div>
       </div>
     </div>

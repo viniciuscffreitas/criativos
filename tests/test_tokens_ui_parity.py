@@ -13,9 +13,10 @@ def _css_var(css: str, name: str) -> str:
 
 
 def _ts_prop(ts: str, name: str) -> str:
-    m = re.search(rf"{name}:\s*'([^']+)'", ts)
+    """Match either single- or double-quoted TS string literal."""
+    m = re.search(rf"{name}:\s*'([^']+)'|{name}:\s*\"([^\"]+)\"", ts)
     assert m, f"tokens.ts missing {name}"
-    return m.group(1).strip()
+    return (m.group(1) or m.group(2)).strip()
 
 
 def test_accent_matches():
@@ -58,3 +59,22 @@ def test_accent_dark_matches():
     css = TOKENS_CSS.read_text(encoding="utf-8")
     ts = TOKENS_TS.read_text(encoding="utf-8")
     assert _css_var(css, "accent-dark") == _ts_prop(ts, "accentDark")
+
+
+def test_font_display_brand_matches():
+    """BrandLibrary preview must use the real brand display font, not the UI font."""
+    css = TOKENS_CSS.read_text(encoding="utf-8")
+    ts = TOKENS_TS.read_text(encoding="utf-8")
+    assert _css_var(css, "font-display") == _ts_prop(ts, "fontDisplayBrand")
+
+
+def test_font_body_brand_matches():
+    css = TOKENS_CSS.read_text(encoding="utf-8")
+    ts = TOKENS_TS.read_text(encoding="utf-8")
+    assert _css_var(css, "font-body") == _ts_prop(ts, "fontBodyBrand")
+
+
+def test_font_mono_brand_matches():
+    css = TOKENS_CSS.read_text(encoding="utf-8")
+    ts = TOKENS_TS.read_text(encoding="utf-8")
+    assert _css_var(css, "font-mono") == _ts_prop(ts, "fontMonoBrand")
