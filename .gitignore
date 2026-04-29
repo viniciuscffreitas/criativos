@@ -29,3 +29,17 @@ dist/
 # Instagram content factory — renders are deterministic outputs;
 # goldens/ is the committed regression baseline.
 features/instagram_content/renders/
+
+# Ad renders cached under ads/.rendered (Jinja2 stage)
+ads/.rendered/
+
+# web_gui runtime artifacts
+features/web_gui/traces/
+features/web_gui/uploads/
+features/web_gui/.golden-bootstrap/
+
+# Web UI
+features/web_gui/ui/node_modules/
+features/web_gui/static/
+features/web_gui/ui/dist/
+features/web_gui/ui/.vite/

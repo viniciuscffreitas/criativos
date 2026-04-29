@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Criativos — Agente IA para Meta Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Fraunces:wght@500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #f5f5f4;
+    font-family: "Geist", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes dash { to { stroke-dashoffset: -14; } }
+  @keyframes blink { 50% { opacity: 0; } }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideInRight {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideInUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="application/json" id="__tweaks_defaults">
+/*EDITMODE-BEGIN*/{
+  "theme": "dark",
+  "accent": "green",
+  "streaming": true,
+  "density": "relaxed"
+}/*EDITMODE-END*/
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components/tokens.jsx"></script>
+<script type="text/babel" src="components/icons.jsx"></script>
+<script type="text/babel" src="components/desktop-chrome.jsx"></script>
+<script type="text/babel" src="components/sidebar.jsx"></script>
+<script type="text/babel" src="components/creatives-data.jsx"></script>
+<script type="text/babel" src="components/workflow-canvas.jsx"></script>
+<script type="text/babel" src="components/workflow-nodes.jsx"></script>
+<script type="text/babel" src="components/detail-panel.jsx"></script>
+<script type="text/babel" src="components/gallery.jsx"></script>
+<script type="text/babel" src="components/generation-trace-modal.jsx"></script>
+<script type="text/babel" src="components/overlays.jsx"></script>
+<script type="text/babel" src="components/flow-steps-setup.jsx"></script>
+<script type="text/babel" src="components/flow-steps-generate.jsx"></script>
+<script type="text/babel" src="components/flow-steps-review.jsx"></script>
+<script type="text/babel" src="components/flow-view.jsx"></script>
+
+<script type="text/babel">
+function App() {
+  const defaults = JSON.parse(
+    document.getElementById('__tweaks_defaults').textContent
+      .replace(/\/\*EDITMODE-(BEGIN|END)\*\//g, '').trim()
+  );
+  const [tweaks, _setTweaks] = React.useState(defaults);
+  const setTweaks = (patch) => {
+    _setTweaks(prev => {
+      const next = { ...prev, ...patch };
+      try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*'); } catch {}
+      return next;
+    });
+  };
+
+  const [nav, setNav] = React.useState(() => localStorage.getItem('cr_nav') || 'flow');
+  React.useEffect(() => localStorage.setItem('cr_nav', nav), [nav]);
+
+  const [selectedCreative, setSelectedCreative] = React.useState(null);
+  const [paletteOpen, setPaletteOpen] = React.useState(false);
+  const [tweaksOpen, setTweaksOpen] = React.useState(false);
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const h = (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen(o => !o); }
+      if (mod && e.key === '1') { e.preventDefault(); setNav('flow'); }
+      if (mod && e.key === '2') { e.preventDefault(); setNav('gallery'); }
+      if (mod && e.key === '3') { e.preventDefault(); setNav('brand'); }
+      if (e.key === 'Escape') { setPaletteOpen(false); setSelectedCreative(null); }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, []);
+
+  // Edit mode wiring
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch {}
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // Open creative from canvas node
+  const openCreativeByNode = (nodeId, i) => {
+    const kindMap = { copy: 'copy', image: 'image', carousel: 'carousel', video: 'video' };
+    const list = creativesByKind(kindMap[nodeId] || 'image');
+    const c = list[i] || list[0];
+    if (c) setSelectedCreative(c);
+  };
+
+  // Auto-pulse demo: cycle streaming off after a while
+  const effectiveStreaming = tweaks.streaming;
+
+  const chromeW = Math.min(1480, window.innerWidth - 48);
+  const chromeH = Math.min(900, window.innerHeight - 48);
+
+  return (
+    <DesktopChrome width={chromeW} height={chromeH} title={navTitle(nav)}>
+      <Sidebar active={nav} onNav={setNav} projectName="Tênis Urban Run"/>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', position: 'relative' }}>
+        {nav === 'flow' && <FlowView onFinish={() => setNav('gallery')}/>}
+        {nav === 'gallery' && <Gallery onOpenCreative={setSelectedCreative}/>}
+        {nav === 'brand' && <BrandLibrary/>}
+
+        {selectedCreative && (
+          <DetailPanel creative={selectedCreative} onClose={() => setSelectedCreative(null)}/>
+        )}
+
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          onAction={(a) => {
+            if (a === 'nav-gallery') setNav('gallery');
+            if (a === 'nav-brand') setNav('brand');
+          }}
+        />
+
+        <TweaksPanel
+          open={tweaksOpen}
+          onClose={() => setTweaksOpen(false)}
+          tweaks={tweaks}
+          setTweaks={setTweaks}
+        />
+      </div>
+    </DesktopChrome>
+  );
+}
+
+function navTitle(n) {
+  return n === 'flow' ? 'Novo fluxo' : n === 'gallery' ? 'Galeria' : 'Marca';
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

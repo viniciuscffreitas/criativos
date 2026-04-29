@@ -1,0 +1,198 @@
+"""Unit tests for the SSE event generator (streaming.py).
+
+Tests the generator directly — no HTTP layer involved.
+"""
+from __future__ import annotations
+
+import json
+import os
+
+import pytest
+
+import features.copy_generation.streaming as streaming_mod
+from features.copy_generation.schema import (
+    AgentResult, Brief, CopyVariant, VariantAxes,
+)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_brief() -> Brief:
+    return Brief(
+        product="Website Design",
+        audience="Freelancers",
+        pain="Too much time on admin",
+        ctas=["Get started"],
+    )
+
+
+def _collect_events(gen) -> list[tuple[str, dict]]:
+    """Parse raw SSE frames into (event_name, data_dict) pairs."""
+    events: list[tuple[str, dict]] = []
+    current_event: str | None = None
+    for line in "".join(gen).splitlines():
+        if line.startswith("event: "):
+            current_event = line[len("event: "):]
+        elif line.startswith("data: "):
+            data = json.loads(line[len("data: "):])
+            if current_event is not None:
+                events.append((current_event, data))
+            current_event = None
+    return events
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+def test_sse_format_contract():
+    from features.copy_generation.streaming import sse
+    result = sse("x", {"a": 1})
+    assert result == 'event: x\ndata: {"a": 1}\n\n'
+
+
+def test_dry_run_events_order(monkeypatch):
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    from features.copy_generation import streaming
+    # Reload the module-level constant that was already evaluated at import.
+    monkeypatch.setattr(streaming, "_STREAM_TICK_SECONDS", 0.0)
+
+    from features.copy_generation.streaming import dry_run_events
+    brief = _make_brief()
+    events = _collect_events(dry_run_events(brief, "pas", 2))
+
+    names = [e[0] for e in events]
+
+    # First and last
+    assert names[0] == "run_start"
+    assert names[-1] == "done"
+
+    # node_start(brief) before node_done(brief) before node_start(agent)
+    brief_start_idx = names.index("node_start")
+    brief_done_idx = names.index("node_done")
+    # Second node_start is for agent
+    agent_start_idx = names.index("node_start", brief_start_idx + 1)
+    assert brief_start_idx < brief_done_idx < agent_start_idx
+
+    # At least one token event
+    assert "token" in names
+
+    # variant_done × N (N=2)
+    assert names.count("variant_done") == 2
+
+    # node_done(agent) before done
+    last_node_done_idx = len(names) - 1 - names[::-1].index("node_done")
+    done_idx = names.index("done")
+    assert last_node_done_idx < done_idx
+
+
+def test_dry_run_events_unicode_preserved(monkeypatch):
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    from features.copy_generation import streaming
+    monkeypatch.setattr(streaming, "_STREAM_TICK_SECONDS", 0.0)
+
+    from features.copy_generation.streaming import dry_run_events
+    brief = Brief(
+        product="Produto incrível",
+        audience="Empreendedores",
+        pain="Dificuldades com ação de marketing",
+        ctas=["Saiba mais"],
+    )
+    raw = "".join(dry_run_events(brief, "pas", 1))
+    # ensure_ascii=False must preserve literal unicode — "ação" must NOT be escaped
+    assert "ação" in raw
+
+
+def test_dry_run_events_n_variants_matches_input(monkeypatch):
+    monkeypatch.setenv("VIBEWEB_STREAM_TICK", "0")
+    from features.copy_generation import streaming
+    monkeypatch.setattr(streaming, "_STREAM_TICK_SECONDS", 0.0)
+
+    from features.copy_generation.streaming import dry_run_events
+    brief = _make_brief()
+    events = _collect_events(dry_run_events(brief, "pas", 3))
+    names = [e[0] for e in events]
+    assert names.count("variant_done") == 3
+
+
+# ---------------------------------------------------------------------------
+# real_stream_events tests
+# ---------------------------------------------------------------------------
+
+def _canonical_result(variants: list) -> AgentResult:
+    return AgentResult(
+        run_id="abc123", variants=variants, trace="t", trace_structured=[],
+        methodology="pas", model="claude-sonnet-4-6",
+        pipeline_version="copy_generation@test", seed=None,
+        created_at="2026-04-19T12:00:00Z",
+    )
+
+
+def _canonical_variant(suffix: str = "1") -> CopyVariant:
+    return CopyVariant(
+        id=f"V{suffix}", headline=f"H{suffix}", primary_text="P",
+        description="D", ctas=["go"], confidence="high", confidence_score=0.9,
+        axes=VariantAxes(0.9, 0.8, 0.7), reasoning="r",
+    )
+
+
+def _fake_stream_factory(variants):
+    """Builds a fake _stream_claude: two token yields then a result yield."""
+    def _gen(methodology, user_prompt, n, model):
+        yield ("token", "[PAS v1] Los")
+        yield ("token", "ing clients")
+        yield ("result", _canonical_result(variants))
+    return _gen
+
+
+def test_real_stream_events_emits_expected_sse_sequence(monkeypatch):
+    from features.copy_generation.streaming import real_stream_events
+    v = _canonical_variant()
+    monkeypatch.setattr(streaming_mod, "_stream_claude", _fake_stream_factory([v]))
+
+    brief = Brief(
+        product="p", audience="a", pain="pain text",
+        ctas=["go"], social_proof=None,
+    )
+    frames = list(real_stream_events(brief, methodology="pas", n=1, model="m"))
+    # Each frame is "event: X\ndata: {...}\n\n"
+    kinds = [f.split("\n")[0] for f in frames]
+
+    assert kinds[0] == "event: run_start"
+    assert kinds[1] == "event: node_start"        # brief
+    assert kinds[2] == "event: node_done"         # brief
+    assert kinds[3] == "event: node_start"        # agent
+    # Then 2 tokens, 1 variant_done, 1 node_done (agent), 1 done
+    assert kinds.count("event: token") == 2
+    assert kinds.count("event: variant_done") == 1
+    assert kinds[-2] == "event: node_done"        # agent
+    assert kinds[-1] == "event: done"
+
+
+def test_real_stream_events_passes_tokens_verbatim(monkeypatch):
+    from features.copy_generation.streaming import real_stream_events
+    v = _canonical_variant()
+    monkeypatch.setattr(streaming_mod, "_stream_claude", _fake_stream_factory([v]))
+
+    brief = Brief(product="p", audience="a", pain="x", ctas=["go"], social_proof=None)
+    frames = list(real_stream_events(brief, methodology="pas", n=1, model="m"))
+    token_frames = [f for f in frames if f.startswith("event: token")]
+    assert '"text": "[PAS v1] Los"' in token_frames[0]
+    assert '"text": "ing clients"' in token_frames[1]
+
+
+def test_real_stream_events_raises_if_stream_never_yields_result(monkeypatch):
+    """Defensive: _stream_claude is documented to yield ('result', ...) at end.
+    If it doesn't (contract break), fail loud rather than emit bogus 'done'."""
+    from features.copy_generation.streaming import real_stream_events
+
+    def broken_stream(*a, **kw):
+        yield ("token", "x")
+        # no result yielded
+
+    monkeypatch.setattr(streaming_mod, "_stream_claude", broken_stream)
+    brief = Brief(product="p", audience="a", pain="x", ctas=["go"], social_proof=None)
+    with pytest.raises(RuntimeError, match="without emitting a result"):
+        list(real_stream_events(brief, methodology="pas", n=1, model="m"))

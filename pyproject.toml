@@ -6,12 +6,20 @@ requires-python = ">=3.11"
 dependencies = [
     "playwright>=1.47,<2.0",
     "pillow>=10.4,<12.0",
+    "jinja2>=3.1,<4.0",
+    "pyyaml>=6.0,<7.0",
+    "fastapi>=0.115,<1.0",
+    "python-multipart>=0.0.9,<1.0",
+    "uvicorn[standard]>=0.32,<1.0",
+    "anyio>=4,<5",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3,<9.0",
     "pytest-asyncio>=0.24,<1.0",
+    "httpx>=0.27,<1.0",
+    "pytest-playwright>=0.5,<1.0",
 ]
 
 [project.scripts]
@@ -21,9 +29,10 @@ vibeweb-build = "scripts.build:main"
 markers = [
     "integration: requires generate.py already run (produces PNGs)",
     "visual: perceptual golden-image comparison",
+    "e2e: browser end-to-end tests (opt-in via VIBEWEB_E2E=1)",
 ]
 asyncio_mode = "auto"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["scripts*", "ads*"]
+include = ["scripts*", "ads*", "features*"]

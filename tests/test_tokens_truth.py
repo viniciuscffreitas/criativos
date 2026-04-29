@@ -17,7 +17,10 @@ import pytest
 ROOT = Path(__file__).parent.parent
 
 BRAND_TEMPLATES = sorted((ROOT / "brand" / "social" / "templates").glob("*.html"))
-AD_TEMPLATES = sorted((ROOT / "ads" / "templates").glob("*.html"))
+# Remote migrated ads to Jinja2 (.html.j2). Local added Instagram templates
+# (still plain .html). Both globs land in ALL_TEMPLATES so all variants get
+# checked for tokens-truth.
+AD_TEMPLATES = sorted((ROOT / "ads" / "templates").glob("*.html.j2"))
 INSTAGRAM_TEMPLATES = sorted((ROOT / "features" / "instagram_content" / "templates").glob("*.html"))
 ALL_TEMPLATES = BRAND_TEMPLATES + AD_TEMPLATES + INSTAGRAM_TEMPLATES
 
