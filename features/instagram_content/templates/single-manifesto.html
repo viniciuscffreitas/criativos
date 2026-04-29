@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Thin accent rule — decorative, not a critical selector, positioned inside safe zone */
+.accent-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.4;
+}
+
+/* Radial glow — decorative, not a critical selector */
+.glow {
+  position: absolute;
+  top: 160px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.04) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Headline block — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 200px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 64px;
+  color: var(--text);
+  letter-spacing: -2px;
+  line-height: 1.05;
+}
+
+/* Sub text placed absolutely to avoid margin-top/padding-top inside hook */
+.hook-sub {
+  position: absolute;
+  top: 560px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+/* Muted prefix line — not a critical selector, safe at any position */
+.lead-line {
+  position: absolute;
+  top: 480px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-subtle);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Accent divider — decorative */
+.divider {
+  position: absolute;
+  top: 720px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+/* CTA bar — critical: bottom >= 60 */
+.cta-bar {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cta-bar .cta-text {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.cta-bar .handle {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 3;
+}
+
+.cta-bar .handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="accent-rule"></div>
+<div class="glow"></div>
+
+<div class="hook">
+  <h1>
+    Most freelancers<br>
+    send a Notion link.<br>
+    <em style="font-style:normal;color:var(--accent);">You're not</em><br>
+    most freelancers.
+  </h1>
+</div>
+
+<div class="lead-line">The difference clients notice</div>
+<div class="hook-sub">A proper site changes how they see you<br>before you say a word.</div>
+
+<div class="divider"></div>
+
+<div class="cta-bar">
+  <span class="cta-text">DM 'site' to start →</span>
+  <span class="handle"></span>
+</div>
+
+</body>
+</html>
