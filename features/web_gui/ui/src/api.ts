@@ -49,6 +49,17 @@ export const api = {
       throw new Error(`${body.code || 'ERROR'}: ${body.error || r.statusText}`);
     }
   },
+  deleteBrandFile: async (relPath: string) => {
+    const r = await fetch(`${BASE}/brand-files`, {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: relPath }),
+    });
+    if (!r.ok && r.status !== 204) {
+      const body = await r.json().catch(() => ({ error: r.statusText, code: `HTTP_${r.status}` }));
+      throw new Error(`${body.code || 'ERROR'}: ${body.error || r.statusText}`);
+    }
+  },
 };
 
 export type StreamEvent =

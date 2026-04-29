@@ -1,18 +1,24 @@
 // Brand library view — shell that composes:
 //   - <BrandUploadsSection> — user-managed assets (selectable, deletable)
 //   - <BrandPaletteEditor>  — click-to-edit color tokens (draft in localStorage)
-//   - typography specimen
+//   - <BrandTypographyEditor> — click-to-edit fonts (draft in localStorage)
 //   - canonical brand assets served by the FastAPI /brand StaticFiles mount
 //
-// IMPORTANT: This view shows the TRUE brand. Logos come from /brand/logos/,
-// social renders from /brand/social/renders/, favicons from /brand/favicons/.
-// Fonts shown match brand/tokens.css (Syne, DM Sans, Fira Code) — not the
-// webapp's chrome typography (Geist/Fraunces).
+// Selection state is unified across uploads + canonical: a single Set<string>
+// of selectionIds, where uploads use "upload:<file_id>" and canonical assets
+// use "brand:<rel-path>". The bulk-delete toolbar in the header dispatches to
+// the appropriate endpoint per selectionId prefix:
+//   upload:* → DELETE /api/v1/projects/{slug}/assets/{file_id}
+//   brand:*  → DELETE /api/v1/brand-files                       (path body)
+//
+// Canonical files deleted via the API stay deleted within this session
+// (`deletedBrandPaths`) so the card disappears immediately. Refresh restores
+// from disk if the file was reincluded by a redeploy.
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
-import { tokens } from '../tokens';
 import { IconUpload } from './icons';
 import { BrandPaletteEditor } from './BrandPaletteEditor';
+import { BrandTypographyEditor } from './BrandTypographyEditor';
 import { BrandUploadsSection } from './BrandUploadsSection';
 
 interface BrandLibraryProps {
@@ -68,8 +74,61 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<UploadState>({ kind: 'idle' });
 
-  // refetchKey bumps after a successful upload — child UploadsSection refetches on change.
+  // Bumps after upload success → BrandUploadsSection refetches.
   const [refetchKey, setRefetchKey] = useState<number>(0);
+  // Bumps after a delete that affected uploads → BrandUploadsSection refetches.
+  const [externalRefetchKey, setExternalRefetchKey] = useState<number>(0);
+
+  // Unified selection across uploads + canonical (selectionId scheme:
+  // "upload:<file_id>" | "brand:<rel-path>").
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Canonical paths the user has deleted this session — hide their cards.
+  const [deletedBrandPaths, setDeletedBrandPaths] = useState<Set<string>>(new Set());
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  function toggleSelect(selectionId: string): void {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(selectionId)) next.delete(selectionId); else next.add(selectionId);
+      return next;
+    });
+  }
+
+  async function deleteSelected(): Promise<void> {
+    if (selected.size === 0) return;
+    const count = selected.size;
+    const noun = count === 1 ? 'ativo' : 'ativos';
+    if (!window.confirm(`Excluir ${count} ${noun}? Não pode ser desfeito.`)) return;
+
+    setDeleteError(null);
+    const uploadIds: string[] = [];
+    const brandPaths: string[] = [];
+    for (const id of selected) {
+      if (id.startsWith('upload:')) uploadIds.push(id.slice('upload:'.length));
+      else if (id.startsWith('brand:')) brandPaths.push(id.slice('brand:'.length));
+    }
+
+    try {
+      await Promise.all([
+        ...uploadIds.map(fid => api.deleteAsset(projectSlug, fid)),
+        ...brandPaths.map(p => api.deleteBrandFile(p)),
+      ]);
+      // Hide canonical cards we just deleted.
+      if (brandPaths.length > 0) {
+        setDeletedBrandPaths(prev => {
+          const next = new Set(prev);
+          for (const p of brandPaths) next.add(p);
+          return next;
+        });
+      }
+      // Trigger upload list refetch (server-driven source of truth).
+      if (uploadIds.length > 0) setExternalRefetchKey(k => k + 1);
+      setSelected(new Set());
+    } catch (err) {
+      console.error('[BrandLibrary] bulk delete failed', err);
+      setDeleteError(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   useEffect(() => {
     if (upload.kind !== 'success') return;
@@ -101,13 +160,6 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
     }
   };
 
-  // BRAND fonts — match brand/tokens.css and what the rendered creatives use.
-  const fonts = [
-    { name: 'Syne',      role: 'Display · headlines',  preview: 'Aa', stack: tokens.fontDisplayBrand },
-    { name: 'DM Sans',   role: 'Body · UI',            preview: 'Aa', stack: tokens.fontBodyBrand    },
-    { name: 'Fira Code', role: 'Mono · IDs / código',  preview: 'M0', stack: tokens.fontMonoBrand    },
-  ];
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fafaf9', overflow: 'auto' }}>
       <div style={{
@@ -137,6 +189,27 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
             e.target.value = '';
           }}
         />
+        {selected.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 4 }}>
+            <span style={{
+              fontFamily: '"Geist Mono", monospace', fontSize: 11, color: '#78716c',
+            }}>
+              {selected.size} {selected.size === 1 ? 'selecionado' : 'selecionados'}
+            </span>
+            <button
+              onClick={() => void deleteSelected()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 6,
+                background: '#fff', border: '1px solid rgba(220,38,38,0.3)',
+                fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+                color: '#dc2626',
+              }}
+            >
+              Excluir
+            </button>
+          </div>
+        )}
         <button
           style={{ ...btnSecondary, opacity: upload.kind === 'uploading' ? 0.6 : 1 }}
           disabled={upload.kind === 'uploading'}
@@ -145,6 +218,17 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
           <IconUpload size={13}/> Subir ativo
         </button>
       </div>
+
+      {deleteError && (
+        <div role="alert" style={{
+          padding: '8px 20px', fontSize: 12, color: '#dc2626',
+          background: 'rgba(220, 38, 38, 0.10)',
+          borderBottom: '1px solid rgba(220, 38, 38, 0.2)',
+          fontFamily: '"Geist Mono", monospace',
+        }}>
+          erro ao excluir: {deleteError}
+        </div>
+      )}
 
       {upload.kind === 'uploading' && (
         <div style={{
@@ -186,40 +270,25 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
         <BrandUploadsSection
           projectSlug={projectSlug}
           refetchKey={refetchKey}
+          externalRefetchKey={externalRefetchKey}
           renderLabel={(label) => <SectionLabel>{label}</SectionLabel>}
+          selected={selected}
+          onToggle={toggleSelect}
         />
 
         <BrandPaletteEditor
           renderLabel={(label) => <SectionLabel>{label}</SectionLabel>}
         />
 
-        {/* Fonts */}
-        <div>
-          <SectionLabel>Tipografia da marca</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-            {fonts.map(f => (
-              <div key={f.name} style={{
-                background: '#fff', border: '1px solid #e7e5e4',
-                borderRadius: 8, padding: 16,
-                display: 'flex', alignItems: 'center', gap: 14,
-              }}>
-                <div style={{
-                  fontSize: 40, fontWeight: 700, letterSpacing: -1,
-                  color: '#1c1917', lineHeight: 1,
-                  fontFamily: f.stack,
-                }}>{f.preview}</div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1917' }}>{f.name}</div>
-                  <div style={{ fontSize: 11, color: '#78716c', marginTop: 2 }}>{f.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <BrandTypographyEditor
+          renderLabel={(label) => <SectionLabel>{label}</SectionLabel>}
+        />
 
         {/* Canonical brand assets — categories rendered separately */}
         {(['logo', 'social', 'favicon'] as const).map(cat => {
-          const items = BRAND_ASSETS.filter(a => a.category === cat);
+          const items = BRAND_ASSETS.filter(a =>
+            a.category === cat && !deletedBrandPaths.has(brandRelPath(a.src)),
+          );
           if (items.length === 0) return null;
           const titles: Record<typeof cat, string> = {
             logo: 'Logos',
@@ -232,9 +301,19 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
                 {titles[cat]} <span style={{ color: '#6f6a64', fontWeight: 400 }}>({items.length})</span>
               </SectionLabel>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-                {items.map(a => (
-                  <BrandAssetCard key={a.src} asset={a} />
-                ))}
+                {items.map(a => {
+                  const relPath = brandRelPath(a.src);
+                  const selectionId = `brand:${relPath}`;
+                  const isSelected = selected.has(selectionId);
+                  return (
+                    <BrandAssetCard
+                      key={a.src}
+                      asset={a}
+                      isSelected={isSelected}
+                      onToggleSelect={() => toggleSelect(selectionId)}
+                    />
+                  );
+                })}
               </div>
             </div>
           );
@@ -244,14 +323,28 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
   );
 }
 
-function BrandAssetCard({ asset }: { asset: BrandAsset }) {
+/** Strip the "/brand/" prefix from a /brand-mounted URL → relative path under brand_dir(). */
+function brandRelPath(src: string): string {
+  return src.replace(/^\/brand\//, '');
+}
+
+interface BrandAssetCardProps {
+  asset: BrandAsset;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}
+
+function BrandAssetCard({ asset, isSelected, onToggleSelect }: BrandAssetCardProps) {
   const bg = asset.bgClass === 'light' ? '#fafaf9'
            : asset.bgClass === 'dark'  ? '#0a0a0a'
            : '#fff';
+  const filename = asset.src.split('/').pop() ?? asset.src;
   return (
     <div style={{
-      background: '#fff', border: '1px solid #e7e5e4',
+      background: '#fff',
+      border: isSelected ? '2px solid var(--accent)' : '1px solid #e7e5e4',
       borderRadius: 8, overflow: 'hidden',
+      position: 'relative',
     }}>
       <div style={{
         aspectRatio: '1', background: bg,
@@ -267,11 +360,27 @@ function BrandAssetCard({ asset }: { asset: BrandAsset }) {
           }}
         />
       </div>
+      <label style={{
+        position: 'absolute', top: 6, right: 6,
+        width: 22, height: 22, borderRadius: 6,
+        background: 'rgba(255,255,255,0.95)',
+        border: '1px solid #d6d3d1',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer',
+      }}>
+        <input
+          type="checkbox"
+          aria-label={`Selecionar ${filename}`}
+          checked={isSelected}
+          onChange={onToggleSelect}
+          style={{ margin: 0, cursor: 'pointer' }}
+        />
+      </label>
       <div style={{ padding: '8px 10px' }}>
         <div style={{ fontSize: 12, color: '#1c1917' }}>{asset.label}</div>
         <div style={{ fontSize: 10, color: '#6f6a64',
           fontFamily: '"Geist Mono", monospace', marginTop: 1 }}>
-          {asset.src.split('/').pop()}
+          {filename}
         </div>
       </div>
     </div>

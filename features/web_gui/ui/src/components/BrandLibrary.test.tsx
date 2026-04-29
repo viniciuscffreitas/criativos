@@ -135,54 +135,119 @@ describe('BrandLibrary — real assets (no mock placeholders)', () => {
   });
 });
 
-describe('BrandLibrary — palette edit', () => {
+describe('BrandLibrary — palette edit (confirm-modal flow)', () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it('renders a color input for each palette swatch', () => {
+  it('renders an "Editar X" trigger button for each swatch', () => {
     render(<BrandLibrary projectSlug="vibeweb" />);
-    // Each swatch label has an associated color input
-    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' });
-    expect(accentInput).toBeInTheDocument();
-    expect((accentInput as HTMLInputElement).value).toBe('#04d361');
+    expect(screen.getByRole('button', { name: /^Editar Accent$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Editar Background/i })).toBeInTheDocument();
   });
 
-  it('editing a swatch persists draft to localStorage and live-applies', () => {
+  it('clicking a swatch opens a confirm dialog (does NOT live-apply)', () => {
     render(<BrandLibrary projectSlug="vibeweb" />);
-    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
-    fireEvent.input(accentInput, { target: { value: '#ff00aa' } });
-    // Draft persisted
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Accent$/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Editing inside the dialog does NOT immediately persist.
+    expect(localStorage.getItem('cr_palette_draft')).toBeNull();
+  });
+
+  it('cancelling the swatch dialog does NOT persist', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Accent$/i }));
+    const dialogPicker = screen.getByLabelText(/^Nova cor$/i) as HTMLInputElement;
+    fireEvent.input(dialogPicker, { target: { value: '#ff00aa' } });
+    fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }));
+    expect(localStorage.getItem('cr_palette_draft')).toBeNull();
+  });
+
+  it('confirming the swatch dialog persists the new color', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Accent$/i }));
+    const dialogPicker = screen.getByLabelText(/^Nova cor$/i) as HTMLInputElement;
+    fireEvent.input(dialogPicker, { target: { value: '#ff00aa' } });
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
     const draft = JSON.parse(localStorage.getItem('cr_palette_draft') ?? '{}');
     expect(draft.accent).toBe('#ff00aa');
-    // Live-applied to the swatch (its inline style background should now be the new color)
-    expect(accentInput.value).toBe('#ff00aa');
   });
 
-  it('restores the draft palette on mount when localStorage has one', () => {
+  it('restores the draft palette on mount and shows it on the swatch', () => {
     localStorage.setItem('cr_palette_draft', JSON.stringify({ accent: '#abcdef' }));
     render(<BrandLibrary projectSlug="vibeweb" />);
-    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
-    expect(accentInput.value).toBe('#abcdef');
+    // Hex chip on the swatch button reflects the draft
+    const accentBtn = screen.getByRole('button', { name: /^Editar Accent$/i });
+    expect(accentBtn.textContent).toMatch(/#abcdef/i);
   });
 
   it('shows "Resetar paleta" button only when a draft exists', () => {
-    const { rerender } = render(<BrandLibrary projectSlug="vibeweb" />);
+    render(<BrandLibrary projectSlug="vibeweb" />);
     expect(screen.queryByRole('button', { name: /Resetar paleta/i })).toBeNull();
-    // Now create a draft
-    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
-    fireEvent.input(accentInput, { target: { value: '#123456' } });
-    rerender(<BrandLibrary projectSlug="vibeweb" />);
+    // Edit one swatch
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Accent$/i }));
+    fireEvent.input(screen.getByLabelText(/^Nova cor$/i), { target: { value: '#123456' } });
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
     expect(screen.getByRole('button', { name: /Resetar paleta/i })).toBeInTheDocument();
   });
 
-  it('clicking "Resetar paleta" clears the draft and reverts swatches', () => {
+  it('clicking "Resetar paleta" clears the draft', () => {
     localStorage.setItem('cr_palette_draft', JSON.stringify({ accent: '#abcdef' }));
     render(<BrandLibrary projectSlug="vibeweb" />);
     fireEvent.click(screen.getByRole('button', { name: /Resetar paleta/i }));
     expect(localStorage.getItem('cr_palette_draft')).toBeNull();
-    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
-    expect(accentInput.value).toBe('#04d361');
+    const accentBtn = screen.getByRole('button', { name: /^Editar Accent$/i });
+    expect(accentBtn.textContent).toMatch(/#04d361/i);
+  });
+});
+
+describe('BrandLibrary — typography edit (confirm-modal flow)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('clicking a font card opens a confirm dialog', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Display$/i }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(/Editar Display/i)).toBeInTheDocument();
+    expect(localStorage.getItem('cr_typography_draft')).toBeNull();
+  });
+
+  it('cancelling typography dialog does NOT persist', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Display$/i }));
+    const input = screen.getByLabelText(/^Nova fonte$/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Inter' } });
+    fireEvent.click(screen.getByRole('button', { name: /Cancelar/i }));
+    expect(localStorage.getItem('cr_typography_draft')).toBeNull();
+  });
+
+  it('confirming typography dialog persists the new font family', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Display$/i }));
+    const input = screen.getByLabelText(/^Nova fonte$/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'Inter' } });
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
+    const draft = JSON.parse(localStorage.getItem('cr_typography_draft') ?? '{}');
+    expect(draft.display).toBe('Inter');
+  });
+
+  it('clicking a suggestion chip fills the input', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Display$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Inter$/ }));
+    const input = screen.getByLabelText(/^Nova fonte$/i) as HTMLInputElement;
+    expect(input.value).toBe('Inter');
+  });
+
+  it('shows "Resetar tipografia" only when a draft exists', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.queryByRole('button', { name: /Resetar tipografia/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Editar Display$/i }));
+    fireEvent.change(screen.getByLabelText(/^Nova fonte$/i), { target: { value: 'Inter' } });
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }));
+    expect(screen.getByRole('button', { name: /Resetar tipografia/i })).toBeInTheDocument();
   });
 });
 
@@ -213,7 +278,7 @@ describe('BrandLibrary — uploads (list + select + delete)', () => {
     expect(screen.getByText('icon.svg')).toBeInTheDocument();
   });
 
-  it('selecting an upload via checkbox shows the selection toolbar', async () => {
+  it('selecting an upload via checkbox shows the global selection toolbar', async () => {
     vi.spyOn(api, 'listAssets').mockResolvedValueOnce({
       assets: [
         { file_id: 'a'.repeat(32), filename: 'banner.png', size: 1024, kind: 'image' },
@@ -221,14 +286,14 @@ describe('BrandLibrary — uploads (list + select + delete)', () => {
       ],
     });
     render(<BrandLibrary projectSlug="vibeweb" />);
-    const checkboxes = await screen.findAllByRole('checkbox', { name: /selecionar/i });
-    expect(checkboxes).toHaveLength(2);
-    expect(screen.queryByRole('button', { name: /Excluir/i })).toBeNull();
-    fireEvent.click(checkboxes[0]);
-    expect(screen.getByRole('button', { name: /Excluir/i })).toBeInTheDocument();
-    expect(screen.getByText(/1 selecionado/i)).toBeInTheDocument();
-    fireEvent.click(checkboxes[1]);
-    expect(screen.getByText(/2 selecionados/i)).toBeInTheDocument();
+    const banner = await screen.findByRole('checkbox', { name: /Selecionar banner\.png/i });
+    const icon   = await screen.findByRole('checkbox', { name: /Selecionar icon\.svg/i });
+    expect(screen.queryByRole('button', { name: /^Excluir$/i })).toBeNull();
+    fireEvent.click(banner);
+    expect(screen.getByRole('button', { name: /^Excluir$/i })).toBeInTheDocument();
+    expect(screen.getByText(/^1 selecionado$/i)).toBeInTheDocument();
+    fireEvent.click(icon);
+    expect(screen.getByText(/^2 selecionados$/i)).toBeInTheDocument();
   });
 
   it('clicking Excluir confirms then calls deleteAsset for each selected id', async () => {
@@ -244,10 +309,9 @@ describe('BrandLibrary — uploads (list + select + delete)', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<BrandLibrary projectSlug="vibeweb" />);
-    const checkboxes = await screen.findAllByRole('checkbox', { name: /selecionar/i });
-    fireEvent.click(checkboxes[0]);
-    fireEvent.click(checkboxes[1]);
-    fireEvent.click(screen.getByRole('button', { name: /Excluir/i }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Selecionar banner\.png/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Selecionar icon\.svg/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Excluir$/i }));
 
     expect(confirmSpy).toHaveBeenCalledOnce();
     await waitFor(() => {
@@ -265,10 +329,87 @@ describe('BrandLibrary — uploads (list + select + delete)', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<BrandLibrary projectSlug="vibeweb" />);
-    const cb = await screen.findByRole('checkbox', { name: /selecionar/i });
-    fireEvent.click(cb);
-    fireEvent.click(screen.getByRole('button', { name: /Excluir/i }));
+    fireEvent.click(await screen.findByRole('checkbox', { name: /Selecionar banner\.png/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Excluir$/i }));
 
     expect(deleteSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('BrandLibrary — canonical asset selection + delete', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(api, 'listAssets').mockResolvedValue({ assets: [] });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders a checkbox on each canonical brand asset card', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    // The Logos section has at least one canonical card with a checkbox.
+    expect(
+      screen.getByRole('checkbox', { name: /selecionar.*vibeweb-primary\.svg/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: /selecionar.*instagram-post\.png/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', { name: /selecionar.*favicon-32\.png/i })
+    ).toBeInTheDocument();
+  });
+
+  it('selecting a canonical asset shows the global selection toolbar', async () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const cb = screen.getByRole('checkbox', { name: /selecionar.*vibeweb-primary\.svg/i });
+    fireEvent.click(cb);
+    expect(await screen.findByText(/^1 selecionado$/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Excluir$/i }).length).toBeGreaterThan(0);
+  });
+
+  it('confirming Excluir on a canonical asset calls api.deleteBrandFile', async () => {
+    const spy = vi.spyOn(api, 'deleteBrandFile').mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('checkbox', { name: /selecionar.*instagram-post\.png/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /^Excluir$/i })[0]);
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    expect(spy).toHaveBeenCalledWith('social/renders/instagram-post.png');
+  });
+
+  it('after delete, the canonical asset card disappears', async () => {
+    vi.spyOn(api, 'deleteBrandFile').mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.getByText('vibeweb-primary.svg')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: /selecionar.*vibeweb-primary\.svg/i }));
+    fireEvent.click(screen.getAllByRole('button', { name: /^Excluir$/i })[0]);
+    await waitFor(() => {
+      expect(screen.queryByText('vibeweb-primary.svg')).toBeNull();
+    });
+  });
+
+  it('mixed selection (upload + canonical) calls both endpoints', async () => {
+    vi.spyOn(api, 'listAssets').mockResolvedValue({
+      assets: [{ file_id: 'a'.repeat(32), filename: 'mine.png', size: 100, kind: 'image' }],
+    });
+    const uploadSpy = vi.spyOn(api, 'deleteAsset').mockResolvedValue(undefined);
+    const brandSpy = vi.spyOn(api, 'deleteBrandFile').mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    // Wait for upload list to load
+    await screen.findByText('mine.png');
+    fireEvent.click(screen.getByRole('checkbox', { name: /selecionar mine\.png/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /selecionar.*vibeweb-icon\.svg/i }));
+    expect(await screen.findByText(/^2 selecionados$/i)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /^Excluir$/i })[0]);
+
+    await waitFor(() => {
+      expect(uploadSpy).toHaveBeenCalledTimes(1);
+      expect(brandSpy).toHaveBeenCalledTimes(1);
+    });
+    expect(uploadSpy).toHaveBeenCalledWith('vibeweb', 'a'.repeat(32));
+    expect(brandSpy).toHaveBeenCalledWith('logos/vibeweb-icon.svg');
   });
 });

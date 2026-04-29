@@ -25,7 +25,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from features.web_gui.api import assets, briefs, creatives, generate, projects, traces, variants
+from features.web_gui.api import assets, brand_files, briefs, creatives, generate, projects, traces, variants
 from features.web_gui.settings import brand_dir, renders_dir, static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
     app.include_router(variants.router, prefix="/api/v1")
     app.include_router(traces.router, prefix="/api/v1")
     app.include_router(assets.router, prefix="/api/v1")
+    app.include_router(brand_files.router, prefix="/api/v1")
 
     @app.exception_handler(HTTPException)
     async def http_exc_handler(_, exc: HTTPException):

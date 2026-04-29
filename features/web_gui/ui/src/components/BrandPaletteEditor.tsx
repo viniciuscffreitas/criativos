@@ -1,11 +1,13 @@
 // Editable palette section of the BrandLibrary.
 //
-// Each swatch is click-to-edit via a native HTML color input. Edits live in
-// localStorage as a draft (cr_palette_draft) — they do NOT write back to
-// brand/tokens.css; that's a separate decision since it ripples through every
-// rendered creative.
+// Each swatch is a button that opens a ConfirmDialog with a side-by-side
+// preview ("atual" vs "nova") and a color picker. Edits only persist when
+// the user explicitly confirms — accidental clicks no longer change the
+// palette. Drafts live in localStorage (cr_palette_draft) and do NOT write
+// back to brand/tokens.css.
 import React, { useState } from 'react';
 import { tokens } from '../tokens';
+import { ConfirmDialog } from './ConfirmDialog';
 
 const PALETTE_DRAFT_KEY = 'cr_palette_draft';
 
@@ -55,10 +57,20 @@ interface BrandPaletteEditorProps {
 
 export function BrandPaletteEditor({ renderLabel }: BrandPaletteEditorProps) {
   const [palette, setPalette] = useState<PaletteDraft>(() => readPaletteDraft());
+  const [editing, setEditing] = useState<{ swatch: PaletteSwatch; pending: string } | null>(null);
   const hasDraft = Object.keys(palette).length > 0;
 
-  function setSwatch(key: PaletteKey, hex: string): void {
-    const next: PaletteDraft = { ...palette, [key]: hex };
+  function swatchHex(s: PaletteSwatch): string {
+    return palette[s.key] ?? s.defaultHex;
+  }
+
+  function openEditor(s: PaletteSwatch): void {
+    setEditing({ swatch: s, pending: swatchHex(s) });
+  }
+
+  function commitEditor(): void {
+    if (!editing) return;
+    const next: PaletteDraft = { ...palette, [editing.swatch.key]: editing.pending };
     setPalette(next);
     writePaletteDraft(next);
   }
@@ -66,10 +78,6 @@ export function BrandPaletteEditor({ renderLabel }: BrandPaletteEditorProps) {
   function resetPalette(): void {
     setPalette({});
     writePaletteDraft({});
-  }
-
-  function swatchHex(s: PaletteSwatch): string {
-    return palette[s.key] ?? s.defaultHex;
   }
 
   const labelNode = (
@@ -100,59 +108,134 @@ export function BrandPaletteEditor({ renderLabel }: BrandPaletteEditorProps) {
           }}>{labelNode}</div>
         )}
         {hasDraft && (
-          <button
-            onClick={resetPalette}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 8px', borderRadius: 6,
-              background: '#fff', color: '#44403c', border: '1px solid #e7e5e4',
-              fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-            }}
-          >
+          <button onClick={resetPalette} style={btnSecondaryStyle}>
             Resetar paleta
           </button>
         )}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-        {SWATCHES.map(s => {
-          const hex = swatchHex(s);
-          const inputId = `swatch-${s.key}`;
-          return (
-            <label
-              key={s.key}
-              htmlFor={inputId}
-              style={{
-                background: '#fff', border: '1px solid #e7e5e4',
-                borderRadius: 8, overflow: 'hidden',
-                cursor: 'pointer', display: 'block',
-                position: 'relative',
-              }}
-            >
-              <div style={{ height: 80, background: hex }}/>
-              <div style={{ padding: '10px 12px' }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1917' }}>{s.name}</div>
-                <div style={{ fontSize: 10, color: '#6f6a64', marginTop: 1,
-                  fontFamily: '"Geist Mono", monospace' }}>{hex}</div>
-                <div style={{ fontSize: 11, color: '#78716c', marginTop: 4 }}>{s.role}</div>
-              </div>
-              <input
-                id={inputId}
-                type="color"
-                aria-label={s.name}
-                value={hex}
-                onInput={(e) => setSwatch(s.key, (e.target as HTMLInputElement).value)}
-                onChange={(e) => setSwatch(s.key, (e.target as HTMLInputElement).value)}
-                style={{
-                  position: 'absolute', top: 8, right: 8,
-                  width: 1, height: 1,
-                  padding: 0, border: 0, opacity: 0,
-                  pointerEvents: 'none',
-                }}
-              />
-            </label>
-          );
-        })}
+        {SWATCHES.map(s => (
+          <PaletteSwatchButton
+            key={s.key}
+            swatch={s}
+            hex={swatchHex(s)}
+            onClick={() => openEditor(s)}
+          />
+        ))}
+      </div>
+
+      {editing && (
+        <ConfirmDialog
+          open
+          title={`Editar ${editing.swatch.name}`}
+          confirmLabel="Confirmar"
+          onConfirm={commitEditor}
+          onClose={() => setEditing(null)}
+          body={
+            <PaletteEditDialogBody
+              swatch={editing.swatch}
+              currentHex={swatchHex(editing.swatch)}
+              pending={editing.pending}
+              onChangePending={(hex) => setEditing(e => e ? { ...e, pending: hex } : e)}
+            />
+          }
+        />
+      )}
+    </div>
+  );
+}
+
+function PaletteSwatchButton({
+  swatch, hex, onClick,
+}: { swatch: PaletteSwatch; hex: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Editar ${swatch.name}`}
+      onClick={onClick}
+      style={{
+        background: '#fff', border: '1px solid #e7e5e4',
+        borderRadius: 8, overflow: 'hidden',
+        cursor: 'pointer', display: 'block',
+        padding: 0, font: 'inherit', textAlign: 'left',
+        width: '100%',
+      }}
+    >
+      <div style={{ height: 80, background: hex }}/>
+      <div style={{ padding: '10px 12px' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1917' }}>{swatch.name}</div>
+        <div style={{ fontSize: 10, color: '#6f6a64', marginTop: 1,
+          fontFamily: '"Geist Mono", monospace' }}>{hex}</div>
+        <div style={{ fontSize: 11, color: '#78716c', marginTop: 4 }}>{swatch.role}</div>
+      </div>
+    </button>
+  );
+}
+
+function PaletteEditDialogBody({
+  swatch, currentHex, pending, onChangePending,
+}: {
+  swatch: PaletteSwatch;
+  currentHex: string;
+  pending: string;
+  onChangePending: (hex: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ fontSize: 12, color: '#57534e', lineHeight: 1.5 }}>
+        Mudando <strong>{swatch.name}</strong> ({swatch.role}). A mudança fica
+        salva localmente como rascunho até você confirmar — não afeta os
+        criativos já renderizados.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ background: '#fff', border: '1px solid #e7e5e4', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ height: 70, background: currentHex }}/>
+          <div style={{ padding: '8px 10px' }}>
+            <div style={{ fontSize: 11, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5 }}>Atual</div>
+            <div style={{ fontFamily: '"Geist Mono", monospace', fontSize: 12, color: '#1c1917', marginTop: 2 }}>
+              {currentHex}
+            </div>
+          </div>
+        </div>
+        <div style={{ background: '#fff', border: '2px solid var(--accent)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ height: 70, background: pending }}/>
+          <div style={{ padding: '8px 10px' }}>
+            <div style={{ fontSize: 11, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5 }}>Nova</div>
+            <div style={{ fontFamily: '"Geist Mono", monospace', fontSize: 12, color: '#1c1917', marginTop: 2 }}>
+              {pending}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <label style={{ fontSize: 12, color: '#57534e' }}>Nova cor:</label>
+        <input
+          type="color"
+          aria-label="Nova cor"
+          value={pending}
+          onInput={(e) => onChangePending((e.target as HTMLInputElement).value)}
+          onChange={(e) => onChangePending((e.target as HTMLInputElement).value)}
+          style={{ width: 48, height: 36, padding: 0, border: '1px solid #e7e5e4', borderRadius: 6, cursor: 'pointer' }}
+        />
+        <input
+          type="text"
+          aria-label="Hex da nova cor"
+          value={pending}
+          onChange={(e) => onChangePending(e.target.value.trim())}
+          style={{
+            flex: 1, padding: '7px 10px', borderRadius: 6,
+            border: '1px solid #e7e5e4', fontFamily: '"Geist Mono", monospace',
+            fontSize: 12, color: '#1c1917',
+          }}
+        />
       </div>
     </div>
   );
 }
+
+const btnSecondaryStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  padding: '4px 8px', borderRadius: 6,
+  background: '#fff', color: '#44403c', border: '1px solid #e7e5e4',
+  fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
+};

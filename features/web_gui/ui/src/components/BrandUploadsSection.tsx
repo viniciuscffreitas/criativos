@@ -17,13 +17,20 @@ interface BrandUploadsSectionProps {
   projectSlug: string;
   /** Bumps when a successful upload happens — triggers refetch. */
   refetchKey: number;
+  /** Bumps when an external action (delete) needs us to refetch. */
+  externalRefetchKey?: number;
   /** Render slot for the section label so parent can wrap with its own component. */
   renderLabel?: (label: React.ReactNode) => React.ReactNode;
+  /** Selection state lives at the BrandLibrary level so it spans uploads + canonical. */
+  selected: Set<string>;
+  /** Toggle a selectionId (always prefixed "upload:" for items in this section). */
+  onToggle: (selectionId: string) => void;
 }
 
-export function BrandUploadsSection({ projectSlug, refetchKey, renderLabel }: BrandUploadsSectionProps) {
+export function BrandUploadsSection({
+  projectSlug, refetchKey, externalRefetchKey = 0, renderLabel, selected, onToggle,
+}: BrandUploadsSectionProps) {
   const [uploads, setUploads] = useState<UploadedAsset[] | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
   async function refetch(): Promise<void> {
@@ -31,39 +38,14 @@ export function BrandUploadsSection({ projectSlug, refetchKey, renderLabel }: Br
     try {
       const r = await api.listAssets(projectSlug);
       setUploads(r.assets);
-      const live = new Set(r.assets.map(a => a.file_id));
-      setSelected(prev => new Set(Array.from(prev).filter(id => live.has(id))));
     } catch (err) {
       console.error('[BrandUploadsSection] listAssets failed', err);
       setError(err instanceof Error ? err.message : String(err));
     }
   }
 
-  useEffect(() => { void refetch(); }, [projectSlug, refetchKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function toggleSelect(fileId: string): void {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(fileId)) next.delete(fileId); else next.add(fileId);
-      return next;
-    });
-  }
-
-  async function deleteSelected(): Promise<void> {
-    if (selected.size === 0) return;
-    const count = selected.size;
-    const noun = count === 1 ? 'ativo' : 'ativos';
-    if (!window.confirm(`Excluir ${count} ${noun}? Não pode ser desfeito.`)) return;
-    const ids = Array.from(selected);
-    try {
-      await Promise.all(ids.map(id => api.deleteAsset(projectSlug, id)));
-      setSelected(new Set());
-      await refetch();
-    } catch (err) {
-      console.error('[BrandUploadsSection] deleteAsset failed', err);
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void refetch(); }, [projectSlug, refetchKey, externalRefetchKey]);
 
   const labelNode = (
     <>Seus uploads {uploads && (
@@ -82,27 +64,6 @@ export function BrandUploadsSection({ projectSlug, refetchKey, renderLabel }: Br
             fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8,
             color: '#78716c', fontWeight: 500,
           }}>{labelNode}</div>
-        )}
-        {selected.size > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              fontFamily: '"Geist Mono", monospace', fontSize: 11, color: '#78716c',
-            }}>
-              {selected.size} {selected.size === 1 ? 'selecionado' : 'selecionados'}
-            </span>
-            <button
-              onClick={() => void deleteSelected()}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 10px', borderRadius: 6,
-                background: '#fff', border: '1px solid rgba(220,38,38,0.3)',
-                fontSize: 11, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-                color: '#dc2626',
-              }}
-            >
-              Excluir
-            </button>
-          </div>
         )}
       </div>
       {error && (
@@ -128,7 +89,8 @@ export function BrandUploadsSection({ projectSlug, refetchKey, renderLabel }: Br
       {uploads && uploads.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
           {uploads.map(u => {
-            const isSelected = selected.has(u.file_id);
+            const selectionId = `upload:${u.file_id}`;
+            const isSelected = selected.has(selectionId);
             const previewable = u.kind === 'image' || u.kind === 'logo';
             return (
               <div key={u.file_id} style={{
@@ -168,7 +130,7 @@ export function BrandUploadsSection({ projectSlug, refetchKey, renderLabel }: Br
                     type="checkbox"
                     aria-label={`Selecionar ${u.filename}`}
                     checked={isSelected}
-                    onChange={() => toggleSelect(u.file_id)}
+                    onChange={() => onToggle(selectionId)}
                     style={{ margin: 0, cursor: 'pointer' }}
                   />
                 </label>
