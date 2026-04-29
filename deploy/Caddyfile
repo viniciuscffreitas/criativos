@@ -1,0 +1,35 @@
+# Vibe Web — Caddy reverse proxy config for VPS
+# Drop into /etc/caddy/Caddyfile (or import via include from main config).
+# Caddy auto-provisions Let's Encrypt cert for the domain.
+
+criativos.vinicius.xyz {
+    # Proxy to the docker container bound to 127.0.0.1:8090
+    reverse_proxy 127.0.0.1:8090
+
+    # Compress text payloads (HTML/JS/CSS) for faster cold-load
+    encode gzip
+
+    # Sensible upload limit — assets endpoint accepts images up to ~10MB by default
+    request_body {
+        max_size 25MB
+    }
+
+    # Logs to stdout (journalctl -u caddy)
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+
+    # Security headers
+    header {
+        # Lock down what other origins can frame us
+        X-Frame-Options "SAMEORIGIN"
+        # MIME sniffing off
+        X-Content-Type-Options "nosniff"
+        # No referrer leak to third parties
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Caddy already terminates TLS; HSTS for 6 months
+        Strict-Transport-Security "max-age=15768000; includeSubDomains"
+    }
+}
