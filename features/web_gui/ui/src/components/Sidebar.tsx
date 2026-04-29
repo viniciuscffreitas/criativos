@@ -1,6 +1,6 @@
 // Left sidebar + project switcher
 import type { Project } from '../types';
-import { IconSparkle, IconGrid, IconBrand, IconChevronDown, IconSettings } from './icons';
+import { IconSparkle, IconGrid, IconBrand, IconChevronDown } from './icons';
 
 export type NavSection = 'flow' | 'gallery' | 'brand';
 
@@ -109,24 +109,6 @@ export function Sidebar({ active, onNav, projects, activeProjectSlug, onSelectPr
             </div>
           );
         })}
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        padding: '10px 12px', borderTop: '1px solid #e7e5e4',
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <div style={{
-          width: 24, height: 24, borderRadius: '50%',
-          background: '#1c1917', color: '#fafaf9',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 600,
-        }}>M</div>
-        <div style={{ flex: 1, fontSize: 12 }}>
-          <div style={{ color: '#1c1917' }}>Mateus R.</div>
-          <div style={{ fontSize: 10, color: '#6f6a64' }}>Plano Pro · 124 créditos</div>
-        </div>
-        <IconSettings size={14} stroke="#a8a29e" />
       </div>
     </div>
   );
