@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Very faint vertical center glow — decorative, not critical selector */
+.glow {
+  position: absolute;
+  top: 400px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 500px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Main headline — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 260px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 96px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 0.95;
+}
+
+.hook h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* Sub — not critical selector, placed absolutely */
+.hook-sub {
+  position: absolute;
+  top: 620px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* Thin accent separator — decorative, not critical */
+.sep {
+  position: absolute;
+  top: 810px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.6;
+}
+
+/* Handle as primary CTA — ungated from .cta-bar per spec */
+/* Not using .cta-bar selector intentionally — handle IS the CTA */
+.handle {
+  position: absolute;
+  bottom: 200px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="hook">
+  <h1>Send<br><em>'site'.</em></h1>
+</div>
+
+<div class="hook-sub">Get a Loom in 24h showing<br>how I'd build yours.</div>
+
+<div class="sep"></div>
+
+<span class="handle"></span>
+
+</body>
+</html>
