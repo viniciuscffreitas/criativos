@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Subtle full-bleed VW mark behind everything */
+.bg-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1100px;
+  height: 880px;
+  opacity: 0.035;
+  z-index: 0;
+}
+
+/* IG crops highlight cover to a circle ~around the center vertically.
+   The icon + label group sits centered between top-edge and bottom-edge,
+   safe inside the circular crop window. */
+.cover-frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.cover-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+}
+
+.icon-circle {
+  width: 280px;
+  height: 280px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 2px solid rgba(var(--accent-rgb), 0.30);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-circle svg {
+  width: 130px;
+  height: 130px;
+}
+
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
+.headline {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 64px;
+  color: var(--text);
+  letter-spacing: -1.2px;
+  text-align: center;
+}
+
+.headline-sub {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  margin-top: -12px;
+}
+
+/* Brand handle anchored top — visible only outside the IG circle crop;
+   the cover itself works without it but story-upload preserves it. */
+.handle-top {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  z-index: 5;
+}
+
+.handle-top::before { content: var(--ig-handle); }
+
+/* Visual rule outside the circle */
+.rule-bottom {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  z-index: 5;
+}
+</style>
+</head>
+<body>
+  <svg class="bg-mark" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+    <g fill="var(--accent)" fill-rule="evenodd">
+      <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+      <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+      <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+    </g>
+  </svg>
+
+  <div class="handle-top"></div>
+
+  <div class="cover-frame">
+    <div class="cover-content">
+      <div class="icon-circle">
+        <svg id="icon-svg" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </div>
+      <div class="headline" id="label">Portfolio</div>
+      <div class="headline-sub" id="sub">Recent work</div>
+    </div>
+  </div>
+
+  <div class="rule-bottom"></div>
+
+<script>
+const TYPES = {
+  services: {
+    label: 'Services',
+    sub: 'What you get',
+    icon: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'
+  },
+  portfolio: {
+    label: 'Portfolio',
+    sub: 'Recent work',
+    icon: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'
+  },
+  about: {
+    label: 'About',
+    sub: 'How I work',
+    icon: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
+  },
+  contact: {
+    label: 'Contact',
+    sub: 'Reach out',
+    icon: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>'
+  },
+  feed: {
+    label: 'Feed',
+    sub: 'Saved posts',
+    icon: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>'
+  }
+};
+
+const params = new URLSearchParams(location.search);
+const type = params.get('type') || 'portfolio';
+const data = TYPES[type];
+if (!data) {
+  console.error('highlight-cover: no config for type=' + type);
+  document.body.innerHTML =
+    '<pre style="color:var(--signal-red);padding:60px;font:24px monospace;">' +
+    'RENDER ERROR: type=' + type + ' not found</pre>';
+} else {
+  document.getElementById('label').textContent = data.label;
+  document.getElementById('sub').textContent = data.sub;
+  document.getElementById('icon-svg').innerHTML = data.icon;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Subtle full-bleed mark behind everything */
+.bg-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 1300px;
+  height: 1040px;
+  opacity: 0.025;
+  z-index: 0;
+}
+
+/* Top bar — small handle + section eyebrow.
+   IG reserves top ~250px for time bar + UI; keep below that. */
+.top-bar {
+  position: absolute;
+  top: 280px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  z-index: 4;
+}
+
+.handle-line {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.handle-line::before { content: var(--ig-handle); }
+
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Main content centered vertically */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
+.main-content {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  z-index: 4;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 96px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+  margin-bottom: 56px;
+}
+
+.headline em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.body {
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.body strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.list {
+  text-align: left;
+  display: inline-block;
+  margin-top: 24px;
+  font-size: 28px;
+  line-height: 1.9;
+  color: var(--text);
+}
+
+.list .check {
+  color: var(--accent);
+  font-weight: 800;
+  margin-right: 14px;
+}
+
+.accent-rule {
+  width: 80px;
+  height: 3px;
+  background: var(--accent);
+  margin: 56px auto;
+}
+
+/* Bottom CTA — IG reserves bottom ~250px for actions/UI */
+.bottom-cta {
+  position: absolute;
+  bottom: 320px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  z-index: 4;
+}
+
+.cta-line {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--accent);
+  letter-spacing: -0.2px;
+}
+
+.cta-arrow {
+  font-size: 44px;
+  color: var(--accent);
+  margin-top: 8px;
+  font-weight: 200;
+}
+</style>
+</head>
+<body>
+  <svg class="bg-mark" viewBox="0 0 600 480" xmlns="http://www.w3.org/2000/svg">
+    <g fill="var(--accent)" fill-rule="evenodd">
+      <path d="M 0.0,0.0 L 69.6,152.7 L 82.6,144.0 L 82.6,122.2 L 95.7,122.2 L 69.6,248.7 L 60.9,253.1 L 52.2,309.8 L 34.8,344.7 L 47.8,353.5 L 95.7,327.3 L 152.2,318.5 L 208.7,440.7 L 226.1,445.1 L 226.1,475.6 L 369.6,475.6 L 595.7,0.0 L 434.8,0.0 L 300.0,279.3 L 282.6,244.4 L 269.6,244.4 L 269.6,274.9 L 256.5,274.9 L 273.9,148.4 L 221.7,174.5 L 173.9,183.3 L 126.1,61.1 L 113.0,61.1 L 104.3,117.8 L 91.3,117.8 L 56.5,43.6 L 134.8,39.3 L 182.6,122.2 L 182.6,144.0 L 200.0,161.5 L 230.4,152.7 L 160.9,0.0 L 4.3,0.0 Z"/>
+      <path d="M 460.9,43.6 L 313.0,353.5 L 300.0,366.5 L 282.6,353.5 L 252.2,279.3 L 226.1,440.7 L 234.8,414.5 L 252.2,432.0 L 343.5,432.0 L 352.2,423.3 L 369.6,366.5 L 534.8,48.0 L 465.2,43.6 Z"/>
+      <path d="M 121.7,183.3 L 121.7,213.8 L 113.0,218.2 L 95.7,283.6 L 169.6,266.2 L 200.0,318.5 L 221.7,218.2 L 156.5,235.6 L 134.8,205.1 L 134.8,183.3 L 126.1,183.3 Z"/>
+    </g>
+  </svg>
+
+  <div class="top-bar">
+    <span class="handle-line"></span>
+    <span class="eyebrow" id="eyebrow">SERVICES</span>
+  </div>
+
+  <div class="main-content" id="main">
+    <h1 class="headline" id="headline">…</h1>
+    <div class="accent-rule"></div>
+    <div class="body" id="body">…</div>
+  </div>
+
+  <div class="bottom-cta">
+    <div class="cta-line" id="cta">DM 'site' to start</div>
+    <div class="cta-arrow">→</div>
+  </div>
+
+<script>
+const SLOTS = {
+  /* SERVICES — 3 slides */
+  'services-1': {
+    eyebrow: 'SERVICES',
+    headline: 'Custom websites.<br><em>€450. 7 days.</em>',
+    body: 'For European freelancers + small businesses who need to look as good as their work.',
+    cta: 'See what\'s included →'
+  },
+  'services-2': {
+    eyebrow: 'WHAT\'S INCLUDED',
+    headline: 'Everything you need.<br><em>Nothing you don\'t.</em>',
+    body: '<div class="list"><span class="check">✓</span>5 custom pages<br><span class="check">✓</span>Mobile-first design<br><span class="check">✓</span>Real code (no Wix)<br><span class="check">✓</span>SEO basics + analytics</div>',
+    cta: 'DM \'site\' to start'
+  },
+  'services-3': {
+    eyebrow: 'READY?',
+    headline: 'Send <em>"site"</em><br>to my DMs.',
+    body: 'I\'ll record a <strong>5-minute Loom</strong> showing how I\'d build yours. Free. No deck.',
+    cta: 'Direct line ↓'
+  },
+
+  /* PORTFOLIO — 3 slides */
+  'portfolio-1': {
+    eyebrow: 'PORTFOLIO',
+    headline: '5 sites.<br><em>60 days.</em>',
+    body: 'Each one custom-built for a European freelancer or solo founder.',
+    cta: 'Swipe through my work →'
+  },
+  'portfolio-2': {
+    eyebrow: 'CASE STUDIES',
+    headline: 'Different niches.<br><em>Same standard.</em>',
+    body: '<strong>SaaS landing</strong> · <strong>Analytics dashboard</strong> · <strong>Wellness brand</strong> · <strong>Creator portfolio</strong> · <strong>Product launch</strong>',
+    cta: 'See them all →'
+  },
+  'portfolio-3': {
+    eyebrow: 'YOUR TURN',
+    headline: 'Want yours<br>in <em>this list?</em>',
+    body: 'DM "site" and I\'ll show you what your version would look like.',
+    cta: 'DM \'site\' →'
+  },
+
+  /* ABOUT — 3 slides */
+  'about-1': {
+    eyebrow: 'ABOUT',
+    headline: 'Hi, I\'m <em>Vibe Web.</em>',
+    body: 'I build custom websites for European freelancers and small businesses. <strong>One designer. Real code.</strong> No agency overhead.',
+    cta: 'How I work →'
+  },
+  'about-2': {
+    eyebrow: 'PHILOSOPHY',
+    headline: 'Your site<br><em>is the portfolio.</em>',
+    body: 'Generic agency template = generic credibility. Custom design = the work speaks for itself.',
+    cta: 'Process ↓'
+  },
+  'about-3': {
+    eyebrow: 'METHOD',
+    headline: '7 days.<br><em>Day by day.</em>',
+    body: 'Brief on Monday. Live by next Monday. <strong>Fixed price.</strong> No revisions roulette, no sneaky scope creep.',
+    cta: 'See the day-by-day →'
+  },
+
+  /* CONTACT — 3 slides */
+  'contact-1': {
+    eyebrow: 'CONTACT',
+    headline: 'DM <em>"site"</em><br>to start.',
+    body: 'Fastest way in. I read every message. Reply within <strong>24 hours</strong>.',
+    cta: '↓'
+  },
+  'contact-2': {
+    eyebrow: 'OR',
+    headline: 'Book a<br><em>15-min call.</em>',
+    body: 'No pitch. Just a quick chat to see if it\'s a fit. Link in bio ↓',
+    cta: 'vibeweb.eu/start'
+  },
+  'contact-3': {
+    eyebrow: 'EXPECTATIONS',
+    headline: 'I reply.<br><em>Within 24h.</em>',
+    body: 'Not a "team" — it\'s just me. But I\'m faster than most agencies\' onboarding flows.',
+    cta: 'DM \'site\' →'
+  },
+
+  /* FEED — 3 slides */
+  'feed-1': {
+    eyebrow: 'FEED',
+    headline: 'Saved<br><em>highlights.</em>',
+    body: 'The posts worth coming back to — case studies, breakdowns, real numbers.',
+    cta: 'Tap through →'
+  },
+  'feed-2': {
+    eyebrow: 'TIP',
+    headline: 'Save the ones<br><em>useful for you.</em>',
+    body: 'Bookmark icon at the bottom of any post. Build your own playbook.',
+    cta: 'More on the grid ↓'
+  },
+  'feed-3': {
+    eyebrow: 'EXPLORE',
+    headline: 'Full posts<br>on the <em>grid.</em>',
+    body: 'Carousels, before/afters, pricing breakdowns. All the longer reads live there.',
+    cta: 'Back to profile ↓'
+  }
+};
+
+const params = new URLSearchParams(location.search);
+const slot = params.get('slot') || 'services-1';
+const data = SLOTS[slot];
+if (!data) {
+  console.error('story-starter: no config for slot=' + slot);
+  document.body.innerHTML =
+    '<pre style="color:var(--signal-red);padding:60px;font:24px monospace;">' +
+    'RENDER ERROR: slot=' + slot + ' not found</pre>';
+} else {
+  document.getElementById('eyebrow').textContent = data.eyebrow;
+  document.getElementById('headline').innerHTML = data.headline;
+  document.getElementById('body').innerHTML = data.body;
+  document.getElementById('cta').textContent = data.cta;
+}
+</script>
+</body>
+</html>

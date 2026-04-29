@@ -1,8 +1,12 @@
 """
-Contract tests for jobs.py — declarative 27-job list.
+Contract tests for jobs.py — declarative 48-job list.
 
-These tests lock the count, dimensions, and carousel-query contracts.
-They run fast (pure Python, no I/O, no Playwright).
+Three IG-native dimensions:
+  - 27 grid posts at 1080×1350 (singles + carousel slides)
+  -  1 avatar      at 1080×1080
+  - 20 stories     at 1080×1920 (5 highlight covers + 15 starter stories)
+
+Tests run fast (pure Python, no I/O, no Playwright).
 """
 from __future__ import annotations
 
@@ -13,20 +17,63 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from features.instagram_content.jobs import build_jobs  # noqa: E402
 
+GRID_POST = (1080, 1350)
+AVATAR    = (1080, 1080)
+STORY     = (1080, 1920)
 
-# ---------- Job declaration contract ---------------------------------------
 
 def test_job_count_locked():
-    """Spec §6 declares 27 renders. Anything else is a contract change."""
+    """27 grid + 1 avatar + 5 highlight covers + 15 starter stories = 48."""
     jobs = build_jobs()
-    assert len(jobs) == 27, f"expected 27 jobs, got {len(jobs)}"
+    assert len(jobs) == 48, f"expected 48 jobs, got {len(jobs)}"
 
 
-def test_jobs_all_target_4_5_portrait():
-    """All v1 IG renders are 1080×1350. Square or 9:16 leaks belong elsewhere."""
-    for j in build_jobs():
-        assert (j.width, j.height) == (1080, 1350), (
-            f"job {j.out.name} has dimensions {j.width}x{j.height}, expected 1080x1350"
+def test_grid_posts_count_and_size():
+    """6 singles + 3 carousels × 7 slides = 27 grid posts at 1080×1350."""
+    grid = [
+        j for j in build_jobs()
+        if j.out.name.startswith(("single-", "carousel-"))
+    ]
+    assert len(grid) == 27, f"expected 27 grid posts, got {len(grid)}"
+    for j in grid:
+        assert (j.width, j.height) == GRID_POST, (
+            f"grid job {j.out.name} has {j.width}x{j.height}, expected {GRID_POST}"
+        )
+
+
+def test_avatar_present_and_square():
+    """One profile avatar at 1080×1080."""
+    avatars = [j for j in build_jobs() if j.out.name == "account-avatar.png"]
+    assert len(avatars) == 1, f"expected 1 avatar, got {len(avatars)}"
+    j = avatars[0]
+    assert (j.width, j.height) == AVATAR, (
+        f"avatar has {j.width}x{j.height}, expected {AVATAR}"
+    )
+
+
+def test_highlight_covers_count_and_size():
+    """5 highlight covers at 1080×1920 with ?type= query."""
+    covers = [j for j in build_jobs() if j.out.name.startswith("highlight-cover-")]
+    assert len(covers) == 5, f"expected 5 highlight covers, got {len(covers)}"
+    for j in covers:
+        assert (j.width, j.height) == STORY, (
+            f"cover {j.out.name} has {j.width}x{j.height}, expected {STORY}"
+        )
+        assert j.query.startswith("?type="), (
+            f"{j.out.name} missing ?type= query (got {j.query!r})"
+        )
+
+
+def test_starter_stories_count_and_size():
+    """15 starter stories at 1080×1920 (3 per highlight × 5 highlights)."""
+    stories = [j for j in build_jobs() if j.out.name.startswith("story-starter-")]
+    assert len(stories) == 15, f"expected 15 starter stories, got {len(stories)}"
+    for j in stories:
+        assert (j.width, j.height) == STORY, (
+            f"story {j.out.name} has {j.width}x{j.height}, expected {STORY}"
+        )
+        assert j.query.startswith("?slot="), (
+            f"{j.out.name} missing ?slot= query (got {j.query!r})"
         )
 
 
