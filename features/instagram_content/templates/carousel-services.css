@@ -1,0 +1,426 @@
+/*
+ * carousel-services.css — styles for the 7-slide services carousel.
+ * Loaded by carousel-services.html only. Tokens come from brand/tokens.css.
+ *
+ * Four slide types:
+ *   .slide-hook   — slides 1 + 5 (open-loop pair, visual rhyme)
+ *   .slide-content — slides 2-4 (included) + 6 (excluded, red variant)
+ *   .slide-cta    — slide 7
+ *
+ * Slide 5 (.slide-reveal) mirrors slide 1 typographically; --signal-red
+ * on "DON'T" and the glow/rule provide the contrast cue for the reveal.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* =====================================================================
+   Shared slide base — every section fills the canvas; JS shows one.
+   ===================================================================== */
+.slide {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 1350px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* =====================================================================
+   Shared decorative elements
+   ===================================================================== */
+.top-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.35;
+}
+
+.top-rule-red {
+  background: linear-gradient(90deg, transparent, var(--signal-red) 50%, transparent);
+}
+
+.glow {
+  position: absolute;
+  top: 380px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 860px;
+  height: 700px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.glow-red {
+  background: radial-gradient(ellipse at center,
+    rgba(232, 112, 112, 0.07) 0%, transparent 60%);
+}
+
+/* =====================================================================
+   Slides 1 + 5 — Hook / Reveal  (.slide-hook)
+   Typographic rhyme: IDENTICAL layout so viewer recognises the pair.
+   ===================================================================== */
+.slide-hook { background: var(--bg); }
+
+.price-badge {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  white-space: nowrap;
+}
+
+.price-badge-red {
+  background: rgba(232, 112, 112, 0.08);
+  border-color: rgba(232, 112, 112, 0.25);
+  color: var(--signal-red);
+}
+
+/* Hook headline — critical selector: top 250px >= 60 */
+.hook {
+  position: absolute;
+  top: 250px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 84px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+}
+
+/* Slide 1 accent: green */
+.hook h1 em { font-style: normal; color: var(--accent); }
+
+/* Slide 5 accent: signal-red on "DON'T" — the open-loop reveal cue */
+.hook h1 .dont {
+  color: var(--signal-red);
+  font-style: normal;
+}
+
+.slide-dots {
+  position: absolute;
+  top: 700px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.active {
+  background: var(--accent);
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* Slide 5 active dot — red pill */
+.dot.active-red {
+  background: var(--signal-red);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.hook-sub {
+  position: absolute;
+  top: 760px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.hook-sub-red { color: var(--text-soft); }
+
+.swipe-cue {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.swipe-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arrow-track { display: flex; gap: 6px; }
+
+.arrow-seg {
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+
+.arrow-seg.bright { opacity: 1; width: 32px; }
+
+/* Slide 5 arrow — red tint */
+.arrow-track-red .red-seg {
+  background: var(--signal-red);
+}
+
+.arrow-track-red .bright-red { opacity: 1; width: 32px; }
+
+.handle-line {
+  position: absolute;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.handle-line::before { content: var(--ig-handle); }
+
+/* =====================================================================
+   Slides 2-4 (included) + 6 (excluded) — Card layout  (.slide-content)
+   Typography-driven: no device mockups. Each slide is 3 punchy lines.
+   ===================================================================== */
+.slide-content { background: var(--bg); }
+
+.slide-index {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slide-index-red { color: var(--signal-red); }
+
+/* Card block — vertically centred, left-anchored text */
+.card {
+  position: absolute;
+  top: 380px;
+  left: 100px;
+  right: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+}
+
+.card-item {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+}
+
+/* ✓ check mark — accent green */
+.check {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 36px;
+  color: var(--accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ✗ cross mark — signal-red */
+.cross {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 36px;
+  color: var(--signal-red);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 56px;
+  color: var(--text);
+  letter-spacing: -1.5px;
+  line-height: 1.0;
+}
+
+/* Progress dots shared across content slides */
+.portfolio-footer {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+
+.pg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.pg-dot.active {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* Slide 6 active dot — red pill (visual rhyme with slide 5) */
+.pg-dot.active-red {
+  background: var(--signal-red);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* =====================================================================
+   Slide 7 — CTA  (.slide-cta)
+   Minimalist. Big "Ready in 7 days." then DM arrow.
+   ===================================================================== */
+.slide-cta { background: var(--bg); }
+
+.slide-cta .glow {
+  position: absolute;
+  top: 340px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 760px;
+  height: 680px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.07) 0%, transparent 58%);
+  pointer-events: none;
+}
+
+.slide-cta .top-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.35;
+}
+
+/* CTA headline — critical selector: top 280px >= 60 */
+.cta {
+  position: absolute;
+  top: 280px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.cta h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 84px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+}
+
+.cta h1 em { font-style: normal; color: var(--accent); }
+
+.cta-instruction {
+  position: absolute;
+  top: 700px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.cta-sep {
+  position: absolute;
+  top: 870px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.cta-handle {
+  position: absolute;
+  bottom: 190px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.cta-handle::before { content: var(--ig-handle); }
+
+.cta-tagline {
+  position: absolute;
+  bottom: 140px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
