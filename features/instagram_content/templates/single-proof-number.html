@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Subtle accent glow — decorative, not critical selector */
+.glow {
+  position: absolute;
+  top: 300px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Hook — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 200px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 72px;
+  color: var(--text);
+  letter-spacing: -2.5px;
+  line-height: 1.0;
+}
+
+.hook h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* Two stat cards — not critical selectors */
+.stat-row {
+  position: absolute;
+  top: 490px;
+  left: 64px;
+  right: 64px;
+  display: flex;
+  gap: 32px;
+}
+
+.stat-card {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.stat-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 96px;
+  color: var(--accent);
+  letter-spacing: -3px;
+  line-height: 0.9;
+  display: block;
+}
+
+.stat-lbl {
+  display: block;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 3;
+}
+
+/* Sub text — not critical selector */
+.proof-sub {
+  position: absolute;
+  top: 850px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.proof-sub strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* CTA bar — critical: bottom >= 60 */
+.cta-bar {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cta-bar .cta-text {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.cta-bar .handle {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 3;
+}
+
+.cta-bar .handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="hook">
+  <h1><em>6 sites.</em><br>7 days each.</h1>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <span class="stat-val">6</span>
+    <span class="stat-lbl">Sites delivered</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-val">7</span>
+    <span class="stat-lbl">Days each</span>
+  </div>
+</div>
+
+<div class="proof-sub">€450 minimum. Last month,<br><strong>every client said yes to round one.</strong></div>
+
+<div class="cta-bar">
+  <span class="cta-text">Yours next? →</span>
+  <span class="handle"></span>
+</div>
+
+</body>
+</html>
