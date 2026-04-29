@@ -1,6 +1,6 @@
 // Multi-step flow: Setup → Generate → Review → Export.
 // All 4 steps are wired. onGenerated bubbles runId up to App for trace access.
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { AgentResult, Brief } from '../types';
 import { loadBrief, saveBrief } from '../data/brief';
 import { Setup } from './flow/Setup';
@@ -15,9 +15,11 @@ interface FlowViewProps {
   adId: string;
   onFinish: () => void;
   onGenerated?: (runId: string) => void;
+  /** Optional UI control rendered in the step header (e.g. ad picker). */
+  adPicker?: React.ReactNode;
 }
 
-export function FlowView({ projectSlug, adId, onFinish, onGenerated }: FlowViewProps) {
+export function FlowView({ projectSlug, adId, onFinish, onGenerated, adPicker }: FlowViewProps) {
   const [step, setStep] = useState<Step>(0);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [briefError, setBriefError] = useState<string | null>(null);
@@ -46,25 +48,22 @@ export function FlowView({ projectSlug, adId, onFinish, onGenerated }: FlowViewP
     }
   }
 
-  if (briefError) {
-    return (
-      <div role="alert" style={{ padding: 24, color: '#f87171' }}>
-        erro ao carregar briefing: {briefError}
-      </div>
-    );
-  }
-  if (!brief) {
-    return (
-      <div style={{ padding: 24, color: '#78716c' }}>
-        Carregando briefing…
-      </div>
-    );
-  }
-
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <StepHeader step={step} />
-      {saveError && (
+      {/* StepHeader (and the adPicker inside it) renders unconditionally so
+          users can switch ads even while a brief is loading or errored. */}
+      <StepHeader step={step} adPicker={adPicker} />
+      {briefError && (
+        <div role="alert" style={{ padding: 24, color: '#f87171' }}>
+          erro ao carregar briefing: {briefError}
+        </div>
+      )}
+      {!briefError && !brief && (
+        <div style={{ padding: 24, color: '#78716c' }}>
+          Carregando briefing…
+        </div>
+      )}
+      {!briefError && brief && saveError && (
         <div role="alert" style={{
           padding: '8px 24px',
           background: 'rgba(220, 38, 38, 0.12)', color: '#dc2626',
@@ -72,7 +71,7 @@ export function FlowView({ projectSlug, adId, onFinish, onGenerated }: FlowViewP
           borderBottom: '1px solid #e7e5e4',
         }}>erro ao salvar briefing: {saveError}</div>
       )}
-      {step === 0 && (
+      {!briefError && brief && step === 0 && (
         <Setup
           projectSlug={projectSlug}
           adId={adId}
@@ -85,7 +84,7 @@ export function FlowView({ projectSlug, adId, onFinish, onGenerated }: FlowViewP
           onNext={() => handleNext(brief)}
         />
       )}
-      {step === 1 && (
+      {!briefError && brief && step === 1 && (
         <Generate
           projectSlug={projectSlug}
           adId={adId}
@@ -94,10 +93,10 @@ export function FlowView({ projectSlug, adId, onFinish, onGenerated }: FlowViewP
           onDone={r => { setResult(r); setStep(2); onGenerated?.(r.run_id); }}
         />
       )}
-      {step === 2 && result && (
+      {!briefError && brief && step === 2 && result && (
         <Review result={result} onFinish={() => setStep(3)} />
       )}
-      {step === 3 && result && (
+      {!briefError && brief && step === 3 && result && (
         <Export
           projectSlug={projectSlug}
           adId={adId}
@@ -118,7 +117,7 @@ const STEPS: { id: string; label: string; sub: string }[] = [
   { id: 'export',   label: 'Export',   sub: 'Envio para Meta' },
 ];
 
-function StepHeader({ step }: { step: Step }) {
+function StepHeader({ step, adPicker }: { step: Step; adPicker?: React.ReactNode }) {
   return (
     <div style={{
       padding: '14px 24px', background: '#ffffff',
@@ -138,6 +137,9 @@ function StepHeader({ step }: { step: Step }) {
           );
         })}
       </div>
+      {adPicker && (
+        <div style={{ marginRight: 12 }}>{adPicker}</div>
+      )}
       <div style={{
         fontFamily: '"Geist Mono", monospace', fontSize: 10,
         padding: '3px 8px', borderRadius: 4,

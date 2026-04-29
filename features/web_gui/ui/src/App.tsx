@@ -18,6 +18,9 @@ export function App() {
   const [nav, setNav] = useState<NavSection>(
     () => (localStorage.getItem('cr_nav') as NavSection | null) ?? 'flow',
   );
+  const [activeAdId, setActiveAdId] = useState<string>(
+    () => localStorage.getItem('cr_ad_id') ?? '01',
+  );
   const [selected, setSelected] = useState<Creative | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -34,6 +37,7 @@ export function App() {
       });
   }, []);
   useEffect(() => { localStorage.setItem('cr_nav', nav); }, [nav]);
+  useEffect(() => { localStorage.setItem('cr_ad_id', activeAdId); }, [activeAdId]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -72,10 +76,18 @@ export function App() {
         )}
         {nav === 'flow' && (
           <FlowView
+            key={`${activeProject}/${activeAdId}`}
             projectSlug={activeProject}
-            adId="01"
+            adId={activeAdId}
             onFinish={() => setNav('gallery')}
             onGenerated={setLastRunId}
+            adPicker={
+              <AdPicker
+                adCount={projects.find(p => p.slug === activeProject)?.ad_count ?? 0}
+                value={activeAdId}
+                onChange={setActiveAdId}
+              />
+            }
           />
         )}
         {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected} onOpenTrace={setTraceRunId}/>}
@@ -102,4 +114,54 @@ const NAV_TITLES: Record<NavSection, string> = {
 };
 function _title(n: NavSection): string {
   return NAV_TITLES[n];
+}
+
+// Ad IDs in this project follow the convention "01".."NN" (zero-padded). The
+// backend keeps that format in config/ads.yaml; we generate the option list
+// from the project's ad_count to avoid drift.
+function adIds(adCount: number): string[] {
+  const out: string[] = [];
+  for (let i = 1; i <= adCount; i++) {
+    out.push(String(i).padStart(2, '0'));
+  }
+  return out;
+}
+
+interface AdPickerProps {
+  adCount: number;
+  value: string;
+  onChange: (id: string) => void;
+}
+
+function AdPicker({ adCount, value, onChange }: AdPickerProps) {
+  const ids = adIds(adCount);
+  if (ids.length === 0) return null;
+  return (
+    <label style={{
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      fontSize: 12, color: '#57534e',
+    }}>
+      <span style={{
+        fontFamily: '"Geist Mono", monospace',
+        textTransform: 'uppercase', letterSpacing: 0.5, fontSize: 10,
+        color: '#78716c',
+      }}>
+        Ad ativo
+      </span>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          fontFamily: 'inherit', fontSize: 12,
+          padding: '4px 8px', borderRadius: 6,
+          border: '1px solid #e7e5e4', background: '#fff',
+          color: '#1c1917', cursor: 'pointer',
+        }}
+      >
+        {ids.map(id => (
+          <option key={id} value={id}>Ad {id}</option>
+        ))}
+      </select>
+    </label>
+  );
 }
