@@ -1,5 +1,6 @@
-// Cross-platform neutral desktop window chrome.
-// Window controls on the right (Windows-style but restrained), thin titlebar.
+// Cross-platform neutral desktop window chrome — thin titlebar with dot logo
+// and breadcrumb. No window controls (this is a web app, not Electron — we
+// cannot minimize/maximize/close anything).
 import React from 'react';
 
 interface DesktopChromeProps {
@@ -53,20 +54,7 @@ function TitleBar({ title }: { title: string }) {
       <span style={{ margin: '0 8px', color: '#d6d3d1' }}>/</span>
       <span>{title}</span>
       <div style={{ flex: 1 }} />
-      {/* Window controls — neutral, small */}
-      <div style={{ display: 'flex', height: '100%' }}>
-        {(['min', 'max', 'close'] as const).map(k => (
-          <div key={k} style={{
-            width: 42, height: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#78716c', cursor: 'default',
-          }}>
-            {k === 'min' && <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5h6" stroke="currentColor" strokeWidth="1"/></svg>}
-            {k === 'max' && <svg width="10" height="10" viewBox="0 0 10 10"><rect x="2" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1" fill="none"/></svg>}
-            {k === 'close' && <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1"/></svg>}
-          </div>
-        ))}
-      </div>
+      <div style={{ width: 12 }} />
     </div>
   );
 }
