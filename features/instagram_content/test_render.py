@@ -43,17 +43,46 @@ SAFE_ZONE_FRACTION_LIMIT = 0.01  # ≤1% non-bg pixels per band
 CRITICAL_SELECTORS = re.compile(
     r"\.(headline|hook|cta|cta-bar|main-text)\b|^\s*h1\b", re.MULTILINE
 )
-TOP_DECL = re.compile(r"top\s*:\s*(\d+)\s*px", re.IGNORECASE)
-BOTTOM_DECL = re.compile(r"bottom\s*:\s*(\d+)\s*px", re.IGNORECASE)
+# Anchor with negative lookbehind so margin-top/padding-top/border-top are NOT
+# matched as positioning declarations.
+TOP_DECL = re.compile(r"(?<![\w-])top\s*:\s*(\d+)\s*px", re.IGNORECASE)
+BOTTOM_DECL = re.compile(r"(?<![\w-])bottom\s*:\s*(\d+)\s*px", re.IGNORECASE)
 
 
 def _all_templates() -> list[Path]:
+    """Templates list for parametrize. Used by tokens-truth-style content tests."""
     return sorted(TEMPLATES_DIR.glob("*.html"))
+
+
+def _all_style_sources() -> list[Path]:
+    """HTML + sibling CSS files. Carousels split CSS to a sibling file (file-size
+    rule); the static safe-zone lint must read both or it covers nothing for them.
+    """
+    return sorted(list(TEMPLATES_DIR.glob("*.html")) + list(TEMPLATES_DIR.glob("*.css")))
 
 
 def _all_renders() -> list[tuple[Path, int, int]]:
     """(out_path, width, height) per RenderJob."""
     return [(j.out, j.width, j.height) for j in build_jobs()]
+
+
+def _skip_or_fail_when_render_missing(render: Path) -> None:
+    """Skip on full clean slate (local dev never ran build.py); FAIL on partial state.
+
+    Partial state = some renders exist but this one doesn't. Indicates either an
+    interrupted build or a regression — silently skipping would hide the bug
+    (CI would pass on a half-empty pipeline).
+    """
+    if render.exists():
+        return
+    other_renders = list(RENDERS_DIR.glob("*.png")) if RENDERS_DIR.exists() else []
+    if other_renders:
+        pytest.fail(
+            f"Render missing: {render.name} — partial pipeline state "
+            f"({len(other_renders)} other renders exist). Re-run build.py "
+            f"--instagram and check stdout for [FAIL] markers."
+        )
+    pytest.skip(f"Render missing: {render.name} — run build.py --instagram")
 
 
 # ---------- Layer 1: dimensions ---------------------------------------------
@@ -64,8 +93,7 @@ def _all_renders() -> list[tuple[Path, int, int]]:
     ids=[r[0].name for r in _all_renders()],
 )
 def test_dimensions_match(render, width, height):
-    if not render.exists():
-        pytest.skip(f"Render missing: {render.name} — run build.py --instagram")
+    _skip_or_fail_when_render_missing(render)
     with Image.open(render) as im:
         assert im.size == (width, height), (
             f"{render.name}: expected {width}x{height}, got {im.size}"
@@ -75,13 +103,18 @@ def test_dimensions_match(render, width, height):
 # ---------- Layer 2: safe-zone static lint ----------------------------------
 
 @pytest.mark.parametrize(
-    "tpl",
-    _all_templates(),
+    "src",
+    _all_style_sources(),
     ids=lambda p: p.name,
 )
-def test_safe_zone_static(tpl):
-    """Reject critical text positioned in top 60px or bottom 60px."""
-    css = tpl.read_text(encoding="utf-8")
+def test_safe_zone_static(src):
+    """Reject critical text positioned in top 60px or bottom 60px.
+
+    Iterates over HTML AND sibling CSS files: the 3 carousels keep their
+    rules in `<name>.css` (file-size split); without reading them this lint
+    would silently pass on 78% of renders.
+    """
+    css = src.read_text(encoding="utf-8")
     # Walk each rule block; if a rule selector matches CRITICAL_SELECTORS,
     # check its top/bottom declarations.
     for block in re.finditer(
@@ -92,12 +125,12 @@ def test_safe_zone_static(tpl):
             continue
         for m in TOP_DECL.finditer(body):
             assert int(m.group(1)) >= SAFE_ZONE_PX, (
-                f"{tpl.name}: selector '{selector.strip()}' has top: {m.group(1)}px "
+                f"{src.name}: selector '{selector.strip()}' has top: {m.group(1)}px "
                 f"— must be >= {SAFE_ZONE_PX}px (3:4 grid crop)"
             )
         for m in BOTTOM_DECL.finditer(body):
             assert int(m.group(1)) >= SAFE_ZONE_PX, (
-                f"{tpl.name}: selector '{selector.strip()}' has bottom: {m.group(1)}px "
+                f"{src.name}: selector '{selector.strip()}' has bottom: {m.group(1)}px "
                 f"— must be >= {SAFE_ZONE_PX}px (3:4 grid crop)"
             )
 
@@ -111,8 +144,7 @@ def test_safe_zone_static(tpl):
 )
 def test_safe_zone_runtime(render, width, height):
     """Top 60px and bottom 60px must be ≥99% background pixels."""
-    if not render.exists():
-        pytest.skip(f"Render missing: {render.name} — run build.py --instagram")
+    _skip_or_fail_when_render_missing(render)
     with Image.open(render) as im:
         rgb = im.convert("RGB")
         total_per_band = width * SAFE_ZONE_PX

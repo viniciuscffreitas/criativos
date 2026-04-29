@@ -23,9 +23,19 @@ async def main() -> None:
     jobs = build_jobs()
     print(f"Rendering {len(jobs)} Instagram assets to {RENDERS_DIR}...")
     await run_jobs(jobs)
+    failures: list[tuple[str, str]] = []
     for j in jobs:
-        marker = "[OK]" if j.out.exists() and j.out.stat().st_size > 0 else "[FAIL]"
-        print(f"  {marker} {j.out.name}")
+        if j.out.exists() and j.out.stat().st_size > 0:
+            print(f"  [OK] {j.out.name}")
+        else:
+            reason = "missing" if not j.out.exists() else "zero-byte"
+            failures.append((j.out.name, reason))
+            print(f"  [FAIL] {j.out.name} ({reason})")
+    if failures:
+        raise RuntimeError(
+            f"Instagram render batch incomplete: {len(failures)}/{len(jobs)} "
+            f"jobs produced no valid output: {failures}"
+        )
     print(f"\nDone: {RENDERS_DIR.resolve()}")
 
 
