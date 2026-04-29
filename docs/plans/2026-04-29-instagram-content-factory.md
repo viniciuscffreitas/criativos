@@ -44,7 +44,7 @@ features/instagram_content/        NEW — vertical slice
     carousel-services.html         ?slide=1..7
     carousel-process.html          ?slide=1..7
   goldens/
-    *.png                          27 PNGs — committed after Task 11
+    *.png                          27 PNGs — committed in Task 10
   renders/                         gitignored — output of build.py --instagram
 
 brand/tokens.css                   MODIFY — add --ig-handle token
@@ -255,6 +255,9 @@ from PIL import Image, ImageChops
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from features.instagram_content.jobs import build_jobs  # noqa: E402
+# NOTE (CLAUDE.md §2.1): cross-feature import tolerated for v1 — tests/ is the
+# legacy location and these constants will graduate to shared/visual_regression.py
+# when a 3rd feature consumes them. Do NOT duplicate the constants here.
 from tests.test_visual_regression import (  # noqa: E402
     ALLOWED_DIFF_FRACTION,
     PIXEL_DIFF_THRESHOLD,
@@ -711,7 +714,7 @@ body {
 | `single-niche-tag.html` | "Designers who can't afford a generic agency." | "Custom sites that look like your work, not their template." | "DM 'site' →" |
 | `single-proof-number.html` | "6 sites. 7 days each." | "€450 minimum. Last month, every client said yes to round one." | "Yours next? →" |
 | `single-offer-mechanics.html` | "€450. 7 days. Done." | "5 pages · Custom design · Real code · Live in a week." | "What's included →" |
-| `single-cta-pure.html` | "Send 'site'." | "Get a Loom in 24h showing how I'd build yours." | (handle line — `<span class="handle"></span>`) |
+| `single-cta-pure.html` | "Send 'site'." | "Get a Loom in 24h showing how I'd build yours." | `<span class="handle"></span>` (use ungated `.handle::before { content: var(--ig-handle); }` rule — NOT scoped to `.cta-bar` for this template since the handle is the CTA itself, not part of a CTA bar) |
 
 **Per-template procedure (repeat 6 times):**
 
@@ -941,23 +944,22 @@ Identify the test pattern for `--brand` and `--ads`. Mirror it for `--instagram`
 
 - [ ] **Step 2: Add a failing test for `--instagram`**
 
-Append to `tests/test_build_cli.py` (using whatever pattern exists — likely a `subprocess.run` or `runpy` invocation that asserts the script's argparse accepts the flag):
+Append to `tests/test_build_cli.py`, mirroring the existing `--help`-listing pattern (running `--help` alone — argparse lists every defined flag without triggering mutex enforcement):
 
 ```python
-def test_build_accepts_instagram_flag():
-    """build.py --instagram parses without error and routes to features.instagram_content.render."""
+def test_build_help_lists_instagram_flag():
+    """build.py --help includes --instagram in its output."""
     import subprocess
     import sys
     result = subprocess.run(
-        [sys.executable, "scripts/build.py", "--instagram", "--help"],
+        [sys.executable, "scripts/build.py", "--help"],
         capture_output=True, text=True,
     )
-    # If --help exits 0, argparse parsed the flag definition successfully.
-    # If --help is rejected because of mutex group, this still validates the flag exists.
-    assert "--instagram" in result.stdout or "--instagram" in result.stderr
+    assert result.returncode == 0
+    assert "--instagram" in result.stdout
 ```
 
-(Adapt the assertion to whatever idiom the file already uses.)
+If the existing file uses a parametrized "all flags listed" test, extend that parametrization with `"--instagram"` instead of adding a separate test — match the established idiom.
 
 - [ ] **Step 3: Run the test — should FAIL**
 
