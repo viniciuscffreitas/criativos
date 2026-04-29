@@ -48,15 +48,34 @@ async def wait_for_fonts(page) -> None:
 
 async def render_job(page, job: RenderJob) -> None:
     await page.set_viewport_size({"width": job.width, "height": job.height})
-    url = to_file_url(job.source) + job.query
-    await page.goto(url)
-    await page.wait_for_load_state("networkidle")
-    await wait_for_fonts(page)
-    job.out.parent.mkdir(parents=True, exist_ok=True)
-    await page.screenshot(
-        path=str(job.out),
-        clip={"x": 0, "y": 0, "width": job.width, "height": job.height},
-    )
+    # Track local (file://) subresource failures so a broken <img src="...">
+    # doesn't silently capture a Chromium broken-image icon as the render.
+    # Remote failures (Google Fonts CDN hiccups) are not local-contract
+    # violations and don't fail the render — document.fonts.ready handles fonts.
+    local_failed: list[str] = []
+
+    def _on_requestfailed(req):
+        if req.url.startswith("file://"):
+            local_failed.append(f"{req.method} {req.url} ({req.failure})")
+
+    page.on("requestfailed", _on_requestfailed)
+    try:
+        url = to_file_url(job.source) + job.query
+        await page.goto(url)
+        await page.wait_for_load_state("networkidle")
+        await wait_for_fonts(page)
+        if local_failed:
+            raise RuntimeError(
+                f"render_job: local subresource failure while rendering "
+                f"{job.source.name} (query={job.query!r}): {local_failed}"
+            )
+        job.out.parent.mkdir(parents=True, exist_ok=True)
+        await page.screenshot(
+            path=str(job.out),
+            clip={"x": 0, "y": 0, "width": job.width, "height": job.height},
+        )
+    finally:
+        page.remove_listener("requestfailed", _on_requestfailed)
 
 
 async def render_html_string(page, html: str, out: Path, width: int, height: int) -> None:

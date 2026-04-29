@@ -54,4 +54,13 @@ def build_jobs() -> list[RenderJob]:
                 height=H,
                 query=f"?slide={i}",
             ))
+    # Preflight: every declared template must exist on disk. Otherwise Playwright
+    # silently captures a Chromium error page as the render. Spec §10 contract:
+    # "Missing template file → FileNotFoundError with full path; no fallback."
+    missing = sorted({j.source for j in jobs if not j.source.exists()})
+    if missing:
+        raise FileNotFoundError(
+            "Instagram templates missing — fix SINGLES/CAROUSELS in jobs.py "
+            f"or create the templates: {[str(p) for p in missing]}"
+        )
     return jobs
