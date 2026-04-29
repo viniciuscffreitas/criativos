@@ -18,8 +18,9 @@ CASES = [
     (ROOT / "brand" / "logos" / "vibeweb-primary.png", GOLDENS / "logo-primary.png"),
 ]
 
-PIXEL_DIFF_THRESHOLD = 20       # soma R+G+B per-channel Manhattan
-ALLOWED_DIFF_FRACTION = 0.01    # 1% dos pixels podem exceder
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from shared.visual_regression import PIXEL_DIFF_THRESHOLD, ALLOWED_DIFF_FRACTION  # noqa: E402,F401
 
 
 def _fraction_diff(a: Image.Image, b: Image.Image) -> float:

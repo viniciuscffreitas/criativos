@@ -21,10 +21,7 @@ from PIL import Image, ImageChops
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from features.instagram_content.jobs import build_jobs  # noqa: E402
-# NOTE (CLAUDE.md §2.1): cross-feature import tolerated for v1 — tests/ is the
-# legacy location and these constants will graduate to shared/visual_regression.py
-# when a 3rd feature consumes them. Do NOT duplicate the constants here.
-from tests.test_visual_regression import (  # noqa: E402
+from shared.visual_regression import (  # noqa: E402
     ALLOWED_DIFF_FRACTION,
     PIXEL_DIFF_THRESHOLD,
 )
