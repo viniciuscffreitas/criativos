@@ -164,3 +164,28 @@ def test_visual_regression(render, width, height):
             f"{render.name}: visual drift {frac*100:.2f}% > "
             f"{ALLOWED_DIFF_FRACTION*100:.2f}% — re-render or update golden"
         )
+
+
+# ---------- Job declaration contract ---------------------------------------
+
+def test_job_count_locked():
+    """Spec §6 declares 27 renders. Anything else is a contract change."""
+    jobs = build_jobs()
+    assert len(jobs) == 27, f"expected 27 jobs, got {len(jobs)}"
+
+
+def test_jobs_all_target_4_5_portrait():
+    """All v1 IG renders are 1080×1350. Square or 9:16 leaks belong elsewhere."""
+    for j in build_jobs():
+        assert (j.width, j.height) == (1080, 1350), (
+            f"job {j.out.name} has dimensions {j.width}x{j.height}, expected 1080x1350"
+        )
+
+
+def test_carousel_jobs_have_slide_query():
+    jobs = [j for j in build_jobs() if "carousel-" in j.out.name]
+    assert len(jobs) == 21, f"expected 21 carousel slides, got {len(jobs)}"
+    for j in jobs:
+        assert j.query.startswith("?slide="), (
+            f"{j.out.name} missing ?slide= query (got {j.query!r})"
+        )
