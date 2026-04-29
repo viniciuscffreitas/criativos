@@ -1,0 +1,415 @@
+/*
+ * carousel-portfolio.css — styles for the 7-slide portfolio carousel.
+ * Loaded by carousel-portfolio.html only. Tokens come from brand/tokens.css.
+ *
+ * Three slide types: .slide-hook (slide 1), .slide-portfolio (2-6), .slide-cta (7).
+ * Critical selectors (.hook, .cta) are kept well clear of the 60px safe-zone.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* =====================================================================
+   Shared slide base — every section fills the canvas; JS shows one.
+   ===================================================================== */
+.slide {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 1350px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* =====================================================================
+   Slide 1 — Hook  (.slide-hook)
+   ===================================================================== */
+.slide-hook { background: var(--bg); }
+
+.slide-hook .glow {
+  position: absolute;
+  top: 380px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 860px;
+  height: 700px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.slide-hook .top-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.35;
+}
+
+.slide-hook .swipe-badge {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  white-space: nowrap;
+}
+
+/* Main hook headline — critical selector: top 250px >= 60 */
+.hook {
+  position: absolute;
+  top: 250px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 84px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+}
+
+.hook h1 em { font-style: normal; color: var(--accent); }
+
+.slide-dots {
+  position: absolute;
+  top: 700px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.active {
+  background: var(--accent);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.slide-hook .sub {
+  position: absolute;
+  top: 760px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.slide-hook .swipe-cue {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.slide-hook .swipe-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slide-hook .arrow-track { display: flex; gap: 6px; }
+
+.slide-hook .arrow-seg {
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+
+.slide-hook .arrow-seg.bright { opacity: 1; width: 32px; }
+
+.slide-hook .handle-line {
+  position: absolute;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.slide-hook .handle-line::before { content: var(--ig-handle); }
+
+/* =====================================================================
+   Slides 2–6 — Portfolio  (.slide-portfolio)
+   MacBook mockup centred, site name + duration label below.
+   ===================================================================== */
+.slide-portfolio { background: var(--bg); }
+
+.site-tag-row {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.site-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.20);
+  padding: 10px 24px;
+}
+
+.site-tag .tag-index {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.site-tag .tag-sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(var(--accent-rgb), 0.30);
+}
+
+.site-tag .tag-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+/* Laptop frame wrapper — not a critical selector */
+.laptop-wrap {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 880px;
+  height: auto;
+}
+
+/* Screen area — proportions from ads/templates/06-niche-designers.html */
+.lt-screen {
+  position: absolute;
+  top: 4.6%;
+  left: 10.85%;
+  right: 10.87%;
+  bottom: 11.59%;
+  overflow: hidden;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+.lt-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.lt-device {
+  width: 100%;
+  display: block;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.55));
+}
+
+.site-label {
+  position: absolute;
+  top: 1020px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.site-name {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  display: block;
+}
+
+.site-duration {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  display: block;
+  line-height: 2.2;
+}
+
+.portfolio-footer {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+
+.pg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.pg-dot.active {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* =====================================================================
+   Slide 7 — CTA  (.slide-cta)
+   Visual rhyme with slide 1: same Syne 800, same green hook, handle.
+   ===================================================================== */
+.slide-cta { background: var(--bg); }
+
+.slide-cta .glow {
+  position: absolute;
+  top: 340px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 760px;
+  height: 680px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.07) 0%, transparent 58%);
+  pointer-events: none;
+}
+
+.slide-cta .top-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.35;
+}
+
+/* CTA headline — critical selector: top 280px >= 60 */
+.cta {
+  position: absolute;
+  top: 280px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.cta h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 80px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+}
+
+.cta h1 em { font-style: normal; color: var(--accent); }
+
+.cta-instruction {
+  position: absolute;
+  top: 700px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.cta-sep {
+  position: absolute;
+  top: 830px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.cta-handle {
+  position: absolute;
+  bottom: 190px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.cta-handle::before { content: var(--ig-handle); }
+
+.cta-tagline {
+  position: absolute;
+  bottom: 140px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
