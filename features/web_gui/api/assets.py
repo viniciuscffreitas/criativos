@@ -1,22 +1,30 @@
-"""Assets upload route — POST /api/v1/assets/upload.
+"""Assets routes — upload, list, delete user-uploaded creative assets.
 
-Accepts multipart file uploads for a known project slug.
-Guards: project existence, MIME type allowlist, 10 MB size cap, filename
-path-traversal stripping.
+All routes require an existing project slug (resolve_ads_path raises 404 if
+not). User uploads land under uploads_dir()/<slug>/. Built-in brand assets
+(brand/logos, brand/social/renders, etc) are NOT exposed by this router —
+they are served read-only by the /brand StaticFiles mount.
 
 Routes:
-  POST /api/v1/assets/upload
+  POST   /api/v1/assets/upload
+  GET    /api/v1/projects/{slug}/assets
+  DELETE /api/v1/projects/{slug}/assets/{file_id}
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Response
 
 from features.web_gui.api._helpers import resolve_ads_path
 from features.web_gui.services import asset_store
 
 router = APIRouter(tags=["assets"])
+
+# Same shape as asset_store._FILE_ID_RE; the route enforces it before the
+# store call so 400s look distinct from 404s in the API.
+_FILE_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 
 _MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
@@ -89,3 +97,50 @@ async def upload_assets(
         })
 
     return {"uploaded": uploaded}
+
+
+@router.get("/projects/{slug}/assets")
+async def list_assets(slug: str) -> dict:
+    """List every user-uploaded asset for a project.
+
+    Returns 404 when the project does not exist (path-traversal guard via
+    resolve_ads_path). Built-in brand assets are not included — those are
+    served by the /brand StaticFiles mount.
+    """
+    resolve_ads_path(slug)
+    items = asset_store.list_(slug)
+    # Strip the on-disk path before returning — clients shouldn't see
+    # server-local filesystem layout.
+    return {
+        "assets": [
+            {k: v for k, v in it.items() if k != "path"}
+            for it in items
+        ],
+    }
+
+
+@router.delete("/projects/{slug}/assets/{file_id}", status_code=204)
+async def delete_asset(slug: str, file_id: str) -> Response:
+    """Delete a user-uploaded asset by file_id.
+
+    Returns 204 on success, 400 for malformed file_id, 404 for unknown
+    project or unknown file_id (within an existing project).
+    """
+    resolve_ads_path(slug)
+    if not _FILE_ID_RE.match(file_id):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": f"file_id {file_id!r} is not a valid 32-char hex id",
+                "code": "INVALID_FILE_ID",
+            },
+        )
+    if not asset_store.delete(slug, file_id):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": f"asset {file_id!r} not found in project {slug!r}",
+                "code": "ASSET_NOT_FOUND",
+            },
+        )
+    return Response(status_code=204)

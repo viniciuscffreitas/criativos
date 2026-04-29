@@ -38,6 +38,17 @@ export const api = {
     }
     return r.json();
   },
+  listAssets: (slug: string) =>
+    req<{ assets: Array<{ file_id: string; filename: string; size: number; kind: string }> }>(
+      `/projects/${slug}/assets`,
+    ),
+  deleteAsset: async (slug: string, fileId: string) => {
+    const r = await fetch(`${BASE}/projects/${slug}/assets/${fileId}`, { method: 'DELETE' });
+    if (!r.ok && r.status !== 204) {
+      const body = await r.json().catch(() => ({ error: r.statusText, code: `HTTP_${r.status}` }));
+      throw new Error(`${body.code || 'ERROR'}: ${body.error || r.statusText}`);
+    }
+  },
 };
 
 export type StreamEvent =

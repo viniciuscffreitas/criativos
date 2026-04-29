@@ -130,9 +130,145 @@ describe('BrandLibrary — real assets (no mock placeholders)', () => {
   });
 
   it('shows the active project slug, not a hardcoded one', () => {
-    // Old version hardcoded "Vibe Web" badge. Now the badge mirrors the
-    // projectSlug prop so multi-project setups won't show stale label.
     render(<BrandLibrary projectSlug="otherproject" />);
     expect(screen.getByText('otherproject')).toBeInTheDocument();
+  });
+});
+
+describe('BrandLibrary — palette edit', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('renders a color input for each palette swatch', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    // Each swatch label has an associated color input
+    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' });
+    expect(accentInput).toBeInTheDocument();
+    expect((accentInput as HTMLInputElement).value).toBe('#04d361');
+  });
+
+  it('editing a swatch persists draft to localStorage and live-applies', () => {
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
+    fireEvent.input(accentInput, { target: { value: '#ff00aa' } });
+    // Draft persisted
+    const draft = JSON.parse(localStorage.getItem('cr_palette_draft') ?? '{}');
+    expect(draft.accent).toBe('#ff00aa');
+    // Live-applied to the swatch (its inline style background should now be the new color)
+    expect(accentInput.value).toBe('#ff00aa');
+  });
+
+  it('restores the draft palette on mount when localStorage has one', () => {
+    localStorage.setItem('cr_palette_draft', JSON.stringify({ accent: '#abcdef' }));
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
+    expect(accentInput.value).toBe('#abcdef');
+  });
+
+  it('shows "Resetar paleta" button only when a draft exists', () => {
+    const { rerender } = render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.queryByRole('button', { name: /Resetar paleta/i })).toBeNull();
+    // Now create a draft
+    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
+    fireEvent.input(accentInput, { target: { value: '#123456' } });
+    rerender(<BrandLibrary projectSlug="vibeweb" />);
+    expect(screen.getByRole('button', { name: /Resetar paleta/i })).toBeInTheDocument();
+  });
+
+  it('clicking "Resetar paleta" clears the draft and reverts swatches', () => {
+    localStorage.setItem('cr_palette_draft', JSON.stringify({ accent: '#abcdef' }));
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    fireEvent.click(screen.getByRole('button', { name: /Resetar paleta/i }));
+    expect(localStorage.getItem('cr_palette_draft')).toBeNull();
+    const accentInput = screen.getByLabelText(/Accent$/i, { selector: 'input[type="color"]' }) as HTMLInputElement;
+    expect(accentInput.value).toBe('#04d361');
+  });
+});
+
+describe('BrandLibrary — uploads (list + select + delete)', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.clear();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('shows empty-state when there are no uploads', async () => {
+    vi.spyOn(api, 'listAssets').mockResolvedValueOnce({ assets: [] });
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(await screen.findByText(/Nenhum ativo enviado/i)).toBeInTheDocument();
+  });
+
+  it('renders one card per uploaded asset', async () => {
+    vi.spyOn(api, 'listAssets').mockResolvedValueOnce({
+      assets: [
+        { file_id: 'a'.repeat(32), filename: 'banner.png', size: 1024, kind: 'image' },
+        { file_id: 'b'.repeat(32), filename: 'icon.svg',   size:  256, kind: 'logo'  },
+      ],
+    });
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    expect(await screen.findByText('banner.png')).toBeInTheDocument();
+    expect(screen.getByText('icon.svg')).toBeInTheDocument();
+  });
+
+  it('selecting an upload via checkbox shows the selection toolbar', async () => {
+    vi.spyOn(api, 'listAssets').mockResolvedValueOnce({
+      assets: [
+        { file_id: 'a'.repeat(32), filename: 'banner.png', size: 1024, kind: 'image' },
+        { file_id: 'b'.repeat(32), filename: 'icon.svg',   size:  256, kind: 'logo'  },
+      ],
+    });
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const checkboxes = await screen.findAllByRole('checkbox', { name: /selecionar/i });
+    expect(checkboxes).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /Excluir/i })).toBeNull();
+    fireEvent.click(checkboxes[0]);
+    expect(screen.getByRole('button', { name: /Excluir/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 selecionado/i)).toBeInTheDocument();
+    fireEvent.click(checkboxes[1]);
+    expect(screen.getByText(/2 selecionados/i)).toBeInTheDocument();
+  });
+
+  it('clicking Excluir confirms then calls deleteAsset for each selected id', async () => {
+    vi.spyOn(api, 'listAssets')
+      .mockResolvedValueOnce({
+        assets: [
+          { file_id: 'a'.repeat(32), filename: 'banner.png', size: 1024, kind: 'image' },
+          { file_id: 'b'.repeat(32), filename: 'icon.svg',   size:  256, kind: 'logo'  },
+        ],
+      })
+      .mockResolvedValueOnce({ assets: [] });
+    const deleteSpy = vi.spyOn(api, 'deleteAsset').mockResolvedValue(undefined);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const checkboxes = await screen.findAllByRole('checkbox', { name: /selecionar/i });
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
+    fireEvent.click(screen.getByRole('button', { name: /Excluir/i }));
+
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledTimes(2);
+    });
+    expect(deleteSpy).toHaveBeenCalledWith('vibeweb', 'a'.repeat(32));
+    expect(deleteSpy).toHaveBeenCalledWith('vibeweb', 'b'.repeat(32));
+  });
+
+  it('cancelling the confirm leaves uploads intact', async () => {
+    vi.spyOn(api, 'listAssets').mockResolvedValueOnce({
+      assets: [{ file_id: 'a'.repeat(32), filename: 'banner.png', size: 1024, kind: 'image' }],
+    });
+    const deleteSpy = vi.spyOn(api, 'deleteAsset');
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(<BrandLibrary projectSlug="vibeweb" />);
+    const cb = await screen.findByRole('checkbox', { name: /selecionar/i });
+    fireEvent.click(cb);
+    fireEvent.click(screen.getByRole('button', { name: /Excluir/i }));
+
+    expect(deleteSpy).not.toHaveBeenCalled();
   });
 });

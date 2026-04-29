@@ -1,15 +1,19 @@
-// Brand library view — palette, typography specimen, and the actual brand
-// assets served by the FastAPI /brand StaticFiles mount (brand/ on disk).
+// Brand library view — shell that composes:
+//   - <BrandUploadsSection> — user-managed assets (selectable, deletable)
+//   - <BrandPaletteEditor>  — click-to-edit color tokens (draft in localStorage)
+//   - typography specimen
+//   - canonical brand assets served by the FastAPI /brand StaticFiles mount
 //
-// IMPORTANT: This view shows the TRUE brand — not mock placeholders. Logos
-// come from /brand/logos/, social renders from /brand/social/renders/,
-// favicons from /brand/favicons/. Fonts shown match the brand fonts in
-// brand/tokens.css (Syne, DM Sans, Fira Code) — not the webapp's chrome
-// typography (Geist/Fraunces).
-import { useEffect, useRef, useState } from 'react';
+// IMPORTANT: This view shows the TRUE brand. Logos come from /brand/logos/,
+// social renders from /brand/social/renders/, favicons from /brand/favicons/.
+// Fonts shown match brand/tokens.css (Syne, DM Sans, Fira Code) — not the
+// webapp's chrome typography (Geist/Fraunces).
+import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import { tokens } from '../tokens';
 import { IconUpload } from './icons';
+import { BrandPaletteEditor } from './BrandPaletteEditor';
+import { BrandUploadsSection } from './BrandUploadsSection';
 
 interface BrandLibraryProps {
   projectSlug: string;
@@ -35,25 +39,16 @@ interface BrandAsset {
   src: string;
   label: string;
   category: 'logo' | 'social' | 'favicon';
-  // Background hint so transparent SVGs render readable on light/dark.
   bgClass?: 'dark' | 'light';
 }
 
-// Hard-coded list of the brand assets that ship with the repo. Each entry
-// points at a real file under /brand (mounted by features/web_gui/server.py).
-// If you add a new file under brand/, add it here too — there is no API
-// endpoint to enumerate the directory and we keep this explicit so the
-// layout doesn't shift on every disk scan.
 const BRAND_ASSETS: BrandAsset[] = [
-  // Logos (SVG primary; PNG also exists for non-vector consumers)
   { src: '/brand/logos/vibeweb-primary.svg',  label: 'Logo principal',     category: 'logo', bgClass: 'dark'  },
   { src: '/brand/logos/vibeweb-icon.svg',     label: 'Marca (símbolo)',    category: 'logo', bgClass: 'dark'  },
   { src: '/brand/logos/vibeweb-stacked.svg',  label: 'Logo stacked',       category: 'logo', bgClass: 'dark'  },
   { src: '/brand/logos/vibeweb-wordmark.svg', label: 'Wordmark',           category: 'logo', bgClass: 'dark'  },
   { src: '/brand/logos/vibeweb-white.svg',    label: 'Versão branca',      category: 'logo', bgClass: 'dark'  },
   { src: '/brand/logos/vibeweb-black.svg',    label: 'Versão preta',       category: 'logo', bgClass: 'light' },
-
-  // Social renders
   { src: '/brand/social/renders/instagram-post.png',  label: 'Instagram post (1080×1080)',  category: 'social' },
   { src: '/brand/social/renders/instagram-story.png', label: 'Instagram story (1080×1920)', category: 'social' },
   { src: '/brand/social/renders/instagram-highlight-portfolio.png', label: 'Highlight · portfolio', category: 'social' },
@@ -63,20 +58,22 @@ const BRAND_ASSETS: BrandAsset[] = [
   { src: '/brand/social/renders/instagram-highlight-feed.png',      label: 'Highlight · feed',      category: 'social' },
   { src: '/brand/social/renders/linkedin-banner.png', label: 'LinkedIn banner (1584×396)',  category: 'social' },
   { src: '/brand/social/renders/og-image.png',        label: 'Open Graph (1200×630)',       category: 'social' },
-
-  // Favicons
-  { src: '/brand/favicons/icon-512.png',        label: 'Favicon 512',  category: 'favicon', bgClass: 'dark' },
-  { src: '/brand/favicons/apple-touch-icon.png', label: 'Apple touch', category: 'favicon', bgClass: 'dark' },
-  { src: '/brand/favicons/favicon-32.png',      label: 'Favicon 32',   category: 'favicon', bgClass: 'dark' },
-  { src: '/brand/favicons/favicon-16.png',      label: 'Favicon 16',   category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/icon-512.png',         label: 'Favicon 512',  category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/apple-touch-icon.png', label: 'Apple touch',  category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/favicon-32.png',       label: 'Favicon 32',   category: 'favicon', bgClass: 'dark' },
+  { src: '/brand/favicons/favicon-16.png',       label: 'Favicon 16',   category: 'favicon', bgClass: 'dark' },
 ];
 
 export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [upload, setUpload] = useState<UploadState>({ kind: 'idle' });
 
+  // refetchKey bumps after a successful upload — child UploadsSection refetches on change.
+  const [refetchKey, setRefetchKey] = useState<number>(0);
+
   useEffect(() => {
     if (upload.kind !== 'success') return;
+    setRefetchKey(k => k + 1);
     const t = setTimeout(() => setUpload({ kind: 'idle' }), 3000);
     return () => clearTimeout(t);
   }, [upload]);
@@ -103,15 +100,6 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
       setUpload({ kind: 'error', message: err instanceof Error ? err.message : String(err) });
     }
   };
-
-  const colors = [
-    { name: 'Accent', hex: tokens.accent, role: 'Destaque verde' },
-    { name: 'Accent Dark', hex: tokens.accentDark, role: 'Hover/pressed' },
-    { name: 'Background', hex: tokens.bg, role: 'Fundo escuro' },
-    { name: 'Text', hex: tokens.text, role: 'Texto principal' },
-    { name: 'Text Muted', hex: tokens.textMuted, role: 'Texto secundário' },
-    { name: 'Border', hex: tokens.border, role: 'Bordas e divisores' },
-  ];
 
   // BRAND fonts — match brand/tokens.css and what the rendered creatives use.
   const fonts = [
@@ -195,26 +183,15 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
       )}
 
       <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 28 }}>
-        {/* Colors */}
-        <div>
-          <SectionLabel>Paleta</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-            {colors.map(c => (
-              <div key={c.name} style={{
-                background: '#fff', border: '1px solid #e7e5e4',
-                borderRadius: 8, overflow: 'hidden',
-              }}>
-                <div style={{ height: 80, background: c.hex }}/>
-                <div style={{ padding: '10px 12px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#1c1917' }}>{c.name}</div>
-                  <div style={{ fontSize: 10, color: '#6f6a64', marginTop: 1,
-                    fontFamily: '"Geist Mono", monospace' }}>{c.hex}</div>
-                  <div style={{ fontSize: 11, color: '#78716c', marginTop: 4 }}>{c.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <BrandUploadsSection
+          projectSlug={projectSlug}
+          refetchKey={refetchKey}
+          renderLabel={(label) => <SectionLabel>{label}</SectionLabel>}
+        />
+
+        <BrandPaletteEditor
+          renderLabel={(label) => <SectionLabel>{label}</SectionLabel>}
+        />
 
         {/* Fonts */}
         <div>
@@ -240,7 +217,7 @@ export function BrandLibrary({ projectSlug }: BrandLibraryProps) {
           </div>
         </div>
 
-        {/* Assets — categories rendered separately */}
+        {/* Canonical brand assets — categories rendered separately */}
         {(['logo', 'social', 'favicon'] as const).map(cat => {
           const items = BRAND_ASSETS.filter(a => a.category === cat);
           if (items.length === 0) return null;
