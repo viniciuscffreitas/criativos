@@ -26,17 +26,26 @@ describe('CommandPalette', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders all commands with their keyboard hints', () => {
+  it('renders only WIRED commands with their keyboard hints', () => {
     render(<CommandPalette {...BASE_PROPS} />);
+    // Wired commands stay
     expect(screen.getByText('Ir para Novo fluxo')).toBeInTheDocument();
     expect(screen.getByText('Ir para Galeria')).toBeInTheDocument();
     expect(screen.getByText('Ir para Marca')).toBeInTheDocument();
-    expect(screen.getByText('A/B Test de variantes')).toBeInTheDocument();
-    expect(screen.getByText('Publicar no Meta')).toBeInTheDocument();
-    expect(screen.getByText('Preferências')).toBeInTheDocument();
+    expect(screen.getByText('Abrir ajustes rápidos')).toBeInTheDocument();
     expect(screen.getByText('⌘1')).toBeInTheDocument();
     expect(screen.getByText('⌘2')).toBeInTheDocument();
-    expect(screen.getByText('⌘T')).toBeInTheDocument();
+    expect(screen.getByText('⌘3')).toBeInTheDocument();
+  });
+
+  it('does NOT render the unwired "coming-in-Spec-X" placeholder commands', () => {
+    // Three commands shipped marked wired:false: A/B Test ("Spec 2"),
+    // Publicar no Meta ("Spec 4"), Preferências ("Spec 2"). They printed
+    // a console.info and closed — no real action. Removed.
+    render(<CommandPalette {...BASE_PROPS} />);
+    expect(screen.queryByText(/A\/B Test/i)).toBeNull();
+    expect(screen.queryByText(/Publicar no Meta/i)).toBeNull();
+    expect(screen.queryByText(/^Preferências$/i)).toBeNull();
   });
 
   it('search input filters the list by label substring', () => {
@@ -53,13 +62,10 @@ describe('CommandPalette', () => {
     expect(BASE_PROPS.onClose).toHaveBeenCalledOnce();
   });
 
-  it('unwired command calls console.info with spec message then onClose', () => {
+  it('clicking "Abrir ajustes rápidos" calls onOpenTweaks then onClose', () => {
     render(<CommandPalette {...BASE_PROPS} />);
-    fireEvent.click(screen.getByText('A/B Test de variantes'));
-    expect(console.info).toHaveBeenCalledWith(
-      expect.stringContaining('[CommandPalette]'),
-      expect.stringContaining('ab-test'),
-    );
+    fireEvent.click(screen.getByText('Abrir ajustes rápidos'));
+    expect(BASE_PROPS.onOpenTweaks).toHaveBeenCalledOnce();
     expect(BASE_PROPS.onClose).toHaveBeenCalledOnce();
   });
 
