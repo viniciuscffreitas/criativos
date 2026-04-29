@@ -97,6 +97,7 @@ Non-KPIs: likes, follower count. The 2026 algorithm ranks on dwell time + swipe 
 - All 3 carousels = **7 slides each** (sweet spot floor). Total carousel slides: 21.
 - Each carousel has a deliberate open-loop somewhere between slide 1 and slide 5.
 - Safe-zone: nothing critical (text, CTA) within 60px of top/bottom.
+- Hook word-count guideline: **≤ 12 words** for slide-1 of carousels and primary headlines of singles (slightly relaxed from the literal "≤ 10" cited in 2026 research, which assumes single-clause hooks; our PAS hooks often pair a setup + payoff in two short sentences — e.g. "Most freelancers send a Notion link. You're not most freelancers."). Implementation should prefer ≤ 10 when the meaning survives trimming.
 
 ---
 
@@ -121,6 +122,8 @@ features/
       carousel-services.html      # ?slide=1..7  (open-loop on slide 5)
       carousel-process.html       # ?slide=1..7  (Day 1 → Day 7 + CTA)
     test_render.py                # structural + visual regression
+    renders/                      # PNG outputs (gitignored at first; goldens are source of truth)
+      *.png                       # 27 PNGs produced on each `--instagram` run
     goldens/
       *.png                       # 27 golden PNGs, populated on first authored run
 ```
@@ -303,29 +306,40 @@ For each `RenderJob` in `jobs.build_jobs()`, verify:
 - Dimensions match `(job.width, job.height)` exactly via Pillow.
 
 ### 9.2 Tokens-truth (extends `tests/test_tokens_truth.py`)
-Extend the existing glob to include `features/instagram_content/templates/*.html`. The current rule "no hex literals + no brand rgba literals outside tokens.css" applies unchanged.
+The current test exposes two hardcoded globs (`BRAND_TEMPLATES`, `AD_TEMPLATES`) joined into `ALL_TEMPLATES`. Add a third glob `INSTAGRAM_TEMPLATES = sorted((ROOT / "features" / "instagram_content" / "templates").glob("*.html"))` and concat: `ALL_TEMPLATES = BRAND_TEMPLATES + AD_TEMPLATES + INSTAGRAM_TEMPLATES`. All existing parametrized rules ("must import tokens.css", "must use var(--*)", "no legacy #0d0d0d", "no hardcoded hex from `TOKENIZED_HEX`", "no literal `rgba(4,211,97,X)`") then apply to IG templates unchanged.
 
 ### 9.3 Visual regression (`test_render.py::test_visual_regression`)
-For each render, compare to `goldens/<name>.png` via Pillow `ImageChops.difference`. Threshold: max pixel diff ≤ 5 (matches `tests/test_visual_regression.py` precedent).
+For each render, compare to `goldens/<name>.png` via Pillow `ImageChops.difference`. **Threshold matches `tests/test_visual_regression.py` exactly:** Manhattan per-channel sum (R+G+B diff) ≤ 20 per pixel, with ≤ 1% of total pixels allowed to exceed that bound. Constants reused from the existing test (`PIXEL_DIFF_THRESHOLD = 20`, `ALLOWED_DIFF_FRACTION = 0.01`) — the IG test imports them rather than redefining, so a future tuning change propagates uniformly.
 
 Goldens populated on first authored run (developer commits the initial goldens after manual visual inspection).
 
-### 9.4 Safe-zone lint (`test_render.py::test_safe_zone`) — **new**
-Static analysis on each template HTML+CSS. For every element matching `h1, .headline, .cta, .cta-bar, .hook, .main-text` (the "critical text" set):
-- Reject if the element's `top` is set to a value `< 60px`.
-- Reject if `bottom` is set to `< 60px`.
-- Reject if the element is inside a parent that places it in the top 60px or bottom 60px of a 1080×1350 viewport (heuristic: parent `top` + element `top` < 60).
+### 9.4 Safe-zone — two-layer (`test_render.py::test_safe_zone_static` + `test_safe_zone_runtime`)
 
-Implementation: BeautifulSoup or simple regex parser (single-pass per template). The test fails fast with the offending selector + computed offset.
+The 3:4 grid preview crops the top 60px and bottom 60px of every 1080×1350 post. Critical text (headlines, CTAs) inside those bands is invisible at the moment a profile visitor scans the grid.
 
-This catches cases where the post would render fine in feed (4:5 full) but get critical text cropped in the 3:4 grid preview — the reason listed in §4.
+**Layer 1 — static lint (`test_safe_zone_static`):** parse each template HTML+CSS. For elements matching `h1, .headline, .cta, .cta-bar, .hook, .main-text`:
+- Reject if `top` < 60px.
+- Reject if `bottom` < 60px.
+- Reject if parent `top` + element `top` < 60.
+
+Catches the obvious cases. Fast, deterministic.
+
+**Layer 2 — runtime band scan (`test_safe_zone_runtime`):** the static lint cannot reason about flexbox/grid placement (e.g., `justify-content: flex-end` on a 1080×1350 container places the last child near the bottom 0px without any explicit `bottom:` value). For each rendered PNG:
+1. Open with Pillow as RGB.
+2. Sample the top 60px band and bottom 60px band.
+3. Count pixels whose Manhattan distance from `var(--bg)` (#0a0a0a → R+G+B = 30) exceeds 30 (i.e., non-background pixels).
+4. Fail if either band has > 1% non-background coverage.
+
+This closes the loop per CLAUDE.md §2.5 ("dimensions match ≠ correct output") — a pure CSS lint cannot prove the rendered image is safe; the rendered image can.
+
+Both layers run; layer 1 catches issues at edit time without rendering, layer 2 catches issues that only manifest after rendering. They complement, they don't duplicate.
 
 ---
 
 ## 10. Error handling (per CLAUDE.md §2.7)
 
 - Missing template file → `FileNotFoundError` with full path; no fallback.
-- Missing screenshot in `ads/assets/` referenced by carousel-portfolio → `FileNotFoundError` with the slide number and asset name in the message; no silent gray block.
+- Missing screenshot in `ads/assets/` referenced by carousel-portfolio → `FileNotFoundError` with the slide number and asset name in the message; no silent gray block. **All 6 referenced assets verified at spec time:** `site-onearc.png`, `site-alytics.png`, `site-lunera.png`, `site-messageai.png`, `site-dreelio.png`, `guima-dark.png` exist in `ads/assets/`.
 - Pillow dimension mismatch → fail the structural test loudly with both dimensions in the assertion.
 - Safe-zone violation → fail the lint test with the exact selector and offset.
 
