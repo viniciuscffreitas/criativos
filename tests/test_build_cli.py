@@ -13,7 +13,7 @@ def test_build_cli_help_lists_flags():
         capture_output=True, text=True, timeout=10,
     )
     assert result.returncode == 0, result.stderr
-    for flag in ("--brand", "--ads", "--all"):
+    for flag in ("--brand", "--ads", "--all", "--instagram"):
         assert flag in result.stdout, f"missing flag {flag} in help"
 
 

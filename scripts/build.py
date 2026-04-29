@@ -3,9 +3,10 @@
 Vibe Web unified asset pipeline.
 
 Usage:
-    python scripts/build.py --all        # brand + ads
+    python scripts/build.py --all        # brand + ads + instagram
     python scripts/build.py --brand      # logos, social, favicons
     python scripts/build.py --ads        # ad creatives only
+    python scripts/build.py --instagram  # Instagram content batch (9 grid posts + 21 carousel slides)
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ def main() -> int:
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("--brand", action="store_true", help="Generate brand pack (logos, social, favicons)")
     g.add_argument("--ads", action="store_true", help="Render ad creatives")
+    g.add_argument("--instagram", action="store_true", help="Render Instagram content batch (9 grid posts + 21 carousel slides)")
     g.add_argument("--all", action="store_true", help="Run the full pipeline")
     args = parser.parse_args()
 
@@ -31,6 +33,9 @@ def main() -> int:
     if args.ads or args.all:
         from ads.render import main as ads_main
         asyncio.run(ads_main())
+    if args.instagram or args.all:
+        from features.instagram_content.render import main as ig_main
+        asyncio.run(ig_main())
     return 0
 
 
