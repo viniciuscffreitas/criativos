@@ -1,0 +1,365 @@
+/*
+ * carousel-process.css — styles for the 7-slide process timeline carousel.
+ * Loaded by carousel-process.html only. Tokens come from brand/tokens.css.
+ *
+ * Three slide types:
+ *   .slide-hook  — slide 1 (hook)
+ *   .slide-day   — slides 2-6 (Day 1 / Day 2-3 / Day 4-5 / Day 6 / Day 7)
+ *   .slide-cta   — slide 7
+ *
+ * Day slides: massive DAY number (Syne 800, 140px, var(--accent)) is the
+ * visual anchor when scrolling fast. Action sentence sits below. A 5-segment
+ * progress arc shows arc position without explicit "step N of 6" labeling.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* =====================================================================
+   Shared slide base — every section fills the canvas; JS shows one.
+   ===================================================================== */
+.slide {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 1350px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* =====================================================================
+   Shared decorative elements
+   ===================================================================== */
+.top-rule {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent);
+  opacity: 0.35;
+}
+
+/* =====================================================================
+   Slide 1 — Hook  (.slide-hook)
+   ===================================================================== */
+.slide-hook { background: var(--bg); }
+
+.slide-hook .glow {
+  position: absolute;
+  top: 320px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 860px;
+  height: 740px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.process-badge {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+  white-space: nowrap;
+}
+
+/* Hook headline — critical selector: top 230px >= 60 */
+.hook {
+  position: absolute;
+  top: 230px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 88px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 1.0;
+}
+
+.hook h1 em { font-style: normal; color: var(--accent); }
+
+/* Parenthetical — sits just below the headline */
+.hook-parens {
+  margin-top: 28px;
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--text-soft);
+  letter-spacing: 0.01em;
+}
+
+.slide-dots {
+  position: absolute;
+  top: 700px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.dot.active {
+  background: var(--accent);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.hook-sub {
+  position: absolute;
+  top: 760px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.swipe-cue {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.swipe-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-subtle);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arrow-track { display: flex; gap: 6px; }
+
+.arrow-seg {
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.4;
+  border-radius: 1px;
+}
+
+.arrow-seg.bright { opacity: 1; width: 32px; }
+
+.handle-line {
+  position: absolute;
+  bottom: 90px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.handle-line::before { content: var(--ig-handle); }
+
+/* =====================================================================
+   Slides 2–6 — Day cards  (.slide-day)
+   Massive day number as visual anchor; action sentence below.
+   Safe-zone: .day-number starts at top 90px (>= 60 safe).
+   ===================================================================== */
+.slide-day { background: var(--bg); }
+
+/* Massive day number — the scroller's anchor at 140px */
+.day-number {
+  position: absolute;
+  top: 90px;
+  left: 80px;
+  right: 80px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 140px;
+  color: var(--accent);
+  letter-spacing: -4px;
+  line-height: 1.0;
+  text-align: center;
+}
+
+/* Action sentence — below the number, prominent but not competing */
+.day-action {
+  position: absolute;
+  top: 380px;
+  left: 100px;
+  right: 100px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+/* 5-segment arc bar — shows position in the 7-day story */
+.day-arc {
+  position: absolute;
+  top: 640px;
+  left: 120px;
+  right: 120px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.arc-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+/* Completed days — bright accent */
+.arc-seg.arc-done {
+  background: rgba(var(--accent-rgb), 0.35);
+}
+
+/* Current day — full accent */
+.arc-seg.arc-active {
+  background: var(--accent);
+  height: 4px;
+}
+
+/* Progress dots — consistent with portfolio/services pattern */
+.portfolio-footer {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+}
+
+.pg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.pg-dot.active {
+  background: var(--accent);
+  width: 20px;
+  border-radius: 3px;
+}
+
+/* =====================================================================
+   Slide 7 — CTA  (.slide-cta)
+   Punchy: "DM 'site' if this sounds like your week." + handle.
+   ===================================================================== */
+.slide-cta { background: var(--bg); }
+
+.slide-cta .glow {
+  position: absolute;
+  top: 280px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 760px;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--accent-rgb), 0.07) 0%, transparent 58%);
+  pointer-events: none;
+}
+
+/* CTA headline — critical selector: top 230px >= 60 */
+.cta {
+  position: absolute;
+  top: 230px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.cta h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 76px;
+  color: var(--text);
+  letter-spacing: -2.5px;
+  line-height: 1.05;
+}
+
+.cta h1 em { font-style: normal; color: var(--accent); }
+
+.cta-sep {
+  position: absolute;
+  top: 830px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.cta-handle {
+  position: absolute;
+  bottom: 190px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 36px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.cta-handle::before { content: var(--ig-handle); }
+
+.cta-tagline {
+  position: absolute;
+  bottom: 140px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
