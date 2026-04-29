@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Radial glow — decorative, not a critical selector */
+.glow {
+  position: absolute;
+  top: 300px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Niche tag — visual anchor, not a critical selector */
+.niche-label {
+  position: absolute;
+  top: 140px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.niche-tag {
+  display: inline-block;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 20px;
+}
+
+/* Hook headline — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 230px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 60px;
+  color: var(--text);
+  letter-spacing: -2px;
+  line-height: 1.05;
+}
+
+/* Sub — not a critical selector, placed absolutely */
+.hook-sub {
+  position: absolute;
+  top: 620px;
+  left: 80px;
+  right: 80px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* CTA bar — critical: bottom >= 60 */
+.cta-bar {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cta-bar .cta-text {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.cta-bar .handle {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 3;
+}
+
+.cta-bar .handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="niche-label">
+  <div class="niche-tag">For Designers</div>
+</div>
+
+<div class="hook">
+  <h1>Designers who can't<br>afford a generic<br>agency.</h1>
+</div>
+
+<div class="hook-sub">Custom sites that look like your work,<br>not their template.</div>
+
+<div class="cta-bar">
+  <span class="cta-text">DM 'site' →</span>
+  <span class="handle"></span>
+</div>
+
+</body>
+</html>
