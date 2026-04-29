@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Radial warm glow — decorative, not a critical selector */
+.glow {
+  position: absolute;
+  top: 250px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 700px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Hook headline — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 200px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 68px;
+  color: var(--text);
+  letter-spacing: -2px;
+  line-height: 1.05;
+}
+
+/* Large number stat — agitate: "3 clients" is the emotional punch */
+.stat-block {
+  position: absolute;
+  top: 510px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.stat-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 160px;
+  color: var(--accent);
+  letter-spacing: -6px;
+  line-height: 0.9;
+  display: block;
+}
+
+.stat-label {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+/* Sub line — not matching critical selectors */
+.sub-line {
+  position: absolute;
+  top: 860px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* CTA bar — critical: bottom >= 60 */
+.cta-bar {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cta-bar .cta-text {
+  display: block;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+.cta-bar .handle {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 3;
+}
+
+.cta-bar .handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="hook">
+  <h1>Every week<br>without a site,</h1>
+</div>
+
+<div class="stat-block">
+  <span class="stat-num">3</span>
+  <span class="stat-label">clients pick<br>someone else.</span>
+</div>
+
+<div class="sub-line">That's not a guess. That's how it works.</div>
+
+<div class="cta-bar">
+  <span class="cta-text">How long can you afford that?</span>
+  <span class="handle"></span>
+</div>
+
+</body>
+</html>
