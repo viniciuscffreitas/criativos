@@ -102,7 +102,7 @@ body {
   color: var(--signal-red);
 }
 
-/* Hook headline — critical selector: top 250px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .hook {
   position: absolute;
   top: 250px;
@@ -354,7 +354,7 @@ body {
   opacity: 0.35;
 }
 
-/* CTA headline — critical selector: top 280px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .cta {
   position: absolute;
   top: 280px;

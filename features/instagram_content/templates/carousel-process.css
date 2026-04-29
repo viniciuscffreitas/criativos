@@ -87,7 +87,7 @@ body {
   white-space: nowrap;
 }
 
-/* Hook headline — critical selector: top 230px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .hook {
   position: absolute;
   top: 230px;
@@ -305,7 +305,7 @@ body {
   pointer-events: none;
 }
 
-/* CTA headline — critical selector: top 230px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .cta {
   position: absolute;
   top: 230px;

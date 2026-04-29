@@ -78,7 +78,7 @@ body {
   white-space: nowrap;
 }
 
-/* Main hook headline — critical selector: top 250px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .hook {
   position: absolute;
   top: 250px;
@@ -226,7 +226,7 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* Laptop frame wrapper — not a critical selector */
+/* Laptop frame wrapper */
 .laptop-wrap {
   position: absolute;
   top: 200px;
@@ -343,7 +343,7 @@ body {
   opacity: 0.35;
 }
 
-/* CTA headline — critical selector: top 280px >= 60 */
+/* critical — must respect 60px safe-zone (test_safe_zone_static) */
 .cta {
   position: absolute;
   top: 280px;

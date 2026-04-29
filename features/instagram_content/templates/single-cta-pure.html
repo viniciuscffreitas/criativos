@@ -17,7 +17,7 @@ body {
   position: relative;
 }
 
-/* Very faint vertical center glow — decorative, not critical selector */
+/* Very faint vertical center glow */
 .glow {
   position: absolute;
   top: 400px;
@@ -29,7 +29,7 @@ body {
   pointer-events: none;
 }
 
-/* Main headline — critical: top >= 60 */
+/* Main headline — critical — top must be >= 60px safe-zone */
 .hook {
   position: absolute;
   top: 260px;
@@ -52,7 +52,7 @@ body {
   color: var(--accent);
 }
 
-/* Sub — not critical selector, placed absolutely */
+/* Sub*/
 .hook-sub {
   position: absolute;
   top: 620px;
@@ -65,7 +65,7 @@ body {
   line-height: 1.55;
 }
 
-/* Thin accent separator — decorative, not critical */
+/* Thin accent separator */
 .sep {
   position: absolute;
   top: 810px;

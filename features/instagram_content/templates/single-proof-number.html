@@ -17,7 +17,7 @@ body {
   position: relative;
 }
 
-/* Subtle accent glow — decorative, not critical selector */
+/* Subtle accent glow */
 .glow {
   position: absolute;
   top: 300px;
@@ -29,7 +29,7 @@ body {
   pointer-events: none;
 }
 
-/* Hook — critical: top >= 60 */
+/* Hook — critical — top must be >= 60px safe-zone */
 .hook {
   position: absolute;
   top: 200px;
@@ -52,7 +52,7 @@ body {
   color: var(--accent);
 }
 
-/* Two stat cards — not critical selectors */
+/* Two stat cardss */
 .stat-row {
   position: absolute;
   top: 490px;
@@ -90,7 +90,7 @@ body {
   line-height: 3;
 }
 
-/* Sub text — not critical selector */
+/* Sub text */
 .proof-sub {
   position: absolute;
   top: 850px;
@@ -108,7 +108,7 @@ body {
   font-weight: 600;
 }
 
-/* CTA bar — critical: bottom >= 60 */
+/* CTA bar — critical — bottom must be >= 60px safe-zone */
 .cta-bar {
   position: absolute;
   bottom: 160px;
