@@ -4,30 +4,50 @@ Production deploy on a Linux VPS (tested on Debian/Ubuntu) behind Caddy reverse 
 
 ## One-time bootstrap
 
+This repo ships **two** reverse-proxy options. Pick whichever matches your VPS:
+
+| Reverse proxy already on the box | Use config |
+|---|---|
+| Caddy (auto TLS) | `deploy/Caddyfile` |
+| nginx + certbot (system pkgs) | `deploy/criativos.nginx.conf` (auto-installed by `install.sh` if it detects `/etc/nginx/sites-enabled/`) |
+
+### Option A — Fresh box (Caddy)
+
 ```bash
-# On the VPS, as user vinicius (with sudo)
 sudo apt update && sudo apt install -y docker.io docker-compose-plugin git caddy curl
 sudo usermod -aG docker vinicius
-newgrp docker  # or logout/login
+newgrp docker
 
-# Clone
 cd /home/vinicius
 git clone https://github.com/viniciuscffreitas/criativos.git
 cd criativos
+cp .env.example .env && nano .env       # set CLAUDE_CODE_OAUTH_TOKEN
 
-# Configure secrets
-cp .env.example .env
-nano .env
-# Set CLAUDE_CODE_OAUTH_TOKEN (real-mode) or leave empty + VIBEWEB_DRY_RUN=1 for safe demo
-
-# Wire Caddy (one time)
-sudo mkdir -p /etc/caddy
-# Append our config to the main Caddyfile
-sudo tee -a /etc/caddy/Caddyfile < deploy/Caddyfile
+sudo cp deploy/Caddyfile /etc/caddy/Caddyfile.criativos
+echo 'import Caddyfile.criativos' | sudo tee -a /etc/caddy/Caddyfile
 sudo systemctl reload caddy
-
-# DNS (out of scope here): point criativos.vinicius.xyz A record to this VPS IP
 ```
+
+### Option B — Box already has nginx + certbot (the vinicius.xyz pattern)
+
+```bash
+cd /home/vinicius
+git clone https://github.com/viniciuscffreitas/criativos.git
+cd criativos
+cp .env.example .env && nano .env       # set CLAUDE_CODE_OAUTH_TOKEN
+
+# nginx vhost + Let's Encrypt cert
+sudo cp deploy/criativos.nginx.conf /etc/nginx/sites-available/criativos.conf
+sudo ln -sfn /etc/nginx/sites-available/criativos.conf /etc/nginx/sites-enabled/criativos.conf
+sudo nginx -t && sudo systemctl reload nginx
+sudo apt install -y python3-certbot-nginx
+sudo certbot --nginx --non-interactive --agree-tos -m you@example.com -d criativos.vinicius.xyz --redirect
+```
+
+### DNS
+
+Point `criativos.vinicius.xyz` (A record) at the VPS IP. This is out of scope
+for the script.
 
 ## Deploy / update
 
