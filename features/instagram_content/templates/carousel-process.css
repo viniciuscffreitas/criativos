@@ -363,3 +363,9 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* Inline keyword highlight inside the slide-7 CTA headline. */
+.cta h1 .kw {
+  font-style: normal;
+  color: var(--accent);
+}

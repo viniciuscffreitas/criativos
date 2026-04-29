@@ -413,3 +413,9 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+/* Inline keyword highlight for the DM 'site' instruction. */
+.cta-instruction .kw {
+  font-style: normal;
+  color: var(--text);
+}

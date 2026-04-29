@@ -51,9 +51,33 @@ def test_template_imports_tokens_css(tpl):
     assert TOKENS_IMPORT.search(content), f"{tpl.name} must import brand/tokens.css"
 
 
+_LINK_HREF = re.compile(
+    r'<link[^>]+href="([^"]+\.css)"[^>]*>', re.IGNORECASE
+)
+
+
+def _stylesheet_text_for(tpl: Path) -> str:
+    """HTML + every same-feature linked .css the template imports.
+
+    Carousels keep their CSS in sibling .css files (file-size split). Reading
+    only the .html silently passes the var-usage check on a single sentinel
+    inline style. Following the link restores the guarantee the test promises.
+    """
+    html = tpl.read_text(encoding="utf-8")
+    parts = [html]
+    for href in _LINK_HREF.findall(html):
+        # Skip remote stylesheets (Google Fonts) and the global tokens file.
+        if href.startswith(("http://", "https://", "//")) or "tokens.css" in href:
+            continue
+        sibling = (tpl.parent / href).resolve()
+        if sibling.exists():
+            parts.append(sibling.read_text(encoding="utf-8"))
+    return "\n".join(parts)
+
+
 @pytest.mark.parametrize("tpl", ALL_TEMPLATES, ids=lambda p: p.name)
 def test_template_uses_var_for_core_colors(tpl):
-    content = tpl.read_text(encoding="utf-8")
+    content = _stylesheet_text_for(tpl)
     assert VAR_USAGE.search(content), f"{tpl.name} must use var(--*) tokens"
 
 
@@ -81,7 +105,7 @@ def test_no_legacy_bg_in_svgs():
 @pytest.mark.parametrize("tpl", ALL_TEMPLATES, ids=lambda p: p.name)
 def test_template_has_no_tokenized_hex_in_css(tpl):
     """CSS must reference tokens — no literal hex for colors that tokens.css owns."""
-    css = _css_only(tpl.read_text(encoding="utf-8"))
+    css = _css_only(_stylesheet_text_for(tpl))
     bad = {hex_: token for hex_, token in TOKENIZED_HEX.items()
            if re.search(re.escape(hex_), css, re.IGNORECASE)}
     assert not bad, (
@@ -92,7 +116,7 @@ def test_template_has_no_tokenized_hex_in_css(tpl):
 @pytest.mark.parametrize("tpl", ALL_TEMPLATES, ids=lambda p: p.name)
 def test_template_uses_accent_rgb_token_not_rgba_literal(tpl):
     """Brand green RGB must come from var(--accent-rgb), not literal rgba(4,211,97,X)."""
-    css = _css_only(tpl.read_text(encoding="utf-8"))
+    css = _css_only(_stylesheet_text_for(tpl))
     matches = _ACCENT_RGBA.findall(css)
     assert not matches, (
         f"{tpl.name}: {len(matches)} literal rgba(4,211,97,X) in CSS — "
