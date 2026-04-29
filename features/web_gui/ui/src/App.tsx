@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { DesktopChrome } from './components/DesktopChrome';
 import { Sidebar } from './components/Sidebar';
 import type { NavSection } from './components/Sidebar';
 import { Gallery } from './components/Gallery';
@@ -58,11 +57,13 @@ export function App() {
     return () => window.removeEventListener('keydown', h);
   }, [paletteOpen]);
 
-  const chromeW = Math.min(1480, window.innerWidth - 48);
-  const chromeH = Math.min(900, window.innerHeight - 48);
-
   return (
-    <DesktopChrome width={chromeW} height={chromeH} title={_title(nav)}>
+    <div data-testid="app-shell" style={{
+      width: '100vw', height: '100vh',
+      display: 'flex', minHeight: 0,
+      background: '#fafaf9',
+      fontFamily: '"Geist", "Inter", system-ui, sans-serif',
+    }}>
       <Sidebar active={nav} onNav={setNav} projects={projects}
                activeProjectSlug={activeProject} onSelectProject={setActiveProject}/>
       <div style={{ flex: 1, minWidth: 0, display: 'flex', position: 'relative' }}>
@@ -103,17 +104,8 @@ export function App() {
       />
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
       <GenerationTraceModal runId={traceRunId} onClose={() => setTraceRunId(null)} />
-    </DesktopChrome>
+    </div>
   );
-}
-
-const NAV_TITLES: Record<NavSection, string> = {
-  flow: 'Novo fluxo',
-  gallery: 'Galeria',
-  brand: 'Marca',
-};
-function _title(n: NavSection): string {
-  return NAV_TITLES[n];
 }
 
 // Ad IDs in this project follow the convention "01".."NN" (zero-padded). The
