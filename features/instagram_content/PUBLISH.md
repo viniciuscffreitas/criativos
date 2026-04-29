@@ -1,79 +1,155 @@
-# Vibe Web Instagram — Publish Runbook (v1)
+# Vibe Web Instagram — Complete Launch Runbook (v1)
 
-Tudo que você precisa pra subir o feed inicial. Ordem importa.
+Tudo que você precisa pra abrir a conta do zero. **48 PNGs** prontos pra upload.
 
 ---
 
-## TL;DR
+## TL;DR — 3 comandos
 
 ```bash
-python scripts/build.py --instagram
+python scripts/build.py --instagram   # gera 48 PNGs
+pytest -q                             # confirma tudo verde (367 passed)
+ls features/instagram_content/renders/
 ```
 
-Vai produzir 27 PNGs em `features/instagram_content/renders/`. Você publica esses PNGs manualmente no Instagram via Meta Business Suite. **Não há automação de upload nesta versão** — Spec E (futuro) cobre Meta Marketing API.
+Daí segue o runbook abaixo na ordem: §1 (account setup) → §2 (avatar) → §3 (bio) → §4 (highlights + starter stories) → §5 (grid posts) → §6 (caption templates).
 
 ---
 
-## 1. Conferência prévia (uma vez, antes do primeiro push)
-
-### Handle da conta
-
-A bio + watermark dos posts usam `@vibeweb.eu` por padrão. Se o handle real for outro, **uma única linha em `brand/tokens.css` resolve**:
-
-```css
-:root {
-  /* ... */
-  --ig-handle: "@SEU_HANDLE_AQUI";   /* ← muda aqui */
-}
-```
-
-Depois rode `python scripts/build.py --instagram` de novo, copie os renders pra goldens, commit. (Procedimento detalhado em §5.)
-
-### Link da bio
-
-A bio aponta pra `https://vibeweb.eu/start`. Se ainda não tiver landing, use Linktree provisório ou aponta pra um Calendly/Notion. Atualize quando o site estiver pronto.
-
-### Assets dependentes
-
-Os 5 slides do carousel-portfolio usam screenshots em `ads/assets/`:
-- `site-onearc.png` · `site-alytics.png` · `site-lunera.png` · `site-messageai.png` · `site-dreelio.png`
-
-Esses arquivos já existem. Se algum for removido/renomeado, o `build_jobs()` agora **falha alto** com `FileNotFoundError` listando o que sumiu (não mais render silencioso de página de erro).
-
----
-
-## 2. Gerar todos os assets
-
-```bash
-python scripts/build.py --instagram
-```
-
-Produz **27 PNGs** em `features/instagram_content/renders/` (~45-60 segundos):
+## Inventário — o que você ganhou
 
 ```
-single-manifesto.png                      ← grid slot 1
-single-cost-of-inaction.png               ← grid slot 2
-single-niche-tag.png                      ← grid slot 3
-carousel-process-slide-1.png .. -7.png    ← grid slot 4 (carousel de 7 slides)
-single-proof-number.png                   ← grid slot 5
-carousel-services-slide-1.png .. -7.png   ← grid slot 6 (carousel de 7 slides)
-single-offer-mechanics.png                ← grid slot 7
-carousel-portfolio-slide-1.png .. -7.png  ← grid slot 8 (carousel de 7 slides)
-single-cta-pure.png                       ← grid slot 9
-```
-
-Se aparecer `[FAIL]` em qualquer linha do output, **a função levanta `RuntimeError`** com a lista. Não publica nada incompleto.
-
-Para gerar tudo (brand + ads + IG):
-```bash
-python scripts/build.py --all
+features/instagram_content/renders/   ← 48 PNGs gerados
+│
+├── account-avatar.png                 (1080×1080) — foto de perfil
+│
+├── highlight-cover-services.png       (1080×1920) ┐
+├── highlight-cover-portfolio.png      (1080×1920) │ 5 capas de
+├── highlight-cover-about.png          (1080×1920) │ destaque
+├── highlight-cover-contact.png        (1080×1920) │
+├── highlight-cover-feed.png           (1080×1920) ┘
+│
+├── story-starter-services-{1,2,3}.png (1080×1920) ┐
+├── story-starter-portfolio-{1,2,3}.png            │ 15 stories pra
+├── story-starter-about-{1,2,3}.png                │ encher os 5
+├── story-starter-contact-{1,2,3}.png              │ destaques
+├── story-starter-feed-{1,2,3}.png     (1080×1920) ┘
+│
+├── single-{6 posts}.png               (1080×1350) ┐
+├── carousel-portfolio-slide-{1..7}.png (1080×1350)│ 27 grid
+├── carousel-services-slide-{1..7}.png  (1080×1350)│ posts
+└── carousel-process-slide-{1..7}.png   (1080×1350)┘
 ```
 
 ---
 
-## 3. Layout do grid (3×3, ordem newest-top-left)
+## §1. Account setup (faça antes de qualquer upload)
 
-Quando você abre `instagram.com/vibeweb.eu`, o grid lê assim:
+### 1.1 Criar a conta
+
+1. App Instagram → Sign up → use email business (não pessoal).
+2. Username: `@vibeweb.eu` *(ou o handle que você confirmar — se mudar, troque uma linha em `brand/tokens.css` `--ig-handle`, regenere os assets)*.
+3. Trocar pra **Professional account** (Settings → Account → Switch to Professional).
+4. Categoria: **"Web Designer"** ou **"Marketing Agency"** (escolha a que mais aproxima).
+
+### 1.2 Contact options (Edit Profile → Contact info)
+
+| Campo | Valor sugerido |
+|---|---|
+| **Public business email** | seu email de trabalho (importante: é como leads te encontram fora do DM) |
+| **Phone** | opcional — só se você quer atender por WhatsApp Business |
+| **Address** | deixa em branco (mono-tenant remoto, não há escritório público) |
+
+### 1.3 Action buttons (Edit Profile → Action buttons)
+
+| Botão | Configuração |
+|---|---|
+| **Email** | botão primário — direciona pro public email |
+| **Book** ou **Reserve** | linka pra `vibeweb.eu/start` ou Calendly se já tiver. (Se ainda não, pula esse passo até a landing existir.) |
+
+Skip "Order Food", "Get Tickets", "Get Quote" — não fazem sentido pra serviço B2B custom.
+
+### 1.4 Privacy
+
+- **Account: Public** (você quer ser encontrado).
+- **Allow tagging: Everyone** (cases podem te taggar).
+- **Disable Messages from non-followers? NO** — você QUER DM de stranger leads. Mantenha aberto.
+
+---
+
+## §2. Profile photo (avatar)
+
+**Arquivo:** `features/instagram_content/renders/account-avatar.png` (1080×1080)
+
+Edit Profile → Change Photo → upload o arquivo. Instagram vai cortar em círculo automaticamente — o design já está safe pra esse crop (V mark centralizado com margem de ~12%, glow verde sutil, ring decorativo apenas na borda externa).
+
+---
+
+## §3. Bio
+
+**Arquivo:** `features/instagram_content/bio.md`
+
+Cole no Edit Profile → Bio:
+
+```
+Custom websites · €450 · 7 days
+For European freelancers + small businesses
+DM 'site' to start →
+@vibeweb.eu  ↓
+```
+
+**Link in bio:** `https://vibeweb.eu/start` (se ainda não existir, use Linktree provisório ou direto Calendly).
+
+**Char count:** ~110 / 150 IG limit. Você tem 40 chars de margem se quiser adicionar emoji ou call-out.
+
+---
+
+## §4. Highlights (covers + starter content)
+
+5 destaques com 3 stories cada — pra que a conta NÃO esteja vazia quando alguém clicar num highlight.
+
+### 4.1 Para cada destaque, repita o processo:
+
+**Pra criar um destaque novo no Instagram:**
+1. Profile → seu avatar (que vai ter um "+" depois) → New Story.
+2. Upload temporário: qualquer foto (vai ser descartada).
+3. Tap "Highlight" no story → New highlight.
+4. **Cover:** Edit cover → upload a `highlight-cover-{nome}.png`.
+5. **Title:** Services / Portfolio / About / Contact / Feed (capitalizado).
+6. Save.
+
+**Pra encher cada destaque com as 3 stories starter:**
+1. Profile → tap o destaque → Edit Highlight (ou "..." → Edit).
+2. Add stories → upload os 3 PNGs do destaque na ordem `-1` → `-2` → `-3`.
+3. Remova a story temporária da etapa 4.1.
+
+### 4.2 Mapeamento exato (cover + 3 stories)
+
+| Highlight | Cover | Stories (na ordem) |
+|---|---|---|
+| **Services** | `highlight-cover-services.png` | `story-starter-services-1.png` (overview) → `services-2.png` (what's included, lista de checks) → `services-3.png` (CTA "DM 'site'") |
+| **Portfolio** | `highlight-cover-portfolio.png` | `portfolio-1.png` (5 sites · 60 days) → `portfolio-2.png` (niches list) → `portfolio-3.png` (yours next?) |
+| **About** | `highlight-cover-about.png` | `about-1.png` (hi I'm Vibe Web) → `about-2.png` (philosophy) → `about-3.png` (7-day method) |
+| **Contact** | `highlight-cover-contact.png` | `contact-1.png` (DM 'site') → `contact-2.png` (book a call) → `contact-3.png` (24h response) |
+| **Feed** | `highlight-cover-feed.png` | `feed-1.png` (saved highlights intro) → `feed-2.png` (save tip) → `feed-3.png` (explore grid) |
+
+### 4.3 Ordem de pin (esquerda → direita)
+
+Profile → tap and hold em cada highlight → drag pra reordenar:
+
+```
+services → portfolio → about → contact → feed
+```
+
+**Por quê:** funil mental do visitante — primeiro vê **o que você faz**, depois **prova** (portfólio), depois **quem você é** (about), depois **como contatar** (contact), e por último **conteúdo do feed** (auto-referencial).
+
+---
+
+## §5. Grid posts (9 slots, publicar em ordem reversa)
+
+### 5.1 Layout do grid (3×3, ordem newest-top-left)
+
+Ao abrir `instagram.com/vibeweb.eu`, o grid renderiza assim:
 
 ```
 ┌──────────────────┬──────────────────┬──────────────────┐
@@ -94,88 +170,33 @@ Quando você abre `instagram.com/vibeweb.eu`, o grid lê assim:
 └──────────────────┴──────────────────┴──────────────────┘
 ```
 
-Instagram preenche grid **do post mais recente** (top-left) **pro mais antigo** (bottom-right). Por isso você precisa **publicar na ordem inversa**: post 9 → post 8 → ... → post 1.
+### 5.2 Sequência de upload (do mais antigo pro mais recente)
 
----
-
-## 4. Publicação manual (Meta Business Suite)
-
-### Sequência exata
-
-Abra Meta Business Suite Composer (business.facebook.com/composer). Pra cada slot do grid, na ordem 9 → 1:
-
-#### Posts 1 (manifesto), 2 (cost-of-inaction), 3 (niche-tag), 5 (proof-number), 7 (offer-mechanics), 9 (cta-pure) — **single image**
-1. Selecionar Instagram como destino.
-2. Upload do PNG correspondente em `features/instagram_content/renders/single-NAME.png`.
-3. Caption: livre. Sugestões em **§7. Caption templates** abaixo.
-4. Publish (não-agendado pra simplificar v1).
-
-#### Posts 4 (carousel-process), 6 (carousel-services), 8 (carousel-portfolio) — **carousel de 7 slides**
-1. Selecionar Instagram + carousel.
-2. Upload **na ordem** dos 7 slides:
-   `carousel-X-slide-1.png` → `slide-2.png` → ... → `slide-7.png`.
-3. Caption sugerida em **§7**.
-4. Publish.
-
-### Ordem cronológica recomendada
-
-Pra grid landing newest-top-left correto, **publique nesta ordem** (intervalo de ~1-2 minutos pra preservar timestamps):
+Pra grid newest-top-left landar correto, **publique na ordem inversa** (intervalo de 1-2 minutos pra preservar timestamps):
 
 | Sequência | Post | Tipo |
 |---:|---|---|
-| 1º (mais antigo) | `single-cta-pure.png` | single |
-| 2º | `carousel-portfolio-slide-{1..7}.png` | carousel |
+| 1º | `single-cta-pure.png` | single |
+| 2º | `carousel-portfolio-slide-{1..7}.png` | carousel (7 slides) |
 | 3º | `single-offer-mechanics.png` | single |
-| 4º | `carousel-services-slide-{1..7}.png` | carousel |
+| 4º | `carousel-services-slide-{1..7}.png` | carousel (7 slides) |
 | 5º | `single-proof-number.png` | single |
-| 6º | `carousel-process-slide-{1..7}.png` | carousel |
+| 6º | `carousel-process-slide-{1..7}.png` | carousel (7 slides) |
 | 7º | `single-niche-tag.png` | single |
 | 8º | `single-cost-of-inaction.png` | single |
-| 9º (mais recente) | `single-manifesto.png` | single |
+| 9º | `single-manifesto.png` | single |
+
+### 5.3 Como publicar cada tipo
+
+**Single:** Composer → Instagram → Image → upload PNG → caption (§6) → Publish.
+
+**Carousel:** Composer → Instagram → Carousel → upload os 7 slides na ordem `-slide-1.png` ... `-slide-7.png` → caption → Publish.
 
 ---
 
-## 5. Bio
+## §6. Caption templates (sugestões PAS-aligned)
 
-Texto pronto em `features/instagram_content/bio.md`. Copie e cole no campo Bio do Instagram (Edit Profile → Bio):
-
-```
-Custom websites · €450 · 7 days
-For European freelancers + small businesses
-DM 'site' to start →
-@vibeweb.eu  ↓
-```
-
-E configure o link da bio (Edit Profile → Website) para `https://vibeweb.eu/start` (ou seu link provisório).
-
-**Caracteres usados:** ~110 / 150 limite IG. Margem de 40 chars pra adicionar emoji ou call-out se quiser.
-
----
-
-## 6. Highlights
-
-Já temos 5 capas renderizadas em `brand/social/renders/`:
-- `instagram-highlight-services.png`
-- `instagram-highlight-portfolio.png`
-- `instagram-highlight-about.png`
-- `instagram-highlight-contact.png`
-- `instagram-highlight-feed.png`
-
-**Ordem do pin (esquerda → direita) no perfil:** services → portfolio → about → contact → feed.
-
-Para criar cada highlight:
-1. Crie um Story com qualquer foto (será descartado).
-2. Save to Highlights → New Highlight.
-3. Cover: upload do PNG correspondente do `brand/social/renders/`.
-4. Title: `Services` / `Portfolio` / `About` / `Contact` / `Feed`.
-
-Conteúdo dentro de cada highlight é livre — adicione ao longo das semanas (cases, depoimentos, etc.).
-
----
-
-## 7. Caption templates (sugestões)
-
-Copys curtos, hooks em <0.5s, sempre fechando com DM CTA. Ajuste como quiser.
+Hooks <0.5s, sempre fechando com DM CTA. Ajuste conforme sua voz.
 
 **Post 1 — manifesto:**
 > Most freelancers in Europe still pitch with a Notion link.
@@ -198,7 +219,7 @@ Copys curtos, hooks em <0.5s, sempre fechando com DM CTA. Ajuste como quiser.
 >
 > €450. 7 days. DM "site". ↓
 
-**Post 4 — carousel-process (7 slides):**
+**Post 4 — carousel-process:**
 > Day 1 to Day 7. Real timeline, no asterisks.
 >
 > Brief on Monday. Live by next Monday. €450 fixed.
@@ -210,7 +231,7 @@ Copys curtos, hooks em <0.5s, sempre fechando com DM CTA. Ajuste como quiser.
 >
 > Yours next? DM "site" →
 
-**Post 6 — carousel-services (7 slides):**
+**Post 6 — carousel-services:**
 > What's actually in the €450 package — and what *isn't*.
 >
 > No templates. No stock. No 6-week timelines.
@@ -222,7 +243,7 @@ Copys curtos, hooks em <0.5s, sempre fechando com DM CTA. Ajuste como quiser.
 >
 > Read that twice. DM "site" for the brief →
 
-**Post 8 — carousel-portfolio (7 slides):**
+**Post 8 — carousel-portfolio:**
 > 5 European freelancers · 5 custom sites · 60 days.
 >
 > Swipe → pick a favorite → DM "site" if you want yours next.
@@ -236,44 +257,54 @@ Copys curtos, hooks em <0.5s, sempre fechando com DM CTA. Ajuste como quiser.
 
 ---
 
-## 8. Cadência sugerida (pós-launch)
+## §7. Pinned posts (3 slots no topo do grid)
 
-Não automatizado nesta v1 — você decide. Recomendação:
+Após publicar tudo, IG permite pin de 3 posts (Profile → 3-dot menu de cada post → Pin to your profile). Recomendado:
+
+1. **Post 8 — carousel-portfolio** (prova social mais forte)
+2. **Post 6 — carousel-services** (offer breakdown — converte)
+3. **Post 9 — cta-pure** (atalho direto pro DM)
+
+---
+
+## §8. Cadência sugerida (pós-launch)
+
+Não automatizado v1 — você decide. Recomendação:
 
 | Formato | Frequência | Esforço |
 |---|---|---|
-| Static post (singles) | 2× / semana (Ter/Sex) | Baixo — reutiliza templates existentes |
+| Static post (singles) | 2× / semana (Ter/Sex) | Baixo — reutiliza templates |
 | Carousel | 1× / semana (Qua) | Médio |
-| Story | 3-5× / semana | Alto sem template (futuro spec adiciona) |
+| Story | 3-5× / semana | Alto sem template (futuro spec) |
 | Reel | 1× / semana | **Spec D futuro** — Playwright não renderiza vídeo |
 
 ---
 
-## 9. KPIs a monitorar
+## §9. KPIs a monitorar
 
-Como o IG é landing dos ads Meta, métricas que importam são **funil**, não engagement:
+IG é **landing dos ads Meta** — métricas são funil, não engagement:
 
 | KPI | Target mês 1 | Onde ver |
 |---|---|---|
 | Profile visit → DM rate | ≥ 4% | Insights → Profile actions |
-| Profile visit → bio link click | ≥ 6% | Bio link tracking (UTM) |
-| Carousel completion rate | ≥ 60% (algoritmo 2026 ranqueia por dwell time) | Insights por post |
-| Save rate (carrosséis) | ≥ 2% | Insights |
+| Profile visit → bio link click | ≥ 6% | UTM no link |
+| Carousel completion rate | ≥ 60% | Insights por post |
+| Save rate (carousels) | ≥ 2% | Insights |
 | DM → discovery call | ≥ 25% | CRM/Notion manual |
 
-**Não-KPIs:** likes absolutos, follower count. IG 2026 não ranqueia por isso.
+**Não-KPIs:** likes absolutos, follower count. Algoritmo 2026 não ranqueia por isso.
 
 ---
 
-## 10. Re-render quando precisar
+## §10. Re-render quando precisar
 
-Sempre que você mudar copy, handle, ou design:
+Sempre que mudar copy, handle, ou design:
 
 ```bash
-python scripts/build.py --instagram
+python scripts/build.py --instagram   # regenera os 48 PNGs (~90s)
 ```
 
-Se a saída visual mudar de propósito (ex: trocou `--ig-handle`), atualize os goldens:
+Se a saída visual mudar de propósito (ex: trocou `--ig-handle`), atualize goldens:
 
 ```bash
 cp features/instagram_content/renders/*.png features/instagram_content/goldens/
@@ -281,66 +312,101 @@ git add features/instagram_content/goldens/
 git commit -m "chore(instagram): refresh goldens after <reason>"
 ```
 
-Se o golden mismatch for **inesperado**, pare e investigue: provavelmente fonte não carregou, ou um asset quebrou. O test `test_visual_regression` te diz qual PNG drift'ou.
-
 ---
 
-## 11. Verify gate (rodar antes de qualquer commit no IG factory)
+## §11. Verify gate
+
+Antes de qualquer commit relacionado:
 
 ```bash
 pytest -q
 ```
 
-Espera-se: **283 passed**. Cobre:
-- Tokens-truth (nenhum hex literal nas templates ou CSS irmãos)
-- Safe-zone estática (CSS lint nos critical selectors)
-- Safe-zone runtime (Pillow band scan dos top/bottom 60px)
-- Visual regression (Pillow ImageChops vs goldens)
-- Job contract (27 jobs, 1080×1350, carousels com `?slide=`)
-- Build CLI (`--instagram` flag)
+Espera-se: **367 passed**. Cobre:
 
-Se algo falhar, o teste te aponta arquivo/linha. O pipeline não tem fallbacks silenciosos — erro = traceback claro.
+| Camada | O que valida |
+|---|---|
+| Tokens-truth | nenhum hex literal, todos templates importam tokens.css, todos usam `var(--*)`, sem `rgba(4,211,97,X)` literal |
+| Safe-zone estática | CSS lint nos critical selectors (h1, .hook, .cta, .cta-bar, .main-text, .headline) — nada com `top:` ou `bottom:` < 60px (lê HTML + CSS irmãos) |
+| Safe-zone runtime | Pillow band scan: top/bottom 60px de cada PNG ≥ 99% background pixels |
+| Visual regression | Pillow ImageChops vs goldens (Manhattan diff ≤ 20, ≤1% pixels excedendo) |
+| Job contract | 48 jobs, dimensões corretas por categoria, queries `?slide=`/`?type=`/`?slot=` corretas |
+| Build CLI | `--instagram` flag listado em `--help` |
+
+Se algo falhar, o teste aponta arquivo:linha. Pipeline sem fallbacks silenciosos — erro = traceback claro.
 
 ---
 
-## 12. Estrutura de arquivos (referência rápida)
+## §12. Estrutura de arquivos (referência)
 
 ```
 features/instagram_content/
-├── PUBLISH.md            ← este arquivo
+├── PUBLISH.md            ← este arquivo (runbook completo)
 ├── CLAUDE.md             ← contexto técnico pra agentes
 ├── bio.md                ← texto da bio (cole no IG)
 ├── render.py             ← entry-point assíncrono
-├── jobs.py               ← lista declarativa dos 27 RenderJobs
+├── jobs.py               ← lista declarativa dos 48 RenderJobs
 ├── test_render.py        ← 4 layers: dimensions/safe-zone-static/runtime/visual-regression
-├── test_jobs.py          ← contract tests
-├── templates/            ← 9 templates HTML (+ 3 .css siblings dos carousels)
-│   ├── single-{manifesto,cost-of-inaction,niche-tag,proof-number,offer-mechanics,cta-pure}.html
-│   ├── carousel-portfolio.html  +  carousel-portfolio.css
-│   ├── carousel-services.html   +  carousel-services.css
-│   └── carousel-process.html    +  carousel-process.css
-├── renders/              ← gitignored, regenerável
-└── goldens/              ← 27 PNGs commitados (regression baseline)
+├── test_jobs.py          ← contract tests (count, dimensions, queries)
+├── templates/
+│   ├── account-avatar.html              (1080×1080) profile photo
+│   ├── highlight-cover.html             (1080×1920) ?type=services|portfolio|about|contact|feed
+│   ├── story-starter.html               (1080×1920) ?slot=services-1|...|feed-3 (15 slots)
+│   ├── single-{6 posts}.html            (1080×1350)
+│   ├── carousel-portfolio.html + .css   (1080×1350) ?slide=1..7
+│   ├── carousel-services.html  + .css   (1080×1350) ?slide=1..7
+│   └── carousel-process.html   + .css   (1080×1350) ?slide=1..7
+├── renders/              ← gitignored — 48 PNGs regeneráveis
+└── goldens/              ← 48 PNGs commitados (regression baseline)
 
-brand/tokens.css          ← design tokens (cores, fontes, --ig-handle)
+brand/tokens.css          ← --ig-handle, cores, fontes
 scripts/build.py          ← CLI: --brand | --ads | --instagram | --all
-shared/visual_regression.py  ← thresholds compartilhados (PIXEL_DIFF_THRESHOLD, ALLOWED_DIFF_FRACTION)
+shared/visual_regression.py  ← thresholds compartilhados
 ```
 
 ---
 
-## 13. Roadmap (out of scope nesta v1)
+## §13. Brand voice quick-ref (pra posts futuros)
 
-| Spec | Quando fizer sentido |
-|---|---|
-| **Spec D — Reels** | Quando o feed estiver vivo + tiver tempo pra ferramenta de vídeo (Remotion/FFmpeg) |
-| **Spec E — Conversion funnel** | Landing `vibeweb.eu/start` + DM auto-reply + Calendly/CRM |
-| **Spec 1 — AI Creative Factory** | LLM gera copy variants das templates por metodologia (PAS/NPQEL/etc) |
-| **Spec — Story templates** | Hoje só temos os 5 highlight covers; faltam stories de update/teaser |
-| **Spec — Meta Marketing API** | Automação de upload e tracking direto da CLI |
+Quando você (ou um agente futuro) for criar conteúdo novo, mantenha:
 
-Esses estão documentados em `docs/superpowers/specs/2026-04-29-instagram-content-factory-design.md` §13.
+**Tom:**
+- Direto, sem bullshit.
+- 1ª pessoa: "I build", "DM me", "I'll send".
+- Confiante mas não arrogante. "5 sites" > "100+ sites" (não invente).
+- Concretude sempre: números reais, prazos reais, preços reais.
+
+**Copy framework (PAS):**
+1. **Problem** — espelho do pain do cliente.
+2. **Agitate** — consequência de não resolver.
+3. **Solution** — sua oferta + CTA explícito.
+
+**Visual:**
+- Background: `--bg` (#0a0a0a) sempre.
+- Headlines: Syne 800, big, `var(--text)` ou `var(--accent)` em palavras-chave.
+- Body: DM Sans 400-500, `var(--text-muted)`.
+- Accent verde `--accent` (#04d361) em palavras-chave + CTA.
+- Vermelho `--signal-red` SOMENTE pra "what you don't get" / open-loop reveal / fallback de erro.
+- Safe-zone: 60px top + 60px bottom.
+
+**CTAs aceitos:**
+- "DM 'site' to start" — primário, recorrente.
+- "Send 'site' to my DMs" — variação.
+- "Yours next? →" — quando precedido por proof.
+- Evitar: "Click bio link", "Comment below", "Tag a friend" — métricas vanity.
 
 ---
 
-**Pronto pra publicar.** Comece pelo §1, depois §2, depois §4. Bio + highlights podem ir junto ou depois (nova ordem não afeta o grid). Boa sorte. 🚀
+## §14. Roadmap (out of scope v1)
+
+| Spec | Quando |
+|---|---|
+| **Spec D — Reels** | Quando feed estiver vivo + ferramenta de vídeo (Remotion/FFmpeg) |
+| **Spec E — Conversion funnel** | Landing `vibeweb.eu/start` + DM auto-reply + CRM |
+| **Spec 1 — AI Creative Factory** | LLM gera copy variants das templates por metodologia |
+| **Spec — Reusable story templates** | story-update / story-quote / story-question / story-link |
+| **Spec — Meta Marketing API** | Automação de upload e tracking direto da CLI |
+
+---
+
+**Tudo pronto.** Sequência de execução: §1 → §2 → §3 → §4 (5×) → §5 (9 posts em ordem reversa) → §6 (captions) → §7 (pin 3) → §9 (monitorar). 🚀
