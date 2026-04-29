@@ -25,3 +25,7 @@ test-results/
 # Python build artifacts
 build/
 dist/
+
+# Instagram content factory — renders are deterministic outputs;
+# goldens/ is the committed regression baseline.
+features/instagram_content/renders/

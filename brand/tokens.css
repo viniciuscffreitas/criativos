@@ -49,4 +49,7 @@
   --font-display: 'Syne', sans-serif;
   --font-body:    'DM Sans', sans-serif;
   --font-mono:    'Fira Code', monospace;
+
+  /* ---------- Instagram (handle as content-string token) ---------- */
+  --ig-handle:    "@vibeweb.eu";
 }

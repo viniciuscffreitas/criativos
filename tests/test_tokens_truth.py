@@ -104,3 +104,11 @@ def test_tokens_css_exposes_accent_rgb_channel():
     assert re.search(r"--accent-rgb\s*:", tokens), (
         "tokens.css must declare --accent-rgb (RGB channels of --accent)"
     )
+
+
+def test_tokens_css_declares_ig_handle():
+    tokens = (ROOT / "brand" / "tokens.css").read_text(encoding="utf-8")
+    assert re.search(r'--ig-handle\s*:\s*"@', tokens), (
+        "tokens.css must declare --ig-handle as a quoted string token "
+        "(used in templates as content: var(--ig-handle))"
+    )
