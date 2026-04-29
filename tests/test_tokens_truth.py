@@ -18,7 +18,8 @@ ROOT = Path(__file__).parent.parent
 
 BRAND_TEMPLATES = sorted((ROOT / "brand" / "social" / "templates").glob("*.html"))
 AD_TEMPLATES = sorted((ROOT / "ads" / "templates").glob("*.html"))
-ALL_TEMPLATES = BRAND_TEMPLATES + AD_TEMPLATES
+INSTAGRAM_TEMPLATES = sorted((ROOT / "features" / "instagram_content" / "templates").glob("*.html"))
+ALL_TEMPLATES = BRAND_TEMPLATES + AD_TEMPLATES + INSTAGRAM_TEMPLATES
 
 LEGACY_BG_PATTERN = re.compile(r"#0d0d0d", re.IGNORECASE)
 TOKENS_IMPORT = re.compile(r'<link[^>]+href="[^"]*tokens\.css"', re.IGNORECASE)
