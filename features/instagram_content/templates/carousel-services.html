@@ -179,9 +179,17 @@
 <script>
 const params = new URLSearchParams(location.search);
 const slide = params.get('slide') || '1';
-document.querySelectorAll('[data-slide]').forEach(function(el) {
-  el.style.display = el.dataset.slide === slide ? 'flex' : 'none';
-});
+const target = document.querySelector('[data-slide="' + slide + '"]');
+if (!target) {
+  console.error('carousel-services: no section for slide=' + slide);
+  document.body.innerHTML =
+    '<pre style="color:var(--signal-red);padding:60px;font:24px monospace;width:100vw;height:100vh;">' +
+    'RENDER ERROR: slide=' + slide + ' not found</pre>';
+} else {
+  document.querySelectorAll('[data-slide]').forEach(function(el) {
+    el.style.display = el.dataset.slide === slide ? 'flex' : 'none';
+  });
+}
 </script>
 </body>
 </html>
