@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../brand/tokens.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+/* Radial glow — decorative, not critical selector */
+.glow {
+  position: absolute;
+  top: 200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 800px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(var(--accent-rgb), 0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+/* Hook — critical: top >= 60 */
+.hook {
+  position: absolute;
+  top: 200px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+}
+
+.hook h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 80px;
+  color: var(--text);
+  letter-spacing: -3px;
+  line-height: 0.95;
+}
+
+.hook h1 em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* Three-stat grid — not critical selector */
+.stat-grid {
+  position: absolute;
+  top: 540px;
+  left: 64px;
+  right: 64px;
+  display: flex;
+  gap: 24px;
+}
+
+.stat-item {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border-faint);
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.stat-val {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 52px;
+  color: var(--accent);
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+
+.stat-lbl {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 3;
+}
+
+/* Feature list — not critical selector */
+.feature-list {
+  position: absolute;
+  top: 850px;
+  left: 64px;
+  right: 64px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+/* CTA bar — critical: bottom >= 60 */
+.cta-bar {
+  position: absolute;
+  bottom: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.cta-bar .cta-text {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.cta-bar .handle {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 3;
+}
+
+.cta-bar .handle::before {
+  content: var(--ig-handle);
+}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="hook">
+  <h1><em>€450.</em><br>7 days.<br>Done.</h1>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-item">
+    <span class="stat-val">€450</span>
+    <span class="stat-lbl">Fixed price</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-val">7</span>
+    <span class="stat-lbl">Days to live</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-val">5</span>
+    <span class="stat-lbl">Pages</span>
+  </div>
+</div>
+
+<div class="feature-list">
+  Custom design · Real code · No templates<br>One revision round · Live in a week
+</div>
+
+<div class="cta-bar">
+  <span class="cta-text">What's included →</span>
+  <span class="handle"></span>
+</div>
+
+</body>
+</html>
