@@ -1,24 +1,32 @@
-// TweaksPanel — static slide-in drawer with disabled toggles (Spec 2 placeholders).
-// Inputs: open flag + onClose callback. Outputs: none (read-only in Spec 1).
-import { useEffect } from 'react';
+// TweaksPanel — slide-in drawer with the working settings.
+// Currently exposes one wired toggle ("Reduzir animações") backed by
+// localStorage + a `data-reduce-motion` attribute on <html> that any
+// component can read to disable transitions/animations.
+//
+// Add new toggles here as backend/UX support lands. Do NOT add disabled
+// "coming soon" placeholders — they erode trust.
+import { useEffect, useState } from 'react';
 
 interface TweaksPanelProps {
   open: boolean;
   onClose: () => void;
 }
 
-const GENERATION_TOGGLES = [
-  { id: 'streaming', label: 'Streaming em tempo real' },
-  { id: 'persist-drafts', label: 'Persistir rascunhos' },
-  { id: 'debug-trace', label: 'Debug trace verboso' },
-];
+const REDUCE_MOTION_KEY = 'cr_reduce_motion';
 
-const APPEARANCE_TOGGLES = [
-  { id: 'compact', label: 'Modo compacto' },
-  { id: 'reduce-motion', label: 'Reduzir animações' },
-];
+function readReduceMotion(): boolean {
+  return localStorage.getItem(REDUCE_MOTION_KEY) === '1';
+}
+
+function writeReduceMotion(on: boolean): void {
+  const flag = on ? '1' : '0';
+  localStorage.setItem(REDUCE_MOTION_KEY, flag);
+  document.documentElement.setAttribute('data-reduce-motion', flag);
+}
 
 export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
+  const [reduceMotion, setReduceMotion] = useState<boolean>(() => readReduceMotion());
+
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
@@ -28,11 +36,24 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
     return () => window.removeEventListener('keydown', h);
   }, [open, onClose]);
 
+  // Sync attribute on first render so other components see the persisted state
+  // even if the panel is never opened.
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      'data-reduce-motion', readReduceMotion() ? '1' : '0',
+    );
+  }, []);
+
   if (!open) return null;
+
+  function toggleReduceMotion(): void {
+    const next = !reduceMotion;
+    setReduceMotion(next);
+    writeReduceMotion(next);
+  }
 
   return (
     <>
-      {/* Dim overlay */}
       <div
         onClick={onClose}
         style={{
@@ -41,7 +62,6 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
           zIndex: 90,
         }}
       />
-      {/* Drawer */}
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0,
         width: 320,
@@ -52,7 +72,6 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
         flexDirection: 'column',
         boxShadow: '-4px 0 20px rgba(0,0,0,0.08)',
       }}>
-        {/* Header */}
         <div style={{
           padding: '16px 20px',
           borderBottom: '1px solid #e7e5e4',
@@ -76,49 +95,37 @@ export function TweaksPanel({ open, onClose }: TweaksPanelProps) {
           </button>
         </div>
 
-        {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-          <TweaksSection title="Geração" toggles={GENERATION_TOGGLES} />
-          <TweaksSection title="Aparência" toggles={APPEARANCE_TOGGLES} />
+          <div style={{ marginBottom: 24 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 600, color: '#78716c',
+              letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 12,
+            }}>
+              Aparência
+            </div>
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={reduceMotion}
+                onChange={toggleReduceMotion}
+                style={{ flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: '#1c1917', letterSpacing: -0.1 }}>
+                Reduzir animações
+              </span>
+            </label>
+            <div style={{
+              marginTop: 8, marginLeft: 24, fontSize: 11, color: '#78716c',
+              lineHeight: 1.5,
+            }}>
+              Desativa transições e animações longas. Útil em máquinas mais lentas
+              ou se você prefere uma interface mais quieta.
+            </div>
+          </div>
         </div>
       </div>
     </>
-  );
-}
-
-// ── Section ────────────────────────────────────────────────────────────────────
-
-interface Toggle { id: string; label: string; }
-
-function TweaksSection({ title, toggles }: { title: string; toggles: Toggle[] }) {
-  return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{
-        fontSize: 10, fontWeight: 600, color: '#78716c',
-        letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 12,
-      }}>
-        {title}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {toggles.map(t => (
-          <label key={t.id} title="Disponível na Spec 2" style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            opacity: 0.55, cursor: 'not-allowed',
-          }}>
-            <input type="checkbox" disabled style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: '#1c1917', letterSpacing: -0.1 }}>
-              {t.label}
-            </span>
-            <span style={{
-              marginLeft: 'auto',
-              fontSize: 10, color: '#78716c',
-              fontFamily: '"Geist Mono", monospace',
-            }}>
-              Spec 2
-            </span>
-          </label>
-        ))}
-      </div>
-    </div>
   );
 }

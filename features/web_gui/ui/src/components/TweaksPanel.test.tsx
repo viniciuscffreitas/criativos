@@ -1,4 +1,4 @@
-// TweaksPanel — static drawer with disabled toggles, close paths.
+// TweaksPanel — single working toggle (reduce-motion) + close paths.
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TweaksPanel } from './TweaksPanel';
@@ -8,6 +8,8 @@ describe('TweaksPanel', () => {
 
   beforeEach(() => {
     onClose.mockClear();
+    localStorage.clear();
+    document.documentElement.removeAttribute('data-reduce-motion');
   });
 
   it('returns null when open=false', () => {
@@ -20,19 +22,46 @@ describe('TweaksPanel', () => {
     expect(screen.getByText('Ajustes rápidos')).toBeInTheDocument();
   });
 
-  it('renders all Geração toggles as disabled', () => {
+  it('does NOT render the Spec-2 placeholder toggles', () => {
+    // Boilerplate left 5 disabled placeholder toggles ("Streaming em tempo real",
+    // "Persistir rascunhos", "Debug trace verboso", "Modo compacto", and a
+    // disabled "Spec 2" badge per row) — none of them did anything. Removed.
     render(<TweaksPanel open onClose={onClose} />);
-    expect(screen.getByText('Streaming em tempo real')).toBeInTheDocument();
-    expect(screen.getByText('Persistir rascunhos')).toBeInTheDocument();
-    expect(screen.getByText('Debug trace verboso')).toBeInTheDocument();
-    const checkboxes = screen.getAllByRole('checkbox');
-    checkboxes.forEach(cb => expect(cb).toBeDisabled());
+    expect(screen.queryByText(/Streaming em tempo real/i)).toBeNull();
+    expect(screen.queryByText(/Persistir rascunhos/i)).toBeNull();
+    expect(screen.queryByText(/Debug trace verboso/i)).toBeNull();
+    expect(screen.queryByText(/Modo compacto/i)).toBeNull();
+    expect(screen.queryByText(/^Spec 2$/i)).toBeNull();
   });
 
-  it('renders all Aparência toggles as disabled', () => {
+  it('renders the working "Reduzir animações" toggle', () => {
     render(<TweaksPanel open onClose={onClose} />);
-    expect(screen.getByText('Modo compacto')).toBeInTheDocument();
-    expect(screen.getByText('Reduzir animações')).toBeInTheDocument();
+    const toggle = screen.getByLabelText(/Reduzir animações/i) as HTMLInputElement;
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).not.toBeDisabled();
+  });
+
+  it('reads initial reduce-motion state from localStorage', () => {
+    localStorage.setItem('cr_reduce_motion', '1');
+    render(<TweaksPanel open onClose={onClose} />);
+    const toggle = screen.getByLabelText(/Reduzir animações/i) as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+  });
+
+  it('toggling reduce-motion persists to localStorage and applies attribute', () => {
+    render(<TweaksPanel open onClose={onClose} />);
+    const toggle = screen.getByLabelText(/Reduzir animações/i) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(true);
+    expect(localStorage.getItem('cr_reduce_motion')).toBe('1');
+    expect(document.documentElement.getAttribute('data-reduce-motion')).toBe('1');
+
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(false);
+    expect(localStorage.getItem('cr_reduce_motion')).toBe('0');
+    expect(document.documentElement.getAttribute('data-reduce-motion')).toBe('0');
   });
 
   it('close × button calls onClose', () => {
