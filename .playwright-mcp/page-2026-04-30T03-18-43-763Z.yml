@@ -1,0 +1,43 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: V
+      - generic [ref=e8]:
+        - generic [ref=e9]: vibeweb
+        - generic [ref=e10]: Projeto ativo
+    - generic [ref=e11]:
+      - generic [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+        - generic [ref=e15]: Novo fluxo
+        - generic [ref=e16]: Ctrl+1
+      - generic [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+        - generic [ref=e23]: Galeria
+        - generic [ref=e24]: Ctrl+2
+      - generic [ref=e25] [cursor=pointer]:
+        - img [ref=e26]
+        - generic [ref=e28]: Marca
+        - generic [ref=e29]: Ctrl+3
+      - generic [ref=e30] [cursor=pointer]:
+        - img [ref=e31]
+        - generic [ref=e36]: Studio
+        - generic [ref=e37]: Ctrl+4
+    - generic [ref=e39]: Projetos recentes
+  - generic [ref=e42]:
+    - generic [ref=e43]:
+      - heading "Novo fluxo criativo" [level=1] [ref=e44]
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]: "1"
+          - generic [ref=e48]: Setup
+        - generic [ref=e50]:
+          - generic [ref=e51]: "2"
+          - generic [ref=e52]: Geração
+        - generic [ref=e54]:
+          - generic [ref=e55]: "3"
+          - generic [ref=e56]: Revisão
+        - generic [ref=e58]:
+          - generic [ref=e59]: "4"
+          - generic [ref=e60]: Export
+      - generic [ref=e61]: 1 / 4
+    - generic [ref=e62]: Carregando briefing…

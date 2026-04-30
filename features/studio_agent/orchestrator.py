@@ -120,8 +120,9 @@ async def stream(
     })
     try:
         # plan() is sync; CLI shell-out is blocking. to_thread keeps the
-        # FastAPI loop responsive for other clients.
-        sp = await asyncio.to_thread(plan, req)
+        # FastAPI loop responsive for other clients. Pass the model through
+        # so callers overriding stream(model=...) reach the planner too.
+        sp = await asyncio.to_thread(plan, req, model)
     except Exception as e:
         yield _sse("error", {
             "code": "PLANNER_FAILED",

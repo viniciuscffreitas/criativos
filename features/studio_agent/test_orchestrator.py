@@ -72,8 +72,33 @@ async def _stub_render_one(category, template_id, n_variants):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
+async def test_orchestrator_passes_model_to_planner(monkeypatch):
+    """Reviewer N3: stream(model=...) was reaching agent_generate but not
+    plan(). Verify the model passes through both calls."""
+    captured: dict[str, Any] = {"plan_model": None, "agent_model": None}
+
+    def _fake_plan(req, model):
+        captured["plan_model"] = model
+        return _stub_plan()
+
+    def _fake_agent(brief, methodology, n, model):
+        captured["agent_model"] = model
+        return _stub_agent_result()
+
+    monkeypatch.setattr(orchestrator, "plan", _fake_plan)
+    monkeypatch.setattr(orchestrator, "agent_generate", _fake_agent)
+    monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
+
+    raw = ""
+    async for chunk in orchestrator.stream(StudioRequest(prompt="x"), model="claude-opus-4-7"):
+        raw += chunk
+    assert captured["plan_model"] == "claude-opus-4-7"
+    assert captured["agent_model"] == "claude-opus-4-7"
+
+
+@pytest.mark.asyncio
 async def test_orchestrator_emits_full_phase_sequence(monkeypatch):
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", lambda *a, **k: _stub_agent_result())
     monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
 
@@ -98,7 +123,7 @@ async def test_orchestrator_emits_full_phase_sequence(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_orchestrator_emits_render_progress_per_file(monkeypatch):
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", lambda *a, **k: _stub_agent_result())
     monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
 
@@ -116,7 +141,7 @@ async def test_orchestrator_emits_render_progress_per_file(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_orchestrator_done_carries_plan_and_render_summary(monkeypatch):
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", lambda *a, **k: _stub_agent_result())
     monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
 
@@ -135,7 +160,7 @@ async def test_orchestrator_done_carries_plan_and_render_summary(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_orchestrator_emits_variant_done_during_copy_phase(monkeypatch):
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", lambda *a, **k: _stub_agent_result())
     monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
 
@@ -160,7 +185,7 @@ async def test_orchestrator_emits_variant_done_during_copy_phase(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_orchestrator_emits_error_on_planner_failure(monkeypatch):
-    def _boom(req):
+    def _boom(req, model=None):
         raise RuntimeError("planner exploded")
     monkeypatch.setattr(orchestrator, "plan", _boom)
 
@@ -181,7 +206,7 @@ async def test_orchestrator_emits_error_on_copy_failure(monkeypatch):
     def _boom_copy(*a, **k):
         raise RuntimeError("agent.generate failed")
 
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", _boom_copy)
     monkeypatch.setattr(orchestrator, "render_one", _stub_render_one)
 
@@ -195,7 +220,7 @@ async def test_orchestrator_emits_error_on_copy_failure(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_orchestrator_emits_error_on_render_failure(monkeypatch):
-    monkeypatch.setattr(orchestrator, "plan", lambda req: _stub_plan())
+    monkeypatch.setattr(orchestrator, "plan", lambda req, model=None: _stub_plan())
     monkeypatch.setattr(orchestrator, "agent_generate", lambda *a, **k: _stub_agent_result())
 
     async def _boom_render(*a, **k):

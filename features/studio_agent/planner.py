@@ -66,11 +66,23 @@ def _is_dry_run() -> bool:
 
 
 def _build_cli_env() -> dict[str, str]:
+    """Strip API-key env vars when an OAuth token is present.
+
+    Mirrors features/copy_generation/agent.py — when a CLAUDE_CODE_OAUTH_TOKEN
+    is set, a stale (non-empty but invalid) ANTHROPIC_API_KEY would beat the
+    OAuth token in the Claude CLI's credential precedence and 401. Strip
+    both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN unconditionally in that
+    case (this is the load-bearing branch for prod). Also strip empty
+    strings — Claude CLI treats "" as a credential and fails instead of
+    falling back.
+    """
     env = os.environ.copy()
-    # Empty string for these keys makes Claude CLI treat "" as a credential
-    # and fail instead of falling back to CLAUDE_CODE_OAUTH_TOKEN.
+    oauth = env.get("CLAUDE_CODE_OAUTH_TOKEN", "")
+    has_oauth = oauth.startswith("sk-ant-oat")
     for k in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
-        if k in env and not env[k].strip():
+        if k not in env:
+            continue
+        if has_oauth or not env[k].strip():
             env.pop(k)
     return env
 
@@ -157,12 +169,14 @@ def _dry_run_plan(req: StudioRequest) -> StudioPlan:
             category = cat
             break
 
+    # StudioRequest.__post_init__ rejects empty/whitespace prompts, so
+    # req.prompt[:80] is always non-empty here.
     return StudioPlan(
         category=category,
         template_id=_DEFAULT_TEMPLATES[category],
         methodology="pas",
         brief=Brief(
-            product=(req.prompt[:80] or "produto"),
+            product=req.prompt[:80],
             audience="audiência inferida",
             pain="dor inferida",
             ctas=["Saiba mais"],

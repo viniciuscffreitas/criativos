@@ -10,7 +10,7 @@
 // Manifest is fetched on mount and refetched after every successful render
 // so cards flip from "pendente" to thumbnail without a page reload. Errors
 // surface as a §2.7 alert banner — never a silent fallback.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, streamStudioRequest } from '../api';
 import type { RenderManifest, RenderManifestItem, StudioStreamEvent } from '../types';
 import { ConversationalPrompt } from './ConversationalPrompt';
@@ -53,14 +53,26 @@ export function Studio({ projectSlug }: StudioProps) {
   const [streamEvents, setStreamEvents] = useState<StudioStreamEvent[]>([]);
   const [conversationBusy, setConversationBusy] = useState(false);
 
+  // Hold the AbortController.abort callback returned by streamStudioRequest
+  // so we can cancel an in-flight stream before submitting another one and
+  // when the Studio view unmounts (Cmd+1/2/3 nav). Without this the SSE
+  // reader keeps draining and the backend keeps running Playwright after
+  // the user has navigated away — silent half-running state per §2.7.
+  const abortStreamRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    return () => abortStreamRef.current?.();
+  }, []);
+
   function onPrompt(prompt: string) {
+    abortStreamRef.current?.();
     setStreamEvents([]);
     setConversationBusy(true);
-    streamStudioRequest(
+    abortStreamRef.current = streamStudioRequest(
       { prompt, n_variants: 3 },
       (e) => setStreamEvents((prev) => [...prev, e]),
       () => {
         setConversationBusy(false);
+        abortStreamRef.current = null;
         // Refetch manifest so the freshly-rendered file flips to a thumbnail
         setReloadKey((k) => k + 1);
       },

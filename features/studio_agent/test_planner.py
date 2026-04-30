@@ -140,6 +140,37 @@ def test_real_mode_non_dict_raises(monkeypatch):
         plan(StudioRequest(prompt="x"))
 
 
+def test_build_cli_env_strips_stale_api_key_when_oauth_present(monkeypatch):
+    """A stale ANTHROPIC_API_KEY beats the OAuth token in the Claude CLI's
+    credential precedence — strip it whenever the OAuth token is present."""
+    from features.studio_agent.planner import _build_cli_env
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-real")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-stale-bogus-key")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "stale-too")
+    env = _build_cli_env()
+    assert "ANTHROPIC_API_KEY" not in env
+    assert "ANTHROPIC_AUTH_TOKEN" not in env
+    assert env["CLAUDE_CODE_OAUTH_TOKEN"] == "sk-ant-oat-real"
+
+
+def test_build_cli_env_keeps_api_key_when_no_oauth(monkeypatch):
+    """If the user authenticates via API key (not OAuth), don't strip it."""
+    from features.studio_agent.planner import _build_cli_env
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-real-api-key")
+    env = _build_cli_env()
+    assert env["ANTHROPIC_API_KEY"] == "sk-real-api-key"
+
+
+def test_build_cli_env_strips_empty_keys(monkeypatch):
+    """Empty ANTHROPIC_API_KEY makes the CLI treat '' as a credential and fail."""
+    from features.studio_agent.planner import _build_cli_env
+    monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    env = _build_cli_env()
+    assert "ANTHROPIC_API_KEY" not in env
+
+
 def test_strip_markdown_fence_removes_json_fence():
     """Claude often wraps JSON in ```json...``` fences despite the system
     prompt asking for raw JSON. _strip_markdown_fence must handle this."""
