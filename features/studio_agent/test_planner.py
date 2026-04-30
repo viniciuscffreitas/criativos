@@ -140,6 +140,68 @@ def test_real_mode_non_dict_raises(monkeypatch):
         plan(StudioRequest(prompt="x"))
 
 
+def test_strip_markdown_fence_removes_json_fence():
+    """Claude often wraps JSON in ```json...``` fences despite the system
+    prompt asking for raw JSON. _strip_markdown_fence must handle this."""
+    from features.studio_agent.planner import _strip_markdown_fence
+    fenced = '```json\n{"a": 1}\n```'
+    assert _strip_markdown_fence(fenced) == '{"a": 1}'
+
+
+def test_strip_markdown_fence_removes_plain_fence():
+    from features.studio_agent.planner import _strip_markdown_fence
+    fenced = '```\n{"a": 1}\n```'
+    assert _strip_markdown_fence(fenced) == '{"a": 1}'
+
+
+def test_strip_markdown_fence_passthrough_when_no_fence():
+    from features.studio_agent.planner import _strip_markdown_fence
+    raw = '{"a": 1}'
+    assert _strip_markdown_fence(raw) == raw
+
+
+def test_real_mode_handles_fenced_json_response(monkeypatch):
+    """End-to-end: real-mode with a CLI that returns fenced JSON must
+    parse correctly. This was a real prod bug from the first deploy."""
+    monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat-fake")
+
+    # Simulate the actual prod failure: CLI envelope's "result" field is
+    # raw text with a markdown fence around the JSON. The planner must
+    # strip that before json.loads.
+    import json as _json
+    import subprocess
+
+    fake_result = '```json\n' + _json.dumps({
+        "category": "instagram",
+        "template_id": "single-manifesto",
+        "methodology": "aida",
+        "brief": {
+            "product": "Novo site",
+            "audience": "Seguidores",
+            "pain": "Dificuldade",
+            "ctas": ["Acesse"],
+            "social_proof": None,
+        },
+        "n_variants": 3,
+        "reasoning": "Manifesto AIDA",
+    }) + '\n```'
+    fake_envelope = {"result": fake_result, "is_error": False}
+
+    class _FakeProc:
+        returncode = 0
+        stdout = _json.dumps(fake_envelope)
+        stderr = ""
+
+    monkeypatch.setattr(planner_mod.shutil, "which", lambda _x: "/fake/claude")
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: _FakeProc())
+
+    p = plan(StudioRequest(prompt="post Instagram"))
+    assert p.category == "instagram"
+    assert p.template_id == "single-manifesto"
+    assert p.methodology == "aida"
+
+
 def test_real_mode_invalid_brief_propagates(monkeypatch):
     """Brief.__post_init__ raises ValueError on empty ctas — surface that."""
     monkeypatch.delenv("VIBEWEB_DRY_RUN", raising=False)

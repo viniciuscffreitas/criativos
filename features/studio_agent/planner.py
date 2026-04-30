@@ -102,12 +102,34 @@ def _run_cli(prompt: str, system_prompt: str, model: str) -> Any:
     if envelope.get("is_error"):
         raise RuntimeError(f"claude CLI envelope marked error: {envelope!r}")
     result_str = envelope.get("result", "")
+    cleaned = _strip_markdown_fence(result_str)
     try:
-        return json.loads(result_str)
+        return json.loads(cleaned)
     except json.JSONDecodeError as e:
         raise RuntimeError(
             f"planner CLI returned non-JSON result body: {result_str[:500]!r}"
         ) from e
+
+
+def _strip_markdown_fence(s: str) -> str:
+    """Remove an optional ```json ... ``` (or ``` ... ```) wrapper.
+
+    Claude often wraps JSON in fences even when the system prompt asks for
+    raw output — the trained-in markdown habit is hard to suppress. We
+    strip a leading ```<lang>\\n and a trailing ``` if both are present;
+    everything else is returned unchanged.
+    """
+    stripped = s.strip()
+    if not stripped.startswith("```"):
+        return s
+    # Drop the opening fence line (``` or ```json or ```JSON, etc.)
+    nl = stripped.find("\n")
+    if nl == -1:
+        return s
+    body = stripped[nl + 1:]
+    if body.endswith("```"):
+        body = body[:-3]
+    return body.strip()
 
 
 # Keyword -> category routing for dry-run deterministic synthesis.
