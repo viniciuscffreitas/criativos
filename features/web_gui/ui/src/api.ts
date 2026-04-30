@@ -1,4 +1,4 @@
-import type { Project, Creative, Brief, AgentResult, GenerateRequest, CopyVariant } from './types';
+import type { Project, Creative, Brief, AgentResult, GenerateRequest, CopyVariant, RenderManifest, RenderReport } from './types';
 
 const BASE = '/api/v1';
 
@@ -60,6 +60,16 @@ export const api = {
       throw new Error(`${body.code || 'ERROR'}: ${body.error || r.statusText}`);
     }
   },
+
+  // Render pipeline — triggers the existing async generators on the server.
+  // Each POST is sync (~6s brand, ~3s ads, ~25s instagram, ~35s all).
+  getRenderManifest: () => req<RenderManifest>('/render/manifest'),
+  renderBrand: () => req<RenderReport>('/render/brand', { method: 'POST' }),
+  renderAds: (adId?: string) =>
+    req<RenderReport>(`/render/ads${adId ? `?ad_id=${adId}` : ''}`, { method: 'POST' }),
+  renderInstagram: (stem?: string) =>
+    req<RenderReport>(`/render/instagram${stem ? `?stem=${stem}` : ''}`, { method: 'POST' }),
+  renderAll: () => req<RenderReport>('/render/all', { method: 'POST' }),
 };
 
 export type StreamEvent =

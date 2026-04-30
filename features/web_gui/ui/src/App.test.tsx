@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { api } from './api';
 import { App } from './App';
@@ -30,6 +30,37 @@ describe('App — §2.7 error surface', () => {
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('App — Studio routing', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(api, 'listProjects').mockResolvedValue({ projects: [] });
+    vi.spyOn(api, 'getRenderManifest').mockResolvedValue({
+      categories: {
+        'brand-logos': [], 'brand-social': [], 'brand-favicons': [],
+        'meta-ads': [], 'instagram': [],
+      },
+    });
+    localStorage.clear();
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('Cmd+4 routes to the Studio view', async () => {
+    render(<App />);
+    fireEvent.keyDown(window, { key: '4', metaKey: true });
+    await waitFor(() => {
+      expect(screen.getByTestId('studio-view')).toBeInTheDocument();
+    });
+  });
+
+  it('Ctrl+4 also routes to Studio (Windows shortcut)', async () => {
+    render(<App />);
+    fireEvent.keyDown(window, { key: '4', ctrlKey: true });
+    await waitFor(() => {
+      expect(screen.getByTestId('studio-view')).toBeInTheDocument();
     });
   });
 });

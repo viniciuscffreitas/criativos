@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { streamGenerate } from './api';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { api, streamGenerate } from './api';
 import type { StreamEvent } from './api';
 import type { GenerateRequest } from './types';
 
@@ -80,6 +80,85 @@ describe('streamGenerate SSE parser', () => {
     expect(err.payload.code).toBe('SSE_PARSE_ERROR');
     expect(err.payload.error).toMatch(/malformed SSE frame/);
     expect(err.payload.raw).toBe('{bad json}');
+  });
+});
+
+describe('render API client', () => {
+  const okJson = (body: unknown) =>
+    new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+  beforeEach(() => {
+    vi.spyOn(global, 'fetch').mockImplementation(async () =>
+      okJson({ category: 'manifest', categories: { 'brand-logos': [], 'brand-social': [], 'brand-favicons': [], 'meta-ads': [], 'instagram': [] } }),
+    );
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('getRenderManifest hits GET /render/manifest', async () => {
+    await api.getRenderManifest();
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/manifest');
+  });
+
+  it('renderBrand POSTs /render/brand', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      okJson({ category: 'brand-pack', ok_count: 0, total: 0, results: [], started_at: '', finished_at: '', duration_ms: 0 }),
+    );
+    await api.renderBrand();
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/brand');
+    expect(call[1]?.method).toBe('POST');
+  });
+
+  it('renderAds passes ad_id query param', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      okJson({ category: 'meta-ads', ok_count: 0, total: 0, results: [], started_at: '', finished_at: '', duration_ms: 0 }),
+    );
+    await api.renderAds('01');
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/ads?ad_id=01');
+    expect(call[1]?.method).toBe('POST');
+  });
+
+  it('renderAds without ad_id renders all', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      okJson({ category: 'meta-ads', ok_count: 0, total: 0, results: [], started_at: '', finished_at: '', duration_ms: 0 }),
+    );
+    await api.renderAds();
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/ads');
+  });
+
+  it('renderInstagram passes stem query param', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      okJson({ category: 'instagram', ok_count: 0, total: 0, results: [], started_at: '', finished_at: '', duration_ms: 0 }),
+    );
+    await api.renderInstagram('single-manifesto');
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/instagram?stem=single-manifesto');
+    expect(call[1]?.method).toBe('POST');
+  });
+
+  it('renderAll POSTs /render/all', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      okJson({ category: 'all', ok_count: 0, total: 0, results: [], started_at: '', finished_at: '', duration_ms: 0 }),
+    );
+    await api.renderAll();
+    const call = (global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe('/api/v1/render/all');
+    expect(call[1]?.method).toBe('POST');
+  });
+
+  it('throws structured error on non-2xx', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'unknown ad_id', code: 'NOT_FOUND' }), {
+        status: 404, headers: { 'content-type': 'application/json' },
+      }),
+    );
+    await expect(api.renderAds('99')).rejects.toThrow(/NOT_FOUND/);
   });
 });
 

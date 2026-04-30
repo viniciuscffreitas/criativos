@@ -11,10 +11,10 @@
 // what's available) but adds a small "Projeto único" caption to explain
 // why clicks don't navigate anywhere.
 import type { Project } from '../types';
-import { IconSparkle, IconGrid, IconBrand } from './icons';
+import { IconSparkle, IconGrid, IconBrand, IconCanvas } from './icons';
 import { formatShortcut } from '../platform';
 
-export type NavSection = 'flow' | 'gallery' | 'brand';
+export type NavSection = 'flow' | 'gallery' | 'brand' | 'studio';
 
 interface SidebarProps {
   active: NavSection;
@@ -29,6 +29,7 @@ export function Sidebar({ active, onNav, projects, activeProjectSlug, onSelectPr
     { id: 'flow' as const, label: 'Novo fluxo', icon: IconSparkle, shortcut: '1' },
     { id: 'gallery' as const, label: 'Galeria', icon: IconGrid, shortcut: '2' },
     { id: 'brand' as const, label: 'Marca', icon: IconBrand, shortcut: '3' },
+    { id: 'studio' as const, label: 'Studio', icon: IconCanvas, shortcut: '4' },
   ];
 
   const activeProject = projects.find(p => p.slug === activeProjectSlug);

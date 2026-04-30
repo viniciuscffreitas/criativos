@@ -82,3 +82,36 @@ export interface GenerateRequest {
   brief_overrides?: Partial<Brief>;
   persist: boolean;
 }
+
+// One asset the pipeline can produce. The Studio view paints these as cards
+// either as a thumbnail (when exists=true) or as a "pendente" placeholder.
+export interface RenderManifestItem {
+  category: string;
+  relative_path: string;
+  url: string;
+  width: number;
+  height: number;
+  exists: boolean;
+}
+
+export interface RenderManifest {
+  categories: Record<string, RenderManifestItem[]>;
+}
+
+export interface RenderResultItem {
+  category: string;
+  relative_path: string;
+  status: 'ok' | 'missing' | 'error';
+  bytes: number;
+  error: string | null;
+}
+
+export interface RenderReport {
+  category: 'brand-pack' | 'meta-ads' | 'instagram' | 'all';
+  started_at: string;
+  finished_at: string;
+  duration_ms: number;
+  ok_count: number;
+  total: number;
+  results: RenderResultItem[];
+}

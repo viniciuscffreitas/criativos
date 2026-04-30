@@ -10,6 +10,7 @@ import { GenerationTraceModal } from './components/GenerationTraceModal';
 import { api } from './api';
 import type { Creative, Project } from './types';
 import { FlowView } from './components/FlowView';
+import { Studio } from './components/Studio';
 
 export function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -51,6 +52,7 @@ export function App() {
       if (mod && e.key === '1') { e.preventDefault(); setNav('flow'); }
       if (mod && e.key === '2') { e.preventDefault(); setNav('gallery'); }
       if (mod && e.key === '3') { e.preventDefault(); setNav('brand'); }
+      if (mod && e.key === '4') { e.preventDefault(); setNav('studio'); }
       if (e.key === 'Escape') { setSelected(null); setTweaksOpen(false); setTraceRunId(null); }
     };
     window.addEventListener('keydown', h);
@@ -93,6 +95,7 @@ export function App() {
         )}
         {nav === 'gallery' && <Gallery projectSlug={activeProject} onOpenCreative={setSelected} onOpenTrace={setTraceRunId}/>}
         {nav === 'brand' && <BrandLibrary projectSlug={activeProject}/>}
+        {nav === 'studio' && <Studio projectSlug={activeProject}/>}
         {selected && <DetailPanel creative={selected} onClose={() => setSelected(null)}/>}
       </div>
       <CommandPalette

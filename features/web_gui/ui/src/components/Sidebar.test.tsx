@@ -23,6 +23,18 @@ describe('Sidebar', () => {
     expect(screen.getAllByText('Alpha').length).toBeGreaterThan(0);
   });
 
+  it('renders the Studio nav entry alongside Flow/Galeria/Marca', () => {
+    render(<Sidebar {...baseProps} />);
+    expect(screen.getByText(/Studio/i)).toBeInTheDocument();
+  });
+
+  it('clicking the Studio nav entry calls onNav("studio")', () => {
+    const onNav = vi.fn();
+    render(<Sidebar {...baseProps} onNav={onNav} />);
+    fireEvent.click(screen.getByText(/Studio/i));
+    expect(onNav).toHaveBeenCalledWith('studio');
+  });
+
   it('does NOT render the hardcoded "Mateus R." mock-user footer', () => {
     render(<Sidebar {...baseProps} />);
     expect(screen.queryByText(/Mateus/i)).toBeNull();
