@@ -134,6 +134,18 @@ describe('Studio', () => {
     });
   });
 
+  it('renders sub-headings for Logos / Social / Favicons inside Marca', async () => {
+    render(<Studio projectSlug="vibeweb"/>);
+    await waitFor(() => {
+      // Sub-divisions under "Marca" so the user sees the structure
+      // (logos / social / favicons). data-testid keys avoid collision
+      // with file paths that contain those words.
+      expect(screen.getByTestId('subgroup-brand-logos')).toBeInTheDocument();
+      expect(screen.getByTestId('subgroup-brand-social')).toBeInTheDocument();
+      expect(screen.getByTestId('subgroup-brand-favicons')).toBeInTheDocument();
+    });
+  });
+
   it('renders the conversational prompt at the top', async () => {
     render(<Studio projectSlug="vibeweb"/>);
     await waitFor(() =>

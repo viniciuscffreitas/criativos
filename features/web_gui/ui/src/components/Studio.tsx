@@ -164,25 +164,79 @@ export function Studio({ projectSlug }: StudioProps) {
                   {running ? 'Renderizando…' : sec.buttonLabel}
                 </button>
               </div>
-              <div style={{
-                display: 'grid', gap: 10,
-                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-              }}>
-                {items.map(it => (
-                  <AssetCardRich key={`${it.category}/${it.relative_path}`} item={it} reloadKey={reloadKey}/>
-                ))}
-                {items.length === 0 && (
-                  <div style={{
-                    padding: '12px 14px', fontSize: 11,
-                    color: '#a8a29e', fontFamily: '"Geist Mono", monospace',
-                    border: '1px dashed #e7e5e4', borderRadius: 8,
-                  }}>nenhum item</div>
-                )}
-              </div>
+              {sec.key === 'brand' ? (
+                <BrandSubGroups manifest={manifest} reloadKey={reloadKey}/>
+              ) : (
+                <div style={{
+                  display: 'grid', gap: 10,
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                }}>
+                  {items.map(it => (
+                    <AssetCardRich key={`${it.category}/${it.relative_path}`} item={it} reloadKey={reloadKey}/>
+                  ))}
+                  {items.length === 0 && (
+                    <div style={{
+                      padding: '12px 14px', fontSize: 11,
+                      color: '#a8a29e', fontFamily: '"Geist Mono", monospace',
+                      border: '1px dashed #e7e5e4', borderRadius: 8,
+                    }}>nenhum item</div>
+                  )}
+                </div>
+              )}
             </section>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+interface BrandSubGroupsProps {
+  manifest: RenderManifest | null;
+  reloadKey: number;
+}
+
+const _BRAND_SUBGROUPS: Array<{ cat: string; title: string }> = [
+  { cat: 'brand-logos',    title: 'Logos' },
+  { cat: 'brand-social',   title: 'Social' },
+  { cat: 'brand-favicons', title: 'Favicons' },
+];
+
+// Marca section: sub-divides into Logos / Social / Favicons. Without this,
+// the 15 brand assets render in one undifferentiated grid (current prod
+// behaviour) and the user can't tell which is which without reading paths.
+function BrandSubGroups({ manifest, reloadKey }: BrandSubGroupsProps) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {_BRAND_SUBGROUPS.map(g => {
+        const sub = manifest?.categories[g.cat] ?? [];
+        if (sub.length === 0) return null;
+        return (
+          <div key={g.cat} data-testid={`subgroup-${g.cat}`}>
+            <div style={{
+              fontSize: 11, textTransform: 'uppercase',
+              letterSpacing: 0.6, color: '#78716c',
+              marginBottom: 8, fontFamily: '"Geist Mono", monospace',
+              display: 'flex', gap: 8, alignItems: 'baseline',
+            }}>
+              <span>{g.title}</span>
+              <span style={{ color: '#a8a29e' }}>· {sub.length}</span>
+            </div>
+            <div style={{
+              display: 'grid', gap: 10,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            }}>
+              {sub.map(it => (
+                <AssetCardRich
+                  key={`${it.category}/${it.relative_path}`}
+                  item={it}
+                  reloadKey={reloadKey}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
