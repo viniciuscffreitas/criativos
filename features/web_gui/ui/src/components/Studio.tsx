@@ -15,6 +15,7 @@ import { api, streamStudioRequest } from '../api';
 import type { RenderManifest, RenderManifestItem, StudioStreamEvent } from '../types';
 import { ConversationalPrompt } from './ConversationalPrompt';
 import { StudioStream } from './StudioStream';
+import { AssetCardRich } from './AssetCardRich';
 
 interface StudioProps {
   projectSlug: string;
@@ -168,7 +169,7 @@ export function Studio({ projectSlug }: StudioProps) {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
               }}>
                 {items.map(it => (
-                  <AssetCard key={`${it.category}/${it.relative_path}`} item={it} reloadKey={reloadKey}/>
+                  <AssetCardRich key={`${it.category}/${it.relative_path}`} item={it} reloadKey={reloadKey}/>
                 ))}
                 {items.length === 0 && (
                   <div style={{
@@ -186,55 +187,3 @@ export function Studio({ projectSlug }: StudioProps) {
   );
 }
 
-interface AssetCardProps {
-  item: RenderManifestItem;
-  reloadKey: number;
-}
-
-function AssetCard({ item, reloadKey }: AssetCardProps) {
-  // Cache-bust the thumbnail when the manifest is refetched after a render —
-  // otherwise the browser may keep serving the stale PNG.
-  const src = item.exists ? `${item.url}?v=${reloadKey}` : null;
-  return (
-    <div style={{
-      background: '#fff', border: '1px solid #e7e5e4', borderRadius: 8, overflow: 'hidden',
-    }}>
-      <div style={{
-        aspectRatio: `${item.width} / ${item.height}`,
-        background: item.exists
-          ? '#0a0a0a'
-          : 'repeating-linear-gradient(45deg, #fafaf9 0 8px, #f5f5f4 8px 16px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative',
-      }}>
-        {src ? (
-          <img
-            src={src}
-            alt={item.relative_path}
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
-        ) : (
-          <span style={{
-            fontFamily: '"Geist Mono", monospace',
-            fontSize: 10, color: '#78716c',
-            textTransform: 'uppercase', letterSpacing: 0.6,
-          }}>pendente</span>
-        )}
-      </div>
-      <div style={{ padding: '8px 10px' }}>
-        <div style={{
-          fontSize: 11, color: '#1c1917',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
-          {item.relative_path}
-        </div>
-        <div style={{
-          fontSize: 10, color: '#6f6a64',
-          fontFamily: '"Geist Mono", monospace', marginTop: 1,
-        }}>
-          {item.width}×{item.height}
-        </div>
-      </div>
-    </div>
-  );
-}
