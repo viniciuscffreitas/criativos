@@ -215,7 +215,13 @@ async def render_meta_ads(ad_id: str | None = None) -> RenderReport:
                 f"unknown ad_id {ad_id!r}; available ids: {available}"
             )
         jobs = filtered
-    await run_jobs(jobs)
+    try:
+        await run_jobs(jobs)
+    except Exception as e:
+        raise RuntimeError(
+            f"render_meta_ads(ad_id={ad_id!r}) failed during run_jobs "
+            f"(jobs={[j.out.name for j in jobs]})"
+        ) from e
     items = [
         RenderItem("meta-ads", j.out.name, j.out, j.width, j.height)
         for j in jobs
@@ -246,7 +252,13 @@ async def render_instagram(stem: str | None = None) -> RenderReport:
                 f"unknown stem {stem!r}; no instagram job matches"
             )
         jobs = filtered
-    await run_jobs(jobs)
+    try:
+        await run_jobs(jobs)
+    except Exception as e:
+        raise RuntimeError(
+            f"render_instagram(stem={stem!r}) failed during run_jobs "
+            f"({len(jobs)} jobs)"
+        ) from e
     items = [
         RenderItem("instagram", j.out.name, j.out, j.width, j.height)
         for j in jobs

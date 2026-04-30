@@ -59,6 +59,22 @@ The same render endpoints power the web UI's **Studio** view (⌘4 / Ctrl+4).
 The UI shows the manifest grouped by category with per-category "Generate"
 buttons — exactly what the REST surface does, just visual.
 
+### First-deploy note: bind mounts mask image content
+
+The four render-output volumes (`brand/social/renders`, `brand/favicons`,
+`ads/renders`, `features/instagram_content/renders`) are bind mounts. On
+first container start they shadow whatever was baked into the image at
+those paths. That means a fresh VPS clone where the host dirs are empty
+will appear to have no rendered PNGs even if they were committed in git.
+
+`bash deploy/install.sh` runs `git pull` before `docker compose up`, so
+the host paths are populated by git before the container starts. If you
+need to rebuild from scratch on a host that doesn't have the git checkout
+populated, run `git restore brand/ ads/renders/` (or just `git checkout
+HEAD -- ads/renders brand/social/renders brand/favicons`) before bringing
+the container up — otherwise the Studio will show every card as
+"pendente" until something is generated.
+
 ### Auth note
 
 The render endpoints are currently unauthenticated. Caddy on a personal
