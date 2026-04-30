@@ -5,6 +5,7 @@
 // erode trust. New commands land here when their backing feature ships.
 import { useEffect, useRef, useState } from 'react';
 import type { NavSection } from './Sidebar';
+import { formatShortcut } from '../platform';
 
 interface Command {
   id: string;
@@ -27,16 +28,16 @@ export function CommandPalette({ open, onClose, onNav, onOpenTweaks, onOpenTrace
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commands: Command[] = [
-    { id: 'nav-flow',    label: 'Ir para Novo fluxo',    hint: '⌘1', onRun: () => onNav('flow') },
-    { id: 'nav-gallery', label: 'Ir para Galeria',       hint: '⌘2', onRun: () => onNav('gallery') },
-    { id: 'nav-brand',   label: 'Ir para Marca',         hint: '⌘3', onRun: () => onNav('brand') },
-    { id: 'tweaks',      label: 'Abrir ajustes rápidos', hint: '⌘;', onRun: onOpenTweaks },
+    { id: 'nav-flow',    label: 'Ir para Novo fluxo',    hint: formatShortcut('1'), onRun: () => onNav('flow') },
+    { id: 'nav-gallery', label: 'Ir para Galeria',       hint: formatShortcut('2'), onRun: () => onNav('gallery') },
+    { id: 'nav-brand',   label: 'Ir para Marca',         hint: formatShortcut('3'), onRun: () => onNav('brand') },
+    { id: 'tweaks',      label: 'Abrir ajustes rápidos', hint: formatShortcut(';'), onRun: onOpenTweaks },
   ];
   if (onOpenTrace !== null) {
     commands.push({
       id: 'trace',
       label: 'Ver trace da última geração',
-      hint: '⌘L',
+      hint: formatShortcut('L'),
       onRun: onOpenTrace,
     });
   }

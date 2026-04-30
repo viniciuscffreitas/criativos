@@ -1,7 +1,12 @@
 // CommandPalette — search, keyboard nav, wired/unwired commands, close paths.
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CommandPalette } from './CommandPalette';
+
+function setPlatform(platform: string) {
+  Object.defineProperty(navigator, 'platform', { value: platform, configurable: true });
+  Object.defineProperty(navigator, 'userAgentData', { value: undefined, configurable: true });
+}
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -19,7 +24,10 @@ describe('CommandPalette', () => {
     BASE_PROPS.onNav.mockClear();
     BASE_PROPS.onOpenTweaks.mockClear();
     vi.spyOn(console, 'info').mockImplementation(() => {});
+    // Default to Mac so the existing assertions ("⌘1", etc.) keep passing.
+    setPlatform('MacIntel');
   });
+  afterEach(() => { setPlatform(''); });
 
   it('returns null when open=false', () => {
     const { container } = render(<CommandPalette {...BASE_PROPS} open={false} />);
@@ -88,5 +96,28 @@ describe('CommandPalette', () => {
     render(<CommandPalette {...BASE_PROPS} />);
     fireEvent.click(screen.getByTestId('palette-overlay'));
     expect(BASE_PROPS.onClose).toHaveBeenCalledOnce();
+  });
+
+  describe('platform-aware shortcut hints', () => {
+    it('renders Ctrl+<key> hints on Windows', () => {
+      setPlatform('Win32');
+      render(<CommandPalette {...BASE_PROPS} onOpenTrace={() => {}} />);
+      expect(screen.getByText('Ctrl+1')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+2')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+3')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+;')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+L')).toBeInTheDocument();
+      // And no leftover Mac glyphs
+      expect(screen.queryByText('⌘1')).toBeNull();
+      expect(screen.queryByText('⌘L')).toBeNull();
+    });
+
+    it('renders ⌘<key> hints on Mac (incl. trace)', () => {
+      setPlatform('MacIntel');
+      render(<CommandPalette {...BASE_PROPS} onOpenTrace={() => {}} />);
+      expect(screen.getByText('⌘1')).toBeInTheDocument();
+      expect(screen.getByText('⌘;')).toBeInTheDocument();
+      expect(screen.getByText('⌘L')).toBeInTheDocument();
+    });
   });
 });

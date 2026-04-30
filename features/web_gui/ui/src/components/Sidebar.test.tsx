@@ -1,6 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Sidebar } from './Sidebar';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+
+function setPlatform(platform: string) {
+  Object.defineProperty(navigator, 'platform', { value: platform, configurable: true });
+  Object.defineProperty(navigator, 'userAgentData', { value: undefined, configurable: true });
+}
 
 const baseProps = {
   active: 'flow' as const,
@@ -60,6 +65,26 @@ describe('Sidebar', () => {
     ]} />);
     fireEvent.click(screen.getByText('Beta'));
     expect(onSelectProject).toHaveBeenCalledWith('beta');
+  });
+
+  describe('platform-aware shortcut hint', () => {
+    afterEach(() => { setPlatform(''); });
+
+    it('renders ⌘<n> on Mac', () => {
+      setPlatform('MacIntel');
+      render(<Sidebar {...baseProps} />);
+      expect(screen.getByText('⌘1')).toBeInTheDocument();
+      expect(screen.getByText('⌘2')).toBeInTheDocument();
+      expect(screen.getByText('⌘3')).toBeInTheDocument();
+    });
+
+    it('renders Ctrl+<n> on Windows', () => {
+      setPlatform('Win32');
+      render(<Sidebar {...baseProps} />);
+      expect(screen.getByText('Ctrl+1')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+2')).toBeInTheDocument();
+      expect(screen.getByText('Ctrl+3')).toBeInTheDocument();
+    });
   });
 
   it('does NOT render the misleading chevron on the project header', () => {

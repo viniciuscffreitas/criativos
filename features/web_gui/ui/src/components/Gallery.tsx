@@ -6,6 +6,7 @@ import { fetchCreatives } from '../data/creatives';
 import {
   IconSearch, IconPlus, IconPlay, IconCanvas,
 } from './icons';
+import { formatShortcut } from '../platform';
 
 interface GalleryProps {
   projectSlug: string;
@@ -70,7 +71,7 @@ export function Gallery({ projectSlug, onOpenCreative, onOpenTrace }: GalleryPro
             fontFamily: '"Geist Mono", monospace', fontSize: 10,
             padding: '1px 5px', borderRadius: 4,
             background: '#fff', border: '1px solid #e7e5e4',
-          }}>⌘K</span>
+          }}>{formatShortcut('K')}</span>
         </div>
         <button style={btnPrimary}><IconPlus size={13}/> Novo criativo</button>
       </div>

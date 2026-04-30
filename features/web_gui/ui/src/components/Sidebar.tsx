@@ -12,6 +12,7 @@
 // why clicks don't navigate anywhere.
 import type { Project } from '../types';
 import { IconSparkle, IconGrid, IconBrand } from './icons';
+import { formatShortcut } from '../platform';
 
 export type NavSection = 'flow' | 'gallery' | 'brand';
 
@@ -87,7 +88,7 @@ export function Sidebar({ active, onNav, projects, activeProjectSlug, onSelectPr
                 padding: '1px 5px', borderRadius: 4,
                 background: isActive ? '#fff' : 'transparent',
                 border: isActive ? '1px solid #e7e5e4' : '1px solid transparent',
-              }}>⌘{s.shortcut}</span>
+              }}>{formatShortcut(s.shortcut)}</span>
             </div>
           );
         })}

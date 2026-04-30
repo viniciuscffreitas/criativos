@@ -2,6 +2,7 @@
 // Controlled inputs bound to the Brief loaded by FlowView.
 // Upload zone and advanced options (formats, tone) are deferred — not part of Brief schema.
 import type { Brief } from '../../types';
+import { formatShortcut } from '../../platform';
 
 interface SetupProps {
   projectSlug: string;
@@ -222,7 +223,7 @@ export function Setup({
               }}
             >
               Próximo
-              <span style={{ fontFamily: '"Geist Mono", monospace', fontSize: 10, opacity: 0.6 }}>⌘↵</span>
+              <span style={{ fontFamily: '"Geist Mono", monospace', fontSize: 10, opacity: 0.6 }}>{formatShortcut('↵')}</span>
             </button>
           </div>
         </div>

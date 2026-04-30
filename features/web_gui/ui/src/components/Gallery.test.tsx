@@ -88,6 +88,35 @@ describe('Gallery — filter tabs accessibility', () => {
   });
 });
 
+describe('Gallery — platform-aware search shortcut hint', () => {
+  function setPlatform(platform: string) {
+    Object.defineProperty(navigator, 'platform', { value: platform, configurable: true });
+    Object.defineProperty(navigator, 'userAgentData', { value: undefined, configurable: true });
+  }
+
+  beforeEach(() => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(api, 'listCreatives').mockResolvedValue({ creatives: [] });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    setPlatform('');
+  });
+
+  it('shows ⌘K on Mac', async () => {
+    setPlatform('MacIntel');
+    render(<Gallery projectSlug="vibeweb" onOpenCreative={() => {}} onOpenTrace={() => {}} />);
+    expect(await screen.findByText('⌘K')).toBeInTheDocument();
+  });
+
+  it('shows Ctrl+K on Windows', async () => {
+    setPlatform('Win32');
+    render(<Gallery projectSlug="vibeweb" onOpenCreative={() => {}} onOpenTrace={() => {}} />);
+    expect(await screen.findByText('Ctrl+K')).toBeInTheDocument();
+    expect(screen.queryByText('⌘K')).toBeNull();
+  });
+});
+
 describe('Gallery — ver trace wiring', () => {
   beforeEach(() => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
