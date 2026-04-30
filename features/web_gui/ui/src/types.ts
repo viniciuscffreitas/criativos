@@ -115,3 +115,42 @@ export interface RenderReport {
   total: number;
   results: RenderResultItem[];
 }
+
+// Conversational studio: agent picks category/template/methodology/brief
+// from a free-form prompt, then orchestrator streams plan -> copy -> render.
+export interface StudioPlanPayload {
+  category: 'brand-pack' | 'meta-ads' | 'instagram';
+  template_id: string;
+  methodology: string;
+  n_variants: number;
+  reasoning: string;
+  brief: {
+    product: string;
+    audience: string;
+    pain: string;
+    ctas: string[];
+    social_proof: string | null;
+  };
+}
+
+export interface RenderProgressPayload {
+  file: string;
+  status: 'rendering' | 'ok' | 'failed' | 'missing' | 'error';
+  url: string | null;
+}
+
+export interface StudioRequestBody {
+  prompt: string;
+  n_variants?: number;
+}
+
+export type StudioStreamEvent =
+  | { type: 'run_start'; payload: { run_id: string; pipeline_version: string; started_at: string } }
+  | { type: 'node_start'; payload: { node_id: string; label: string; start_ms: number } }
+  | { type: 'node_done'; payload: { node_id: string; end_ms: number; tokens: number; confidence: number | null; output_preview: string } }
+  | { type: 'token'; payload: { node_id: string; variant_id: string | null; text: string } }
+  | { type: 'plan_decided'; payload: { plan: StudioPlanPayload } }
+  | { type: 'variant_done'; payload: CopyVariant }
+  | { type: 'render_progress'; payload: RenderProgressPayload }
+  | { type: 'done'; payload: { run_id: string; plan: StudioPlanPayload; variants: CopyVariant[]; render: { category: string; ok_count: number; total: number; duration_ms: number } } }
+  | { type: 'error'; payload: { error: string; code: string; raw?: string } };

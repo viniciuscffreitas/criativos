@@ -1,4 +1,4 @@
-import type { Project, Creative, Brief, AgentResult, GenerateRequest, CopyVariant, RenderManifest, RenderReport } from './types';
+import type { Project, Creative, Brief, AgentResult, GenerateRequest, CopyVariant, RenderManifest, RenderReport, StudioRequestBody, StudioStreamEvent } from './types';
 
 const BASE = '/api/v1';
 
@@ -80,6 +80,68 @@ export type StreamEvent =
   | { type: 'variant_done'; payload: CopyVariant }
   | { type: 'done'; payload: AgentResult }
   | { type: 'error'; payload: { error: string; code: string; raw?: string } };
+
+// Conversational studio stream — POST /studio/request returns the same SSE
+// shape as /generate/stream but with the studio_agent vocabulary on top
+// (plan_decided, render_progress). Mirrors streamGenerate's parser exactly
+// so both share the cancellation pattern.
+export function streamStudioRequest(
+  payload: StudioRequestBody,
+  onEvent: (e: StudioStreamEvent) => void,
+  onComplete?: () => void,
+  fetchImpl: typeof fetch = fetch,
+): () => void {
+  const controller = new AbortController();
+  (async () => {
+    const r = await fetchImpl(`${BASE}/studio/request`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    if (!r.body) {
+      onEvent({ type: 'error', payload: { error: 'SSE response has no body', code: 'NO_BODY' } });
+      onComplete?.();
+      return;
+    }
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) !== -1) {
+        const block = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        const lines = block.split('\n');
+        let eventName = '';
+        let dataStr = '';
+        for (const line of lines) {
+          if (line.startsWith('event:')) eventName = line.slice(6).trim();
+          else if (line.startsWith('data:')) dataStr += line.slice(5).trim();
+        }
+        if (eventName && dataStr) {
+          try {
+            onEvent({ type: eventName as StudioStreamEvent['type'], payload: JSON.parse(dataStr) });
+          } catch (err) {
+            onEvent({
+              type: 'error',
+              payload: {
+                error: `malformed SSE frame: ${(err as Error).message}`,
+                code: 'SSE_PARSE_ERROR',
+                raw: dataStr.slice(0, 200),
+              },
+            });
+          }
+        }
+      }
+    }
+    onComplete?.();
+  })();
+  return () => controller.abort();
+}
 
 export function streamGenerate(
   payload: GenerateRequest,
