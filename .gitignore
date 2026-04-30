@@ -25,6 +25,10 @@ test-results/
 # Local Claude Code workspace settings
 .claude/
 
+# Playwright MCP working artifacts (snapshots + screenshots)
+.playwright-mcp/
+studio-*.png
+
 # Python build artifacts
 build/
 dist/
