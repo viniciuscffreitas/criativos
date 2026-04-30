@@ -30,6 +30,13 @@ RUN pip install --no-cache-dir \
     "pillow>=10.4,<12.0" \
     "playwright>=1.47,<2.0"
 
+# Playwright chromium binary + apt deps (libnss, libatk, libcups, etc).
+# Without --with-deps the binary downloads fine but crashes at launch with
+# "Host system is missing dependencies". The render service hits this every
+# time POST /api/v1/render/* fires — the container would be a no-op without
+# this layer.
+RUN python -m playwright install --with-deps chromium
+
 COPY features/ ./features/
 COPY scripts/ ./scripts/
 COPY ads/ ./ads/

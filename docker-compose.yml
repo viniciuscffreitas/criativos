@@ -9,6 +9,13 @@ services:
       - ./config:/app/config
       - ./features/web_gui/traces:/app/features/web_gui/traces
       - ./features/web_gui/uploads:/app/features/web_gui/uploads
+      # Render outputs — without these, web-app-generated PNGs die on rebuild.
+      # We mount only the generated subdirs (not all of brand/) so that
+      # brand/logos/*.svg and brand/tokens.css still come from the image (git).
+      - ./brand/social/renders:/app/brand/social/renders
+      - ./brand/favicons:/app/brand/favicons
+      - ./ads/renders:/app/ads/renders
+      - ./features/instagram_content/renders:/app/features/instagram_content/renders
     env_file:
       - .env
     environment:
