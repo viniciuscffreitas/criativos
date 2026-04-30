@@ -22,6 +22,9 @@ playwright-report/
 test-results/
 .superpowers/
 
+# Local Claude Code workspace settings
+.claude/
+
 # Python build artifacts
 build/
 dist/
