@@ -25,8 +25,8 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from features.web_gui.api import assets, brand_files, briefs, creatives, generate, projects, traces, variants
-from features.web_gui.settings import brand_dir, renders_dir, static_dir, traces_dir, uploads_dir
+from features.web_gui.api import assets, brand_files, briefs, creatives, generate, projects, render, traces, variants
+from features.web_gui.settings import brand_dir, instagram_renders_dir, renders_dir, static_dir, traces_dir, uploads_dir
 
 _log = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(traces.router, prefix="/api/v1")
     app.include_router(assets.router, prefix="/api/v1")
     app.include_router(brand_files.router, prefix="/api/v1")
+    app.include_router(render.router, prefix="/api/v1")
 
     @app.exception_handler(HTTPException)
     async def http_exc_handler(_, exc: HTTPException):
@@ -77,6 +78,14 @@ def create_app() -> FastAPI:
         if os.getenv("VIBEWEB_REQUIRE_RENDERS", "0") == "1":
             raise RuntimeError(f"renders dir not found: {rdir}")
         _log.warning("Renders dir %s not found — /renders will not be served", rdir)
+
+    # Instagram content lives in its own vertical slice
+    # (features/instagram_content/renders) — mount it so Studio can show
+    # those 48 PNGs alongside brand and ads. Auto-create if missing so a
+    # fresh checkout can render via the web app without manual mkdir.
+    igdir = instagram_renders_dir()
+    igdir.mkdir(parents=True, exist_ok=True)
+    app.mount("/instagram", StaticFiles(directory=str(igdir)), name="instagram")
 
     bdir = brand_dir()
     if bdir.exists():

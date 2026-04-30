@@ -1294,6 +1294,48 @@ def test_brand_missing_file_returns_404(tmp_path, monkeypatch):
     assert r.status_code == 404
 
 
+def test_instagram_mount_serves_renders(tmp_path, monkeypatch):
+    """The web app must expose features/instagram_content/renders at
+    /instagram so the Studio view can show the 48 IG PNGs alongside brand
+    and ads (which already mount at /brand and /renders)."""
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+
+    ig = tmp_path / "ig_renders"
+    ig.mkdir()
+    (ig / "single-manifesto.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    monkeypatch.setattr(
+        "features.web_gui.server.instagram_renders_dir", lambda: ig,
+    )
+    from fastapi.testclient import TestClient
+    c = TestClient(create_app())
+    r = c.get("/instagram/single-manifesto.png")
+    assert r.status_code == 200
+    assert r.content.startswith(b"\x89PNG")
+
+
+def test_instagram_mount_creates_dir_at_boot(tmp_path, monkeypatch):
+    """server.py mkdirs the IG renders dir on startup so a fresh checkout
+    can hit POST /render/instagram and have a place to write to. settings
+    itself stays pure (see test_settings.test_instagram_renders_dir_is_pure)."""
+    projects = tmp_path / "projects.yaml"
+    ads = tmp_path / "ads.yaml"
+    projects.write_text(yaml.safe_dump({"projects": {}}))
+    ads.write_text(yaml.safe_dump({"ads": {}}))
+    monkeypatch.setenv("VIBEWEB_PROJECTS_YAML", str(projects))
+
+    ig = tmp_path / "fresh_ig_renders"
+    assert not ig.exists()
+    monkeypatch.setattr(
+        "features.web_gui.server.instagram_renders_dir", lambda: ig,
+    )
+    create_app()
+    assert ig.exists() and ig.is_dir()
+
+
 def test_create_app_raises_when_brand_required_but_missing(tmp_path, monkeypatch):
     """VIBEWEB_REQUIRE_UI=1 must gate brand dir too — tokens.css is load-bearing."""
     projects = tmp_path / "projects.yaml"

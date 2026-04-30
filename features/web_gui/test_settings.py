@@ -47,3 +47,18 @@ def test_static_dir_returns_path():
 def test_projects_yaml_path_default():
     result = settings.projects_yaml_path()
     assert result.name == "projects.yaml"
+
+
+def test_instagram_renders_dir_points_to_feature_slice():
+    """The web app must serve the IG vertical slice's renders/ at /instagram —
+    not /renders (Meta Ads) and not /brand (canonical brand pack)."""
+    result = settings.instagram_renders_dir()
+    assert result == settings.ROOT / "features" / "instagram_content" / "renders"
+
+
+def test_instagram_renders_dir_is_pure(tmp_path, monkeypatch):
+    """instagram_renders_dir() must not create directories — server.py is the
+    one that mkdirs at app boot, settings stays side-effect-free."""
+    monkeypatch.setattr(settings, "ROOT", tmp_path)
+    result = settings.instagram_renders_dir()
+    assert not result.exists()

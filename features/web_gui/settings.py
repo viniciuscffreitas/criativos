@@ -28,5 +28,9 @@ def renders_dir() -> Path:
     return ROOT / "ads" / "renders"
 
 
+def instagram_renders_dir() -> Path:
+    return ROOT / "features" / "instagram_content" / "renders"
+
+
 def brand_dir() -> Path:
     return ROOT / "brand"
