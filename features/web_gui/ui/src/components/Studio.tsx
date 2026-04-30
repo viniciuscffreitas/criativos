@@ -11,8 +11,10 @@
 // so cards flip from "pendente" to thumbnail without a page reload. Errors
 // surface as a §2.7 alert banner — never a silent fallback.
 import { useEffect, useState } from 'react';
-import { api } from '../api';
-import type { RenderManifest, RenderManifestItem } from '../types';
+import { api, streamStudioRequest } from '../api';
+import type { RenderManifest, RenderManifestItem, StudioStreamEvent } from '../types';
+import { ConversationalPrompt } from './ConversationalPrompt';
+import { StudioStream } from './StudioStream';
 
 interface StudioProps {
   projectSlug: string;
@@ -41,6 +43,28 @@ export function Studio({ projectSlug }: StudioProps) {
   const [manifest, setManifest] = useState<RenderManifest | null>(null);
   const [state, setState] = useState<GenerateState>({ kind: 'idle' });
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Conversational layer: prompt → SSE stream of plan/copy/render events.
+  // streamEvents drives StudioStream (live progress), conversationBusy
+  // disables ConversationalPrompt to prevent parallel runs, and the 'done'
+  // event bumps reloadKey so the manifest refetches and asset cards flip
+  // from "pendente" to thumbnail.
+  const [streamEvents, setStreamEvents] = useState<StudioStreamEvent[]>([]);
+  const [conversationBusy, setConversationBusy] = useState(false);
+
+  function onPrompt(prompt: string) {
+    setStreamEvents([]);
+    setConversationBusy(true);
+    streamStudioRequest(
+      { prompt, n_variants: 3 },
+      (e) => setStreamEvents((prev) => [...prev, e]),
+      () => {
+        setConversationBusy(false);
+        // Refetch manifest so the freshly-rendered file flips to a thumbnail
+        setReloadKey((k) => k + 1);
+      },
+    );
+  }
 
   useEffect(() => {
     api.getRenderManifest()
@@ -94,7 +118,15 @@ export function Studio({ projectSlug }: StudioProps) {
         }}>erro: {state.message}</div>
       )}
 
-      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 32 }}>
+      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* Conversational layer — top of the Studio. The "eu peço X, você
+            gera tudo" entry-point. The button-driven sections below stay
+            as a fallback for "render every asset of category Y." */}
+        <ConversationalPrompt onSubmit={onPrompt} busy={conversationBusy}/>
+        {(conversationBusy || streamEvents.length > 0) && (
+          <StudioStream events={streamEvents}/>
+        )}
+
         {SECTIONS.map(sec => {
           const items: RenderManifestItem[] = sec.categories.flatMap(c => manifest?.categories[c] ?? []);
           const okCount = items.filter(it => it.exists).length;

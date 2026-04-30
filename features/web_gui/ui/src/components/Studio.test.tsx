@@ -133,4 +133,40 @@ describe('Studio', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(/render exploded/);
     });
   });
+
+  it('renders the conversational prompt at the top', async () => {
+    render(<Studio projectSlug="vibeweb"/>);
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/pedir pra claude/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: /enviar/i })).toBeInTheDocument();
+  });
+
+  it('submitting the prompt shows the StudioStream pipeline', async () => {
+    // Stub fetch — the streamStudioRequest helper reads it directly.
+    const fakeFetch = vi.fn().mockResolvedValue(
+      new Response(
+        'event: run_start\ndata: {"run_id":"r","pipeline_version":"v","started_at":"s"}\n\n' +
+        'event: node_start\ndata: {"node_id":"planning","label":"l","start_ms":0}\n\n' +
+        'event: done\ndata: {}\n\n',
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      ),
+    );
+    vi.spyOn(global, 'fetch').mockImplementation(fakeFetch);
+
+    render(<Studio projectSlug="vibeweb"/>);
+    const ta = await screen.findByPlaceholderText(/pedir pra claude/i);
+    fireEvent.change(ta, { target: { value: 'preciso de um anúncio' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+    // The pipeline component renders three node labels — assert one of them.
+    await waitFor(() =>
+      expect(screen.getByText(/Entendendo seu pedido/i)).toBeInTheDocument(),
+    );
+    // streamStudioRequest must have hit /studio/request
+    expect(fakeFetch).toHaveBeenCalledWith(
+      '/api/v1/studio/request',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
 });
